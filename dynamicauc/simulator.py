@@ -9,7 +9,7 @@ from typing import Callable, List, Tuple
 import numpy as np
 import pandas as pd
 
-from dynamicauc.primitives.primitives import (
+from dynamicauc.primitives import (
     AuctionRule,
     ArrivalProcess,
     CompetitionDistribution,
