@@ -1,3 +1,6 @@
+# TODO: Créer fonction visualisation
+# TODO : Ajouter autres baselines (ex: bidding policy)
+
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"

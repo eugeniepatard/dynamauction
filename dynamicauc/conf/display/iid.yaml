@@ -1,2 +1,2 @@
-_target_: primitives.IIDUniformSampler
+_target_: dynamicauc.primitives.IIDUniformSampler
 dim: 3

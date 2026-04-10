@@ -4,3 +4,4 @@ omegaconf
 scipy
 pandas
 matplotlib
+gymnasium
