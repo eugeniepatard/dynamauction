@@ -3,3 +3,4 @@ __pycache__/
 *.pyo
 simulate/outputs/
 .DS_Store
+.venv/

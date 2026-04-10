@@ -1,0 +1,6 @@
+numpy
+hydra-core
+omegaconf
+scipy
+pandas
+matplotlib
