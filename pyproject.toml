@@ -7,19 +7,18 @@ name = "dynamicauc"
 version = "0.1.0"
 description = "Kernel causal models for repeated auctions with dynamic values"
 readme = "README.md"
-authors = [
-  { name="Your Name", email="your@email.com" } #TODO : remplir les noms
-]
-license = { text = "MIT" }
 requires-python = ">=3.9"
+
+authors = [
+  { name = "Your Name", email = "your@email.com" }
+]
 
 dependencies = [
   "numpy",
   "scikit-learn",
   "matplotlib",
   "hydra-core",
-  "pandas",
-  "omegaconf"
+  "pandas"
 ]
 
 [project.optional-dependencies]
@@ -29,8 +28,5 @@ dev = [
   "flake8"
 ]
 
-[tool.setuptools]
-packages = ["dynamicauc"]
-
-[tool.setuptools.package-dir]
-"" = "."
+[tool.setuptools.packages.find]
+where = ["."]

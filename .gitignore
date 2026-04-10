@@ -4,3 +4,4 @@ __pycache__/
 simulate/outputs/
 .DS_Store
 .venv/
+*.egg-info/
