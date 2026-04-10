@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+*.pyo
+simulate/outputs/
+.DS_Store

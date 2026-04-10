@@ -1,0 +1,18 @@
+defaults:
+  - auction: second_price
+  - competition: lognormal
+  - arrival: piecewise_poisson
+  - kernel: saturation
+  - display: iid
+  - exogenous: trivial
+  - policy: fipla
+  - _self_
+
+campaign:
+  horizon: 30.0          # campaign duration (arbitrary time units)
+  user_features: [0.5, 0.3, 0.7]
+  n_runs: 10
+  seed: 42
+
+output:
+  dir: outputs/
