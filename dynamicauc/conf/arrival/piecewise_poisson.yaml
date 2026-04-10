@@ -1,4 +1,4 @@
-_target_: primitives.PiecewiseConstantPoisson
+_target_: dynamicauc.primitives.PiecewiseConstantPoisson
 # Interior breakpoints splitting [0, T] into intervals
 breakpoints: [10.0, 20.0]
 # One intensity per interval (auctions per unit time)

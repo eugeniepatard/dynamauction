@@ -1,0 +1,37 @@
+auction:
+  _target_: primitives.SecondPriceAuction
+competition:
+  _target_: primitives.LogNormalCompetition
+  mu: 0.0
+  sigma: 0.5
+arrival:
+  _target_: primitives.PiecewiseConstantPoisson
+  breakpoints:
+  - 10.0
+  - 20.0
+  intensities:
+  - 5.0
+  - 8.0
+  - 5.0
+kernel:
+  _target_: primitives.SaturationKernel
+  base_rate: 1.0
+  saturation_scale: 10.0
+  delay_rate: 0.5
+display:
+  _target_: primitives.IIDUniformSampler
+  dim: 3
+exogenous:
+  _target_: primitives.TrivialProcess
+policy:
+  _target_: policy.FiPlaPolicy
+campaign:
+  horizon: 30.0
+  user_features:
+  - 0.5
+  - 0.3
+  - 0.7
+  n_runs: 5
+  seed: 42
+output:
+  dir: outputs/

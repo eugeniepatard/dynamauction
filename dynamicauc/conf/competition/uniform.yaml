@@ -1,3 +1,3 @@
-_target_: primitives.UniformCompetition
+_target_: dynamicauc.primitives.UniformCompetition
 low: 0.0
 high: 2.0

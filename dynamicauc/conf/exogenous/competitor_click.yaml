@@ -1,2 +1,2 @@
-_target_: primitives.CompetitorClickProcess
+_target_: dynamicauc.primitives.CompetitorClickProcess
 rate: 2.0
