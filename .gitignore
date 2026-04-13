@@ -5,3 +5,4 @@ simulate/outputs/
 .DS_Store
 .venv/
 *.egg-info/
+docs/outputs/
