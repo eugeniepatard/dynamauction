@@ -209,7 +209,11 @@ class AuctionEnv(Env):
         if self.stochastic_reward:
             # Realized conversions (κ realized + λ realized via thinning)
             # Each entry in conversions_data is 1 conversion event
-            reward = float(len(conversions_data))
+            if auction_data["won"]:
+                reward = float(len(conversions_data))
+                net_reward = reward - auction_data['payment']
+            else:
+                net_reward = 0.0
         else:
             # Deterministic: κ + Integral of λ
             # This is the "cleanest" signal for theoretical benchmarking
@@ -217,11 +221,12 @@ class AuctionEnv(Env):
                 reward = self.kernel.expected_reward(
                     u, x, ctx, y_func, t, self.scenario.horizon
                 )
+                net_reward = reward - auction_data['payment']
             else:
-                reward = 0.0
+                net_reward = 0.0
 
         # net_profit = reward - cost.
-        net_reward = reward - auction_data['payment']
+        
 
         self.state.step_idx += 1
         
