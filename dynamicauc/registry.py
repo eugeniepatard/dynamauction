@@ -28,6 +28,7 @@ Examples
 
 from __future__ import annotations
 
+import copy
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
@@ -70,7 +71,7 @@ SCENARIO_PRESETS = {
         "description": "Saturation kernel with first-price auction and uniform competition",
         "kernel": {"name": "saturation", "params": {"base_rate": 0.5, "saturation_scale": 10.0, "delay_rate": 0.1}},
         "auction": {"name": "first-price"},
-        "competition": {"name": "uniform", "params": {"low": 0.0, "high": 20.0}},
+        "competition": {"name": "uniform", "params": {"low": 0.0, "high": 1.0}},
         "arrival": {"name": "poisson", "params": {"breakpoints": [5.0], "intensities": [0.1, 1.2]}},
         "display": {"name": "iid", "params": {"dim": 3}},
         "exogenous": {"name": "trivial"},
@@ -306,91 +307,65 @@ def make(scenario_id: str, **overrides) -> Scenario:
     >>> scenario = make("saturation-first-price-uniform", horizon=20.0)
     """
     if scenario_id not in SCENARIO_PRESETS:
-        raise ValueError(f"Unknown scenario: {scenario_id}. Available: {list(SCENARIO_PRESETS.keys())}")
+        raise ValueError(f"Unknown scenario: {scenario_id}")
 
-    preset = SCENARIO_PRESETS[scenario_id].copy()
+    # 1. Deep copy to avoid modifying the original registry
+    preset = copy.deepcopy(SCENARIO_PRESETS[scenario_id])
     preset.pop("description", None)
 
-    # Build scenario config from preset
-    builder = ScenarioBuilder()
-    
-    # Apply preset defaults
-    kernel_cfg = preset.pop("kernel")
-    builder.with_kernel(kernel_cfg["name"], **kernel_cfg.get("params", {}))
-    
-    auction_cfg = preset.pop("auction")
-    builder.with_auction(auction_cfg["name"], **auction_cfg.get("params", {}))
-    
-    competition_cfg = preset.pop("competition")
-    builder.with_competition(competition_cfg["name"], **competition_cfg.get("params", {}))
-    
-    arrival_cfg = preset.pop("arrival")
-    builder.with_arrival(arrival_cfg["name"], **arrival_cfg.get("params", {}))
-    
-    display_cfg = preset.pop("display")
-    builder.with_display(display_cfg["name"], **display_cfg.get("params", {}))
-    
-    exogenous_cfg = preset.pop("exogenous")
-    builder.with_exogenous(exogenous_cfg["name"], **exogenous_cfg.get("params", {}))
-    
-    policy_cfg = preset.pop("policy")
-    builder.with_policy(policy_cfg["name"], **policy_cfg.get("params", {}))
-    
-    horizon = preset.pop("horizon", 10.0)
-    builder.with_horizon(horizon)
-    
-    user_features = preset.pop("user_features", [0.5, 0.5, 0.5])
-    builder.with_user_features(user_features)
-    
-    # Apply overrides
-    if "horizon" in overrides:
-        builder.with_horizon(overrides.pop("horizon"))
-    if "user_features" in overrides:
-        builder.with_user_features(overrides.pop("user_features"))
-    
+    # 2. Apply nested overrides (e.g., kernel_base_rate=0.8)
+    # We do this BEFORE popping anything so the keys exist
     for key, value in list(overrides.items()):
         if "_" in key:
             prefix, param_name = key.split("_", 1)
-            # Map 'display' to 'display' key in preset, etc.
-            # Note: preset keys are 'kernel', 'auction', 'competition', 'arrival', 'display'
             if prefix in preset and isinstance(preset[prefix], dict):
                 if "params" not in preset[prefix]:
                     preset[prefix]["params"] = {}
                 preset[prefix]["params"][param_name] = value
-                overrides.pop(key) # Remove so it's not treated as a top-level override
+                overrides.pop(key) 
 
-    # 2. Build scenario using the modified preset
+    # 3. Apply top-level overrides (horizon, user_features) to the preset dict
+    if "horizon" in overrides:
+        preset["horizon"] = overrides.pop("horizon")
+    if "user_features" in overrides:
+        preset["user_features"] = overrides.pop("user_features")
+
+    # 4. Now use the builder ONCE to construct the final Scenario
     builder = ScenarioBuilder()
     
+    # Kernel
     k_cfg = preset.pop("kernel")
     builder.with_kernel(k_cfg["name"], **k_cfg.get("params", {}))
     
+    # Auction
     a_cfg = preset.pop("auction")
     builder.with_auction(a_cfg["name"], **a_cfg.get("params", {}))
     
+    # Competition
     c_cfg = preset.pop("competition")
     builder.with_competition(c_cfg["name"], **c_cfg.get("params", {}))
     
+    # Arrival
     arr_cfg = preset.pop("arrival")
     builder.with_arrival(arr_cfg["name"], **arr_cfg.get("params", {}))
     
+    # Display
     disp_cfg = preset.pop("display")
     builder.with_display(disp_cfg["name"], **disp_cfg.get("params", {}))
     
+    # Exogenous
     exo_cfg = preset.pop("exogenous")
     builder.with_exogenous(exo_cfg["name"], **exo_cfg.get("params", {}))
     
+    # Policy
     pol_cfg = preset.pop("policy")
     builder.with_policy(pol_cfg["name"], **pol_cfg.get("params", {}))
     
-    # Apply top-level remaining overrides (horizon, user_features)
-    builder.with_horizon(overrides.get("horizon", preset.get("horizon", 10.0)))
-    
-    user_feat = overrides.get("user_features", preset.get("user_features", [0.5]*3))
-    builder.with_user_features(user_feat)
+    # Final parameters
+    builder.with_horizon(preset.get("horizon", 10.0))
+    builder.with_user_features(preset.get("user_features", [0.5]*3))
     
     return builder.build()
-
 
 def list_scenarios() -> List[str]:
     """Return list of available scenario preset IDs."""
