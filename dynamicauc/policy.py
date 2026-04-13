@@ -13,6 +13,7 @@ import numpy as np
 if TYPE_CHECKING:
     from dynamicauc.simulator import Scenario
 
+# TODO: coment rendre ce classes compatibles avec des training RL
 
 class BiddingPolicy(ABC):
     """
