@@ -75,7 +75,6 @@ SCENARIO_PRESETS = {
         "arrival": {"name": "poisson", "params": {"breakpoints": [5.0], "intensities": [0.1, 1.2]}},
         "display": {"name": "iid", "params": {"dim": 3}},
         "exogenous": {"name": "trivial"},
-        "policy": {"name": "fipla"},
         "horizon": 10.0,
         "user_features": [0.5, 0.8, 0.02],
     },
@@ -87,7 +86,6 @@ SCENARIO_PRESETS = {
         "arrival": {"name": "poisson", "params": {"breakpoints": [], "intensities": [1.0]}},
         "display": {"name": "iid", "params": {"dim": 3}},
         "exogenous": {"name": "trivial"},
-        "policy": {"name": "fipla"},
         "horizon": 30.0,
         "user_features": [0.5, 0.5, 0.5],
     },
@@ -100,14 +98,13 @@ SCENARIO_PRESETS = {
                 "kappa_base_rate": 0.2,
             },
         },
-        "auction": {"name": "first-price"},
+        "auction": {"name": "second-price"},
         "competition": {"name": "exponential", "params": {"scale": 1.0}},
         "arrival": {"name": "poisson", "params": {"breakpoints": [], "intensities": [0.5]}},
-        "display": {"name": "iid", "params": {"dim": 2}},
+        "display": {"name": "iid", "params": {"dim": 3}},
         "exogenous": {"name": "trivial"},
-        "policy": {"name": "fipla"},
         "horizon": 20.0,
-        "user_features": [0.7, 0.3],
+        "user_features": [0.5, 0.3, 0.2],
     },
 }
 
@@ -200,7 +197,6 @@ class ScenarioBuilder:
         self._arrival: Optional[ArrivalProcess] = None
         self._display_sampler: Optional[DisplaySampler] = None
         self._exogenous: Optional[ExogenousProcess] = None
-        self._policy: Optional[BiddingPolicy] = None
         self._horizon: float = 10.0
         self._user_features: Optional[np.ndarray] = None
 
@@ -234,11 +230,6 @@ class ScenarioBuilder:
         self._exogenous = create_exogenous(name, **params)
         return self
 
-    def with_policy(self, name: str, **params) -> ScenarioBuilder:
-        """Set the bidding policy."""
-        self._policy = create_policy(name, **params)
-        return self
-
     def with_horizon(self, horizon: float) -> ScenarioBuilder:
         """Set the campaign horizon."""
         self._horizon = horizon
@@ -264,8 +255,6 @@ class ScenarioBuilder:
             self._display_sampler = IIDUniformSampler(dim=3)
         if self._exogenous is None:
             self._exogenous = TrivialProcess()
-        if self._policy is None:
-            self._policy = FiPlaPolicy()
         if self._user_features is None:
             self._user_features = np.array([0.5, 0.5, 0.5], dtype=np.float32)
         if self._horizon is None:
@@ -278,7 +267,6 @@ class ScenarioBuilder:
             kernel=self._kernel,
             display_sampler=self._display_sampler,
             exogenous=self._exogenous,
-            policy=self._policy,
             horizon=self._horizon,
             user_features=self._user_features,
         )
@@ -309,62 +297,91 @@ def make(scenario_id: str, **overrides) -> Scenario:
     if scenario_id not in SCENARIO_PRESETS:
         raise ValueError(f"Unknown scenario: {scenario_id}")
 
-    # 1. Deep copy to avoid modifying the original registry
+    # 1. Deep copy the preset to avoid side effects
+    import copy
     preset = copy.deepcopy(SCENARIO_PRESETS[scenario_id])
     preset.pop("description", None)
 
-    # 2. Apply nested overrides (e.g., kernel_base_rate=0.8)
-    # We do this BEFORE popping anything so the keys exist
+    def set_nested_value(d: dict, path_parts: list, value: Any):
+        """
+        Surgically injects values into nested components.
+        """
+        for i in range(len(path_parts), 0, -1):
+            candidate_key = "_".join(path_parts[:i])
+            remaining_path = path_parts[i:]
+
+            # Check if candidate_key exists in the current dictionary or its 'params'
+            target = None
+            in_params = False
+            
+            if candidate_key in d:
+                target = d[candidate_key]
+            elif "params" in d and candidate_key in d["params"]:
+                target = d["params"][candidate_key]
+                in_params = True
+
+            if target is not None:
+                if not remaining_path:
+                    # BASE CASE: We found the actual parameter to set
+                    if "params" not in d: d["params"] = {}
+                    # If it was already in params, set it there, else set it in d
+                    if in_params:
+                        d["params"][candidate_key] = value
+                    else:
+                        # If it's a top level attr of the dict (not a sub-component)
+                        d[candidate_key] = value
+                    return
+                
+                # RECURSIVE STEP: We found a sub-dictionary (like base_kernel)
+                if isinstance(target, dict):
+                    return set_nested_value(target, remaining_path, value)
+
+        # If no match found at all, it's a new parameter at the current level
+        if "params" not in d: d["params"] = {}
+        d["params"]["_".join(path_parts)] = value
+    # -----------------------
+
+    # 2. Process underscore overrides (e.g., kernel_base_kernel_saturation_scale)
     for key, value in list(overrides.items()):
         if "_" in key:
-            prefix, param_name = key.split("_", 1)
-            if prefix in preset and isinstance(preset[prefix], dict):
-                if "params" not in preset[prefix]:
-                    preset[prefix]["params"] = {}
-                preset[prefix]["params"][param_name] = value
-                overrides.pop(key) 
+            parts = key.split("_")
+            prefix = parts[0]
+            if prefix in preset:
+                # We pass everything after the prefix (e.g., ["base", "kernel", "saturation", "scale"])
+                set_nested_value(preset[prefix], parts[1:], value)
+                overrides.pop(key)
 
-    # 3. Apply top-level overrides (horizon, user_features) to the preset dict
+    # 3. Standard top-level overrides (horizon, user_features)
     if "horizon" in overrides:
         preset["horizon"] = overrides.pop("horizon")
     if "user_features" in overrides:
         preset["user_features"] = overrides.pop("user_features")
 
-    # 4. Now use the builder ONCE to construct the final Scenario
+    # 4. Build the scenario using the updated preset dict
     builder = ScenarioBuilder()
     
-    # Kernel
+    # Kernel (Mixed or otherwise) now receives the correctly nested 'base_kernel' dict
     k_cfg = preset.pop("kernel")
     builder.with_kernel(k_cfg["name"], **k_cfg.get("params", {}))
     
-    # Auction
     a_cfg = preset.pop("auction")
     builder.with_auction(a_cfg["name"], **a_cfg.get("params", {}))
     
-    # Competition
     c_cfg = preset.pop("competition")
     builder.with_competition(c_cfg["name"], **c_cfg.get("params", {}))
     
-    # Arrival
     arr_cfg = preset.pop("arrival")
     builder.with_arrival(arr_cfg["name"], **arr_cfg.get("params", {}))
     
-    # Display
     disp_cfg = preset.pop("display")
     builder.with_display(disp_cfg["name"], **disp_cfg.get("params", {}))
     
-    # Exogenous
     exo_cfg = preset.pop("exogenous")
     builder.with_exogenous(exo_cfg["name"], **exo_cfg.get("params", {}))
     
-    # Policy
-    pol_cfg = preset.pop("policy")
-    builder.with_policy(pol_cfg["name"], **pol_cfg.get("params", {}))
-    
-    # Final parameters
     builder.with_horizon(preset.get("horizon", 10.0))
     builder.with_user_features(preset.get("user_features", [0.5]*3))
-    
+
     return builder.build()
 
 def list_scenarios() -> List[str]:

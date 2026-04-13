@@ -68,3 +68,19 @@ class FiPlaPolicy(BiddingPolicy):
         scenario: "Scenario",
     ) -> float:
         return scenario.kernel.expected_reward(u, x, ctx, y_func, t, scenario.horizon)
+
+class ConstantPolicy(BiddingPolicy):
+    """Always Bid the same value, ignoring saturation/recency."""
+    def __init__(self, bid_value: float = 0.5):
+        self.bid_value = bid_value
+
+    def bid(self, u, x, ctx, y_func, t, scenario) -> float:
+        return self.bid_value
+
+class RandomPolicy(BiddingPolicy):
+    """Bid randomly between 0 and an upper bound."""
+    def __init__(self, max_bid: float = 2.0):
+        self.max_bid = max_bid
+
+    def bid(self, u, x, ctx, y_func, t, scenario) -> float:
+        return np.random.uniform(0, self.max_bid)
