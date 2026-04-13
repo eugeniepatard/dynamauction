@@ -1,5 +1,7 @@
 # TODO: Créer fonction visualisation
 # TODO : Ajouter autres baselines (ex: bidding policy)
+# TODO : Ajouter un moyen de créer automatoquement les nouvelles optionsdans registery (si qqun rajoute un new kernel rajouter cette option
+# dans create_kernel())
 
 [build-system]
 requires = ["setuptools>=61.0"]
