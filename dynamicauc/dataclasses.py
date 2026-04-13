@@ -30,4 +30,5 @@ class AuctionState:
     ctx: float
     step_idx: int
     y_func: Callable[[float], float]
+    display_features : np.ndarray
 

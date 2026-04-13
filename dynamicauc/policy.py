@@ -40,7 +40,6 @@ class BiddingPolicy(ABC):
         ctx: float,
         y_func: Callable[[float], float],
         t: float,
-        horizon: float,
         scenario: "Scenario",
     ) -> float: ...
 
@@ -65,7 +64,6 @@ class FiPlaPolicy(BiddingPolicy):
         ctx: float,
         y_func: Callable[[float], float],
         t: float,
-        horizon: float,
         scenario: "Scenario",
     ) -> float:
-        return scenario.kernel.expected_reward(u, x, ctx, y_func, t, horizon)
+        return scenario.kernel.expected_reward(u, x, ctx, y_func, t, scenario.horizon)
