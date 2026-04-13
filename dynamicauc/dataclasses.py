@@ -20,7 +20,6 @@ class Scenario:
     kernel: RewardKernel
     display_sampler: DisplaySampler
     exogenous: ExogenousProcess
-    policy: BiddingPolicy
     horizon: float
     user_features: np.ndarray
 
