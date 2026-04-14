@@ -90,8 +90,8 @@ SCENARIO_PRESETS = {
         "horizon": 30.0,
         "user_features": [0.5, 0.5, 0.5],
     },
-    "mixed-first-price-exponential": {
-        "description": "Mixed kernel (immediate + delayed) with first-price and exponential competition",
+    "mixed-second-price-exponential": {
+        "description": "Mixed kernel (immediate + delayed) with second-price and exponential competition",
         "kernel": {
             "name": "mixed",
             "params": {

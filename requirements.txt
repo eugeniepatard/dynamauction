@@ -5,4 +5,7 @@ scipy
 pandas
 matplotlib
 gymnasium
+
+# Benchmark
+tabulate
 seaborn

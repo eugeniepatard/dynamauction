@@ -11,13 +11,14 @@ import gymnasium as gym
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-def run_benchmark_anarchy(policies : Dict[str, dac.BiddingPolicy], saturation_scales : List[float] =[2.0, 10.0, 50.0]):
-    seeds = [42, 123, 456] # Multiples seeds pour la robustesse NeurIPS
+def run_benchmark_anarchy(policies : Dict[str, dac.BiddingPolicy], 
+                          saturation_scales : List[float] =[2.0, 10.0, 50.0],
+                          seeds : List[int] = [42, 123, 456]) -> pd.DataFrame:
     results = []
 
     for sat_scale in saturation_scales:
         scenario_base = dac.make(
-            "mixed-first-price-exponential",
+            "mixed-second-price-exponential",
             kernel_base_kernel_saturation_scale=sat_scale,
             horizon=50.0 # On allonge un peu pour voir l'effet de fatigue
         )
@@ -41,12 +42,20 @@ def run_benchmark_anarchy(policies : Dict[str, dac.BiddingPolicy], saturation_sc
                     
                     obs, net_reward, done, _, info = env.step(bid)
                     cum_utility += net_reward
+                    expected_value = env.unwrapped.kernel.expected_reward(
+                        obs["user_features"], obs["display_features"], 
+                        obs["ctx"].item(), env.unwrapped.state.y_func, 
+                        obs["t"].item(), scenario_base.horizon
+                    )
                     history.append({"t": obs["t"].item(), 
                                     "utility": cum_utility,
                                     "net_reward": net_reward,
+                                    "context": obs["ctx"].item(),
+                                    "expected_value": expected_value,
                                     "won": info["auction"]["won"]})
                 
                 run_df = pd.DataFrame(history)
+                run_df['seed'] = s
                 run_df['policy'] = name
                 run_df['sat_scale'] = sat_scale
                 results.append(run_df)
@@ -73,7 +82,7 @@ def plot_anarchy_results(
         return
 
     # 2. Plotting
-    plt.figure(figsize=(12, 7), dpi=150)
+    plt.figure(figsize=(10, 7), dpi=150)
     
     sns.lineplot(
         data=plot_df, 
@@ -92,7 +101,63 @@ def plot_anarchy_results(
     plt.xlabel(r"Campaign Time $t$", fontsize=12)
     plt.ylabel(ylabel, fontsize=12)
     
-    plt.legend(title="Policy & Saturation ($\phi$)", bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.legend(title="Policy & Saturation", bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.grid(True, linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    plt.show()
+
+def plot_value_dynamics(
+    df: pd.DataFrame, 
+    policies: Optional[List[str]] = None, 
+    sat_scales: Optional[List[float]] = None,
+    show_scatters: bool = True
+) -> None:
+    # 1. Filtering
+    plot_df = df.copy()
+    if policies:
+        plot_df = plot_df[plot_df['policy'].isin(policies)]
+    if sat_scales:
+        plot_df = plot_df[plot_df['sat_scale'].isin(sat_scales)]
+    
+    if plot_df.empty:
+        print("No data found for selected filters.")
+        return
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), sharex=True, dpi=150)
+    
+    # Define common lineplot arguments for consistency
+    lp_args = {
+        'x': 't',
+        'errorbar': 'sd',
+        'linewidth': 2.5
+    }
+
+    # --- PANEL 1: Evolution of User Saturation ---
+    sns.lineplot(data=plot_df, y='context', hue='policy', style='sat_scale', ax=ax1, **lp_args)
+    
+    if show_scatters:
+        wins = plot_df[plot_df['won']]
+        # Use a very low alpha for scatters when multi-plotting to avoid "ink-soup"
+        ax1.scatter(wins['t'], wins['context'], color='red', alpha=0.5, s=20, label='Auction Won', zorder=4)
+        ax1.scatter(plot_df['t'], plot_df['context'], color='blue', alpha=0.5, s=20, label='Auctions', zorder=3)
+    
+    ax1.set_ylabel(r"Saturation Level $\phi_t$", fontsize=11)
+    ax1.set_title("Evolution of User Saturation (State Dynamics)", fontsize=13, weight='bold')
+    ax1.legend(frameon=True, loc='upper left', fontsize=8, bbox_to_anchor=(1, 1))
+    ax1.grid(True, linestyle='--', alpha=0.3)
+    
+    # --- PANEL 2: The Reward Kernel (Causal Response) ---
+    sns.lineplot(data=plot_df, y='expected_value', hue='policy', style='sat_scale', ax=ax2, **lp_args, legend=False)
+    
+    if show_scatters:
+        wins = plot_df[plot_df['won']]
+        ax2.scatter(wins['t'], wins['expected_value'], color='red', alpha=0.5, s=20,label='Auctions Won', zorder=4)
+        ax2.scatter(plot_df['t'], plot_df['expected_value'], color='blue', alpha=0.5, s=20, label='Auctions', zorder=3)
+    
+    ax2.set_xlabel(r"Time $t$", fontsize=11)
+    ax2.set_ylabel(r"Expected Reward $R_i$", fontsize=11)
+    ax2.set_title("Causal Reward Kernel: Diminishing Returns", fontsize=13, weight='bold')
+    ax2.grid(True, linestyle='--', alpha=0.3)
+    
     plt.tight_layout()
     plt.show()
