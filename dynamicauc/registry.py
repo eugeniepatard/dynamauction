@@ -63,6 +63,7 @@ from dynamicauc.primitives import (
     TrivialProcess,
 )
 
+# TODO : Créer un builder utilisant un fichier yaml
 
 # ── Registry of presets ────────────────────────────────────────────────────────
 
@@ -389,20 +390,48 @@ def list_scenarios() -> List[str]:
     return list(SCENARIO_PRESETS.keys())
 
 
-def get_scenario_info(scenario_id: str) -> Dict[str, Any]:
-    """Get description of a scenario preset."""
+def get_scenario_info(scenario_id: str, verbose: bool = True) -> Dict[str, Any]:
+    """
+    Get the full specification of a scenario preset.
+    If verbose=True, prints a formatted tree of all parameters.
+    """
     if scenario_id not in SCENARIO_PRESETS:
         raise ValueError(f"Unknown scenario: {scenario_id}")
-    return SCENARIO_PRESETS[scenario_id]
+    
+    preset = SCENARIO_PRESETS[scenario_id]
+
+    if verbose:
+        print(f"\nTECHNICAL SPECIFICATIONS: {scenario_id}")
+        print("=" * 60)
+        print(f"Description: {preset.get('description', 'N/A')}")
+        print("-" * 60)
+
+        def print_nested(d, indent=0):
+            for key, value in d.items():
+                if key == "description": continue
+                if isinstance(value, dict):
+                    print("  " * indent + f"{key}:")
+                    print_nested(value, indent + 1)
+                else:
+                    print("  " * indent + f"{key}: {value}")
+
+        # Start printing from the top level (excluding description)
+        content = {k: v for k, v in preset.items() if k != 'description'}
+        print_nested(content)
+        print("=" * 60 + "\n")
+
+    return preset
 
 
 # ── Pretty printing ────────────────────────────────────────────────────────────
 
 def describe_scenarios() -> str:
-    """Return a formatted description of all available scenarios."""
-    lines = ["Available Scenarios\n" + "=" * 60]
+    """Return a concise list of IDs and descriptions."""
+    lines = ["Available Scenarios", "=" * 60]
     for scenario_id in list_scenarios():
-        info = get_scenario_info(scenario_id)
-        lines.append(f"\n{scenario_id}")
-        lines.append(f"  {info['description']}")
+        # verbose=False prevents the full parameter tree from printing
+        info = get_scenario_info(scenario_id, verbose=False)
+        lines.append(f"{scenario_id:<35} | {info.get('description', 'N/A')}")
+    
+    lines.append("\n* Use get_scenario_info(scenario_id) for full technical specs.")
     return "\n".join(lines)
