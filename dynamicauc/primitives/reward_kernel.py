@@ -244,3 +244,5 @@ class MixedKernel(RewardKernel):
 
     def initial_context(self) -> float:
         return self.base_kernel.initial_context()
+    
+# TODO: Ajouter un kernel pour étudier l'hétérogénéité des users.

@@ -1,3 +1,5 @@
+# TODO : Corriger simulator car j'ai enlevé la bid policy de scenario
+
 """
 Scenario dataclass and Simulator.
 """
