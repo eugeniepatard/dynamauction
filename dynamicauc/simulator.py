@@ -119,7 +119,7 @@ class Simulator:
 
         env.close()
         return auctions, displays, conversions
-
+    
     @staticmethod
     def _summarise(
         auctions: pd.DataFrame,
@@ -128,21 +128,29 @@ class Simulator:
     ) -> pd.DataFrame:
         records = []
         for run_id in range(n_runs):
-            a = auctions[auctions.run_id == run_id] if len(auctions) else auctions
-            c = conversions[conversions.run_id == run_id] if len(conversions) else conversions
+            a = auctions[auctions.run_id == run_id] if not auctions.empty else auctions
+            c = conversions[conversions.run_id == run_id] if not conversions.empty else conversions
+            
             n_auc = len(a)
-            n_wins = int(a.won.sum()) if n_auc else 0
+            
+            if n_auc > 0:
+                n_wins = int(np.array(a['won'].tolist()).sum())
+                total_spend = float(np.array(a['payment'].tolist()).sum())
+            else:
+                n_wins = 0
+                total_spend = 0.0
+
             n_conv = len(c)
-            n_imm = int(c.is_immediate.sum()) if n_conv else 0
+            n_imm = int(np.array(c['is_immediate'].tolist()).sum()) if n_conv else 0
+            
             records.append(dict(
                 run_id=run_id,
                 n_auctions=n_auc,
                 n_wins=n_wins,
                 win_rate=round(n_wins / n_auc, 4) if n_auc else 0.0,
-                total_spend=round(float(a.payment.sum()), 4) if n_auc else 0.0,
+                total_spend=round(total_spend, 4),
                 n_conversions=n_conv,
                 n_immediate=n_imm,
                 n_delayed=n_conv - n_imm,
             ))
         return pd.DataFrame(records)
-    

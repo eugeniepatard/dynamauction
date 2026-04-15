@@ -28,7 +28,8 @@ class AuctionEnv(Env):
         self.kernel: RewardKernel = scenario.kernel
 
         # --------------Gym initialization params -----------------
-        self.action_space = spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32)
+        # TODO : paramétrer la lower and upper bound de l'action space
+        self.action_space = spaces.Box(low=0.0, high=1e10, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Dict({
             "t": spaces.Box(low=0.0, high=scenario.horizon, shape=(1,), dtype=np.float32),
             "ctx": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
