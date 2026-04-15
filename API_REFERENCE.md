@@ -72,7 +72,7 @@ Method 2: BUILDER (Flexible, readable, recommended for custom setups)
         .with_exogenous("trivial")
         .with_policy("fipla")
         .with_horizon(15.0)
-        .with_user_features([0.5, 0.8, 0.02])
+        .with_user_features("uniform", full_dim=3, observable_dim=3)
         .build()
     )
 
@@ -93,7 +93,7 @@ Method 3: HYBRID (Start from preset, customize parameters)
     scenario = dac.make(
         "saturation-first-price-uniform",
         horizon=20.0,              # Global override
-        user_features=[0.3, 0.7],   # Global override
+        user_params_observable_dim=2, # Nested override: user.params.observable_dim
         kernel_base_rate=0.8,       # Nested override: kernel.params.base_rate
         competition_high=50.0       # Nested override: competition.params.high
     )
@@ -141,7 +141,6 @@ Campaign config parameters:
     - horizon: Campaign duration (time units)
     - n_runs: Number of independent campaign runs
     - seed: Random seed for reproducibility
-    - user_features: User feature vector (override scenario default)
 
 Output DataFrames:
 
@@ -158,7 +157,6 @@ Output DataFrames:
         Columns: run_id, n_auctions, n_wins, win_rate, total_spend, n_conversions, 
                  n_immediate, n_delayed
 
-# TODO : changer ou enlever cette partie :
 ═══════════════════════════════════════════════════════════════════════════════
 5. BENCHMARKING
 ═══════════════════════════════════════════════════════════════════════════════
@@ -167,22 +165,19 @@ Compare multiple policies on the same scenario:
 
     from dynamicauc.simulator import Simulator
     
-    policies = [
-        ("FiPla", dac.FiPlaPolicy()),
+    policies = {
+        "FiPla": dac.FiPlaPolicy(),
         # Add more policies here
-    ]
+    }
     
-    results = {}
-    for policy_name, policy in policies:
-        scenario.policy = policy
-        sim = Simulator(scenario, campaign_cfg={"horizon": 10.0, "n_runs": 50})
-        _, _, _, summary_df = sim.run()
-        
-        results[policy_name] = {
-            "mean_reward": summary_df["n_conversions"].mean(),
-            "std_reward": summary_df["n_conversions"].std(),
-            "mean_spend": summary_df["total_spend"].mean(),
-        }
+    sim = Simulator(scenario, policies, campaign_cfg={"horizon": 10.0, "n_runs": 50, "seed": 42})
+    _, _, _, summary_df = sim.run()
+    
+    results = summary_df.groupby("policy").agg({
+        "n_conversions": ["mean", "std"],
+        "total_spend": ["mean"]
+    })
+    print(results)
 
 For more sophisticated benchmarking workflows, see dynamicauc/benchmark.py (when implemented).
 
@@ -204,15 +199,7 @@ Use the Gym environment for step-by-step simulation:
     done = False
     while not done:
         # Decide action (bid)
-        bid = scenario.policy.bid(
-            u=obs["user_features"],
-            x=obs["display_features"],
-            ctx=obs["ctx"].item(),
-            y_func=env.unwrapped.state.y_func,
-            t=obs["t"].item(),
-            horizon=obs["horizon"].item(),
-            scenario=scenario,
-        )
+        bid = policy.bid(obs)
         
         obs, reward, done, truncated, info = env.step(bid)
     
@@ -222,7 +209,7 @@ Observation space:
     - t: Current auction time
     - ctx: Kernel context state
     - step: Current step count
-    - user_features: User feature vector
+    - user_features: Observable user feature vector
     - display_features: Current display features
     - y_now: Exogenous process value
     - horizon: Campaign horizon
