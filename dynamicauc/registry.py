@@ -15,8 +15,8 @@ Examples
         .with_arrival("poisson", breakpoints=[5.0], intensities=[0.1, 1.2])
         .with_display("catalogue", creatives=[[1.0, 0.0], [0.0, 1.0]])
         .with_exogenous("trivial")
-        .with_horizon(10.0)
-        .with_user_features([0.5, 0.8, 0.02])
+        .with_horizon("fixed", value=10.0)
+        .with_user_features("uniform", full_dim=3, observable_dim=3)
         .build()
     )
     
@@ -38,6 +38,9 @@ from dynamicauc.primitives import (
     ArrivalProcess,
     UserFeatureGenerator,
     UniformUser,
+    HorizonGenerator,
+    FixedHorizon,
+    ExponentialHorizon,
     CompetitionDistribution,
     DisplaySampler,
     ExogenousProcess,
@@ -77,7 +80,7 @@ SCENARIO_PRESETS = {
         "arrival": {"name": "poisson", "params": {"breakpoints": [5.0], "intensities": [0.1, 1.2]}},
         "display": {"name": "iid", "params": {"dim": 3}},
         "exogenous": {"name": "trivial"},
-        "horizon": 50.0,
+        "horizon": {"name": "fixed", "params": {"value": 50.0}},
         "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 3}},
         "max_history": 10,
     },
@@ -89,7 +92,7 @@ SCENARIO_PRESETS = {
         "arrival": {"name": "poisson", "params": {"breakpoints": [], "intensities": [1.0]}},
         "display": {"name": "iid", "params": {"dim": 3}},
         "exogenous": {"name": "trivial"},
-        "horizon": 30.0,
+        "horizon": {"name": "fixed", "params": {"value": 30.0}},
         "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 3}},
         "max_history": 10,
     },
@@ -107,7 +110,7 @@ SCENARIO_PRESETS = {
         "arrival": {"name": "poisson", "params": {"breakpoints": [], "intensities": [0.5]}},
         "display": {"name": "iid", "params": {"dim": 3}},
         "exogenous": {"name": "trivial"},
-        "horizon": 20.0,
+        "horizon": {"name": "fixed", "params": {"value": 20.0}},
         "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 2}},
         "max_history": 10,
     },
@@ -198,6 +201,16 @@ def create_user_feature_generator(name: str, **kwargs) -> UserFeatureGenerator:
         raise ValueError(f"Unknown user feature generator: {name}")
 
 
+def create_horizon_generator(name: str, **kwargs) -> HorizonGenerator:
+    """Create a HorizonGenerator by name and parameters."""
+    if name == "fixed":
+        return FixedHorizon(**kwargs)
+    elif name == "exponential":
+        return ExponentialHorizon(**kwargs)
+    else:
+        raise ValueError(f"Unknown horizon generator: {name}")
+
+
 # ── Scenario builder (fluent API) ──────────────────────────────────────────────
 
 class ScenarioBuilder:
@@ -210,7 +223,7 @@ class ScenarioBuilder:
         self._arrival: Optional[ArrivalProcess] = None
         self._display_sampler: Optional[DisplaySampler] = None
         self._exogenous: Optional[ExogenousProcess] = None
-        self._horizon: float = 10.0
+        self._horizon_generator: Optional[HorizonGenerator] = None
         self._user_feature_generator: Optional[UserFeatureGenerator] = None
         self._max_history: int = 10
 
@@ -244,9 +257,9 @@ class ScenarioBuilder:
         self._exogenous = create_exogenous(name, **params)
         return self
 
-    def with_horizon(self, horizon: float) -> ScenarioBuilder:
-        """Set the campaign horizon."""
-        self._horizon = horizon
+    def with_horizon(self, name: str, **params) -> ScenarioBuilder:
+        """Set the campaign horizon generator."""
+        self._horizon_generator = create_horizon_generator(name, **params)
         return self
 
     def with_user_features(self, name: str, **params) -> ScenarioBuilder:
@@ -274,10 +287,10 @@ class ScenarioBuilder:
             self._display_sampler = IIDUniformSampler(dim=3)
         if self._exogenous is None:
             self._exogenous = TrivialProcess()
+        if self._horizon_generator is None:
+            self._horizon_generator = FixedHorizon(value=10.0)
         if self._user_feature_generator is None:
             self._user_feature_generator = UniformUser(full_dim=3, observable_dim=3)
-        if self._horizon is None:
-            self._horizon = 10.0
         if self._max_history is None:
             self._max_history = 10
 
@@ -288,7 +301,7 @@ class ScenarioBuilder:
             kernel=self._kernel,
             display_sampler=self._display_sampler,
             exogenous=self._exogenous,
-            horizon=self._horizon,
+            horizon_generator=self._horizon_generator,
             user_feature_generator=self._user_feature_generator,
             max_history=self._max_history,
         )
@@ -314,7 +327,7 @@ def make(scenario_id: str, **overrides) -> Scenario:
     Examples
     --------
     >>> scenario = make("saturation-first-price-uniform")
-    >>> scenario = make("saturation-first-price-uniform", horizon=20.0)
+    >>> scenario = make("saturation-first-price-uniform", horizon_params_value=20.0)
     """
     if scenario_id not in SCENARIO_PRESETS:
         raise ValueError(f"Unknown scenario: {scenario_id}")
@@ -374,8 +387,6 @@ def make(scenario_id: str, **overrides) -> Scenario:
                 overrides.pop(key)
 
     # 3. Standard top-level overrides (horizon, user_features)
-    if "horizon" in overrides:
-        preset["horizon"] = overrides.pop("horizon")
     if "max_history" in overrides:
         preset["max_history"] = overrides.pop("max_history")
 
@@ -404,7 +415,9 @@ def make(scenario_id: str, **overrides) -> Scenario:
     user_cfg = preset.pop("user")
     builder.with_user_features(user_cfg["name"], **user_cfg.get("params", {}))
     
-    builder.with_horizon(preset.get("horizon", 10.0))
+    h_cfg = preset.pop("horizon")
+    builder.with_horizon(h_cfg["name"], **h_cfg.get("params", {}))
+    
     builder.with_max_history(preset.get("max_history", 10))
 
     return builder.build()

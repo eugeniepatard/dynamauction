@@ -9,6 +9,7 @@ from .arrival_process import ArrivalProcess, PiecewiseConstantPoisson
 from .kernel import RewardKernel, SaturationKernel, MixedKernel, RecencyDisplayKernel, CompetitorExtinctionKernel
 from .display_sampler import DisplaySampler, IIDUniformSampler, CatalogueSampler, FixedSampler
 from .user import UserFeatureGenerator, UniformUser
+from .horizon import HorizonGenerator, FixedHorizon, ExponentialHorizon
 from . import auctions
 from . import competition
 from . import exogenous_process

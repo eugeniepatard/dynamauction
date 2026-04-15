@@ -9,10 +9,9 @@ from dynamicauc.primitives import (
     DisplaySampler,
     ExogenousProcess,
     RewardKernel,
+    HorizonGenerator,
     UserFeatureGenerator,
 )
-
-# TODO : horizon => classe / horizon = nombre aléatoire loi exp / ou constant
 
 @dataclass
 class Scenario:
@@ -22,7 +21,7 @@ class Scenario:
     kernel: RewardKernel
     display_sampler: DisplaySampler
     exogenous: ExogenousProcess
-    horizon: float
+    horizon_generator: HorizonGenerator
     user_feature_generator: UserFeatureGenerator
     max_history: int
 
