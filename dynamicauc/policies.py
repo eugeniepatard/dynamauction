@@ -6,14 +6,12 @@ All policies have oracle access to the full scenario (no learning).
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Dict, Any
 
 import numpy as np
 
 if TYPE_CHECKING:
     from dynamicauc.simulator import Scenario
-
-# TODO: coment rendre ce classes compatibles avec des training RL
 
 class BiddingPolicy(ABC):
     """
@@ -24,24 +22,13 @@ class BiddingPolicy(ABC):
 
     Parameters passed to bid()
     --------------------------
-    u        : user feature vector (fixed for the whole campaign)
-    x        : display feature vector for this auction opportunity
-    ctx      : carry-over context (summarises past won displays)
-    y_func   : exogenous process y(·)
-    t        : current auction time
-    horizon  : campaign end time T
-    scenario : full scenario — gives access to all primitives
+    observations : Dict[str, Any] - Gymnasium-style observation dictionary.
     """
 
     @abstractmethod
     def bid(
         self,
-        u: np.ndarray,
-        x: np.ndarray,
-        ctx: float,
-        y_func: Callable[[float], float],
-        t: float,
-        scenario: "Scenario",
+        observations: Dict[str, Any],
     ) -> float: ...
 
 
@@ -60,21 +47,16 @@ class FiPlaPolicy(BiddingPolicy):
 
     def bid(
         self,
-        u: np.ndarray,
-        x: np.ndarray,
-        ctx: float,
-        y_func: Callable[[float], float],
-        t: float,
-        scenario: "Scenario",
+        observations: Dict[str, Any],
     ) -> float:
-        return scenario.kernel.expected_reward(u, x, ctx, y_func, t, scenario.horizon)
+        return observations["expected_reward"].item()
 
 class ConstantPolicy(BiddingPolicy):
     """Always Bid the same value, ignoring saturation/recency."""
     def __init__(self, bid_value: float = 0.5):
         self.bid_value = bid_value
 
-    def bid(self, u, x, ctx, y_func, t, scenario) -> float:
+    def bid(self, observations: Dict[str, Any]) -> float:
         return self.bid_value
 
 class RandomPolicy(BiddingPolicy):
@@ -82,5 +64,5 @@ class RandomPolicy(BiddingPolicy):
     def __init__(self, max_bid: float = 2.0):
         self.max_bid = max_bid
 
-    def bid(self, u, x, ctx, y_func, t, scenario) -> float:
+    def bid(self, observations: Dict[str, Any]) -> float:
         return np.random.uniform(0, self.max_bid)

@@ -35,13 +35,15 @@ class AuctionEnv(Env):
         # --------------Gym initialization params -----------------
         self.action_space = spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Dict({
-                "t": spaces.Box(low=0.0, high=scenario.horizon, shape=(1,), dtype=np.float32),
-                "ctx": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32), # Kernel context
-                "step": spaces.Discrete(100000), # Current step: a simple integer count
-                "user_features": spaces.Box(low=-np.inf, high=np.inf, shape=scenario.user_features.shape, dtype=np.float32),
-                "display_features": spaces.Box(low=-np.inf, high=np.inf, shape=(self.scenario.display_sampler.dim,), dtype=np.float32),
-                "y_now": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
-                "horizon": spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32),})
+            "t": spaces.Box(low=0.0, high=scenario.horizon, shape=(1,), dtype=np.float32),
+            "ctx": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
+            "step": spaces.Discrete(100000),
+            "user_features": spaces.Box(low=-np.inf, high=np.inf, shape=scenario.user_features.shape, dtype=np.float32),
+            "display_features": spaces.Box(low=-np.inf, high=np.inf, shape=(self.scenario.display_sampler.dim,), dtype=np.float32),
+            "y_now": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
+            "horizon": spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32),
+            "expected_reward": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
+        })
         # --------------------------------------------------------
 
         self.state: Optional[AuctionState] = None
@@ -261,6 +263,16 @@ class AuctionEnv(Env):
         This includes the current time, context, step index, user features, 
         display features, exogenous process function, and campaign horizon."""
 
+        # Pre-compute the expected reward, as this requires the y_func callable
+        # which cannot be part of the observation space itself.
+        expected_reward = self.scenario.kernel.expected_reward(
+            self.scenario.user_features,
+            self.state.display_features,
+            self.state.ctx,
+            self.state.y_func,
+            self.state.t,
+            self.scenario.horizon,
+        )
         return {
             "t": np.array([self.state.t], dtype=np.float32),
             "ctx": np.array([self.state.ctx], dtype=np.float32),
@@ -269,6 +281,7 @@ class AuctionEnv(Env):
             "display_features": self.state.display_features.astype(np.float32),
             "y_now": np.array([self.state.y_func(self.state.t)], dtype=np.float32),
             "horizon": np.array([self.scenario.horizon], dtype=np.float32),
+            "expected_reward": np.array([expected_reward], dtype=np.float32),
         }
     def _sample_user(self):
         # placeholder: replace with your arrival model

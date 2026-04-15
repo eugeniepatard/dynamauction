@@ -6,7 +6,7 @@ Scenario dataclass and Simulator.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, List, Tuple, Any, Dict
+from typing import Callable, List, Tuple, Any, Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -17,8 +17,9 @@ from dynamicauc.dataclasses import AuctionState, Scenario
 from dynamicauc.primitives.kernel import RewardKernel
 
 class Simulator:
-    def __init__(self, scenario: Scenario, campaign_cfg):
+    def __init__(self, scenario: Scenario, policy: Union[BiddingPolicy, Callable[[Dict[str, Any]], float], Dict[str, Union[BiddingPolicy, Callable[[Dict[str, Any]], float]]]], campaign_cfg: Dict[str, Any]):
         self.scenario = scenario
+        self.policies = policy if isinstance(policy, dict) else {"default": policy}
         self.cfg = campaign_cfg
 
     def run(self) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -32,33 +33,63 @@ class Simulator:
         conversions_df : one row per conversion event
         summary_df     : one row per run with aggregate statistics
         """
-        u = np.array(self.cfg.user_features, dtype=float)
+        # Use user_features from scenario, but allow override from campaign_cfg
+        if "user_features" in self.cfg:
+            u = np.array(self.cfg["user_features"], dtype=float)
+        else:
+            u = self.scenario.user_features.astype(float)
+
         horizon = float(self.cfg.horizon)
         n_runs = int(self.cfg.n_runs)
-        rng = np.random.default_rng(int(self.cfg.seed))
+        base_seed = int(self.cfg.seed)
 
-        all_auctions: List[dict] = []
-        all_displays: List[dict] = []
-        all_conversions: List[dict] = []
+        all_auctions: List[pd.DataFrame] = []
+        all_displays: List[pd.DataFrame] = []
+        all_conversions: List[pd.DataFrame] = []
+        all_summaries: List[pd.DataFrame] = []
 
-        for run_id in range(n_runs):
-            a, d, c = self._run_single(run_id, u, horizon, rng)
-            all_auctions.extend(a)
-            all_displays.extend(d)
-            all_conversions.extend(c)
+        for policy_name, current_policy in self.policies.items():
+            policy_auctions = []
+            policy_displays = []
+            policy_conversions = []
+            
+            for run_id in range(n_runs):
+                # Seeding per run ensures identically paired environments across policies
+                rng = np.random.default_rng(base_seed + run_id)
+                a, d, c = self._run_single(run_id, u, horizon, current_policy, rng)
+                policy_auctions.extend(a)
+                policy_displays.extend(d)
+                policy_conversions.extend(c)
+                
+            a_df = pd.DataFrame(policy_auctions)
+            d_df = pd.DataFrame(policy_displays)
+            c_df = pd.DataFrame(policy_conversions)
+            s_df = self._summarise(a_df, c_df, n_runs)
+            
+            if len(self.policies) > 1 or policy_name != "default":
+                a_df["policy"] = policy_name
+                d_df["policy"] = policy_name
+                c_df["policy"] = policy_name
+                s_df["policy"] = policy_name
+                
+            all_auctions.append(a_df)
+            all_displays.append(d_df)
+            all_conversions.append(c_df)
+            all_summaries.append(s_df)
 
-        auctions_df = pd.DataFrame(all_auctions)
-        displays_df = pd.DataFrame(all_displays)
-        conversions_df = pd.DataFrame(all_conversions)
-        summary_df = self._summarise(auctions_df, conversions_df, n_runs)
-
-        return auctions_df, displays_df, conversions_df, summary_df
+        return (
+            pd.concat(all_auctions, ignore_index=True),
+            pd.concat(all_displays, ignore_index=True),
+            pd.concat(all_conversions, ignore_index=True),
+            pd.concat(all_summaries, ignore_index=True),
+        )
 
     def _run_single(
         self,
         run_id: int,
         u: np.ndarray,
         horizon: float,
+        policy: Union[BiddingPolicy, Callable[[Dict[str, Any]], float]],
         rng: np.random.Generator,
     ) -> Tuple[List[dict], List[dict], List[dict]]:
 
@@ -76,7 +107,25 @@ class Simulator:
         for auction_id, t in enumerate(auction_times):
             t = float(t)
             x = sc.display_sampler.sample(rng)
-            bid = sc.policy.bid(u, x, ctx, y_func, t, horizon, sc)
+            
+            # Construct Observation exactly like AuctionEnv does
+            expected_reward = sc.kernel.expected_reward(u, x, ctx, y_func, t, horizon)
+            obs = {
+                "t": np.array([t], dtype=np.float32),
+                "ctx": np.array([ctx], dtype=np.float32),
+                "step": auction_id,
+                "user_features": u.astype(np.float32),
+                "display_features": x.astype(np.float32),
+                "y_now": np.array([y_func(t)], dtype=np.float32),
+                "horizon": np.array([horizon], dtype=np.float32),
+                "expected_reward": np.array([expected_reward], dtype=np.float32),
+            }
+            
+            if hasattr(policy, "bid"):
+                bid = policy.bid(obs)
+            else:
+                bid = policy(obs) # Allows passing a lambda or predict function directly
+                
             B = sc.competition.sample(rng)
             won = sc.auction.win(bid, B)
             payment = sc.auction.payment(bid, B) if won else 0.0

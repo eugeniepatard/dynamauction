@@ -15,7 +15,6 @@ Examples
         .with_arrival("poisson", breakpoints=[5.0], intensities=[0.1, 1.2])
         .with_display("catalogue", creatives=[[1.0, 0.0], [0.0, 1.0]])
         .with_exogenous("trivial")
-        .with_policy("fipla")
         .with_horizon(10.0)
         .with_user_features([0.5, 0.8, 0.02])
         .build()

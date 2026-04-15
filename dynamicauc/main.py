@@ -20,11 +20,13 @@ import hydra
 from hydra.utils import get_original_cwd, instantiate
 from omegaconf import DictConfig
 
-from dynamicauc.simulator import Scenario, Simulator
+from dynamicauc.dataclasses import Scenario
+from dynamicauc.simulator import Simulator
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: DictConfig) -> None:
+    policy = instantiate(cfg.policy)
     scenario = Scenario(
         auction=instantiate(cfg.auction),
         competition=instantiate(cfg.competition),
@@ -32,10 +34,9 @@ def main(cfg: DictConfig) -> None:
         kernel=instantiate(cfg.kernel),
         display_sampler=instantiate(cfg.display),
         exogenous=instantiate(cfg.exogenous),
-        policy=instantiate(cfg.policy),
     )
 
-    auctions_df, displays_df, conversions_df, summary_df = Simulator(scenario, cfg.campaign).run()
+    auctions_df, displays_df, conversions_df, summary_df = Simulator(scenario, policy, cfg.campaign).run()
 
     out_dir = os.path.join(get_original_cwd(), cfg.output.dir)
     os.makedirs(out_dir, exist_ok=True)
