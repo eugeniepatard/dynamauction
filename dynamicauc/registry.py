@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from dynamicauc.dataclasses import Scenario
-from dynamicauc.policy import BiddingPolicy, FiPlaPolicy
+from dynamicauc.policies import BiddingPolicy, FiPlaPolicy
 from dynamicauc.primitives import (
     AuctionRule,
     ArrivalProcess,

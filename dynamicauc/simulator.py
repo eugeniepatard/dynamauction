@@ -12,9 +12,9 @@ import numpy as np
 import pandas as pd
 
 
-from dynamicauc.policy import BiddingPolicy
+from dynamicauc.policies import BiddingPolicy
 from dynamicauc.dataclasses import AuctionState, Scenario
-from dynamicauc.primitives.reward_kernel import RewardKernel
+from dynamicauc.primitives.kernel import RewardKernel
 
 class Simulator:
     def __init__(self, scenario: Scenario, campaign_cfg):

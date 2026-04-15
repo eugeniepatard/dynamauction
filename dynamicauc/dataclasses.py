@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
-from dynamicauc.policy import BiddingPolicy
+from dynamicauc.policies import BiddingPolicy
 from dynamicauc.primitives import (
     AuctionRule,
     ArrivalProcess,
