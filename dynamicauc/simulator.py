@@ -1,23 +1,23 @@
-# TODO : Corriger simulator car j'ai enlevé la bid policy de scenario
-
 """
 Scenario dataclass and Simulator.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, List, Tuple, Any, Dict, Union
+from typing import Callable, List, Any, Dict, Tuple, Union, TYPE_CHECKING
+
+from dynamicauc.env import AuctionEnv
+from dynamicauc.policies import BiddingPolicy
 
 import numpy as np
 import pandas as pd
-
-
-from dynamicauc.policies import BiddingPolicy
-from dynamicauc.dataclasses import AuctionState, Scenario
+from dynamicauc.dataclasses import Scenario
 from dynamicauc.primitives.kernel import RewardKernel
 
 class Simulator:
-    def __init__(self, scenario: Scenario, policy: Union[BiddingPolicy, Callable[[Dict[str, Any]], float], Dict[str, Union[BiddingPolicy, Callable[[Dict[str, Any]], float]]]], campaign_cfg: Dict[str, Any]):
+    def __init__(self, scenario: Scenario, 
+                 policy: Union[BiddingPolicy, Callable[[Dict[str, Any]], float], Dict[str, Union[BiddingPolicy, Callable[[Dict[str, Any]], float]]]], 
+                 campaign_cfg: Dict[str, Any]):
         self.scenario = scenario
         self.policies = policy if isinstance(policy, dict) else {"default": policy}
         self.cfg = campaign_cfg
@@ -33,13 +33,8 @@ class Simulator:
         conversions_df : one row per conversion event
         summary_df     : one row per run with aggregate statistics
         """
-        horizon = float(self.cfg.horizon)
-        n_runs = int(self.cfg.n_runs)
-        base_seed = int(self.cfg.seed)
-
-        # Generate one user for the entire set of simulation runs
-        user_rng = np.random.default_rng(base_seed)
-        u = self.scenario.user_feature_generator.generate(user_rng)
+        n_runs = int(self.cfg["n_runs"])
+        base_seed = int(self.cfg["seed"])
 
         all_auctions: List[pd.DataFrame] = []
         all_displays: List[pd.DataFrame] = []
@@ -53,8 +48,8 @@ class Simulator:
             
             for run_id in range(n_runs):
                 # Seeding per run ensures identically paired environments across policies
-                rng = np.random.default_rng(base_seed + run_id)
-                a, d, c = self._run_single(run_id, u, horizon, current_policy, rng)
+                run_seed = base_seed + run_id
+                a, d, c = self._run_single(run_id, current_policy, run_seed)
                 policy_auctions.extend(a)
                 policy_displays.extend(d)
                 policy_conversions.extend(c)
@@ -85,113 +80,44 @@ class Simulator:
     def _run_single(
         self,
         run_id: int,
-        u: np.ndarray,
-        horizon: float,
         policy: Union[BiddingPolicy, Callable[[Dict[str, Any]], float]],
-        rng: np.random.Generator,
+        seed: int,
     ) -> Tuple[List[dict], List[dict], List[dict]]:
-
-        pending_conversions: List[float] = []
-        t_previous = 0.0
-
-        sc = self.scenario
-        sc.exogenous.generate(horizon, rng)
-        y_func = sc.exogenous.y
-
-        auction_times = sc.arrival.sample_times(horizon, rng)
-        ctx = sc.kernel.initial_context()
+        
+        env = AuctionEnv(scenario=self.scenario)
+        
+        # The seed sets the seed for the whole episode, ensuring pairing across policies.
+        obs, _ = env.reset(seed=seed)
 
         auctions: List[dict] = []
         displays: List[dict] = []
         conversions: List[dict] = []
-
-        for auction_id, t_current in enumerate(auction_times):
-            t_current = float(t_current)
-            x = sc.display_sampler.sample(rng)
-            
-            # Find delayed rewards that matured in the interval (t_previous, t_current]
-            matured_times = sorted([c for c in pending_conversions if c > t_previous and c <= t_current])
-            delayed_reward_for_obs = float(len(matured_times))
-
-            # Construct Observation exactly like AuctionEnv does
-            u_obs = sc.user_feature_generator.get_observable_features(u)
-            expected_reward = sc.kernel.expected_reward(u, x, ctx, y_func, t_current, horizon)
-            obs = {
-                "t": np.array([t_current], dtype=np.float32),
-                "ctx": np.array([ctx], dtype=np.float32),
-                "step": auction_id,
-                "user_features": u_obs.astype(np.float32),
-                "display_features": x.astype(np.float32),
-                "y_now": np.array([y_func(t_current)], dtype=np.float32),
-                "expected_reward": np.array([expected_reward], dtype=np.float32),
-                "cumulative_reward_since_last_step": np.array([delayed_reward_for_obs], dtype=np.float32),
-                "conversion_times_since_last_step": tuple(
-                    np.array([t], dtype=np.float32) for t in matured_times
-                ),
-            }
-            
+        
+        done = False
+        while not done:
             if hasattr(policy, "bid"):
                 bid = policy.bid(obs)
             else:
                 bid = policy(obs) # Allows passing a lambda or predict function directly
-                
-            B = sc.competition.sample(rng)
-            won = sc.auction.win(bid, B)
-            payment = sc.auction.payment(bid, B) if won else 0.0
-            y_t = y_func(t_current)
-
-            auctions.append(dict(
-                run_id=run_id,
-                auction_id=auction_id,
-                time=t_current,
-                bid=bid,
-                competing_bid=B,
-                won=won,
-                payment=payment,
-                context=ctx,
-                y=y_t,
-            ))
-
-            if won:
-                displays.append(dict(
-                    run_id=run_id,
-                    auction_id=auction_id,
-                    time=t_current,
-                    context=ctx,
-                    y=y_t,
-                    **{f"x_{j}": float(v) for j, v in enumerate(x)},
-                ))
-
-                # Immediate conversions ~ Poisson(κ)
-                kap = sc.kernel.kappa(u, x, ctx, y_t)
-                for _ in range(int(rng.poisson(kap))):
-                    conversions.append(dict(
-                        run_id=run_id,
-                        auction_id=auction_id,
-                        display_time=t_current,
-                        conversion_time=t_current,
-                        delay=0.0,
-                        is_immediate=True,
-                    ))
-
-                # Delayed conversions via Ogata thinning
-                new_delayed_times = sample_delayed(sc.kernel, u, x, ctx, y_func, t_current, horizon, rng)
-                pending_conversions.extend([t_current + s for s in new_delayed_times])
-
-                for s in new_delayed_times:
-                    conversions.append(dict(
-                        run_id=run_id,
-                        auction_id=auction_id,
-                        display_time=t_current,
-                        conversion_time=t_current + s,
-                        delay=s,
-                        is_immediate=False,
-                    ))
-
-                ctx = sc.kernel.update_context(ctx, x, t_current)
             
-            t_previous = t_current
+            obs, _, done, _, info = env.step(bid)
 
+            # Collect data from the info dictionary
+            auction_record = info["auction"]
+            auction_record["run_id"] = run_id
+            auctions.append(auction_record)
+
+            if info["display"]:
+                display_record = info["display"]
+                display_record["run_id"] = run_id
+                displays.append(display_record)
+            
+            if info["actual_conversions"]:
+                for conv in info["actual_conversions"]:
+                    conv["run_id"] = run_id
+                conversions.extend(info["actual_conversions"])
+
+        env.close()
         return auctions, displays, conversions
 
     @staticmethod
@@ -220,39 +146,3 @@ class Simulator:
             ))
         return pd.DataFrame(records)
     
-
-def sample_delayed(
-    kernel: RewardKernel,
-    u: np.ndarray,
-    x: np.ndarray,
-    ctx: float,
-    y_func: Callable[[float], float],
-    t: float,
-    horizon: float,
-    rng: np.random.Generator,
-) -> List[float]:
-    """
-    Sample delayed conversion delays in (0, horizon−t] via Ogata's thinning.
-
-    Steps:
-      1. Compute λ_max, an upper bound on λ(s) over s ∈ [0, horizon−t].
-      2. Draw candidate times from a homogeneous Poisson(λ_max) process.
-      3. Accept candidate at delay s with probability λ(s) / λ_max.
-    """
-    remaining = horizon - t
-    if remaining <= 0.0:
-        return []
-    lam_max = kernel.lambda_upper_bound(u, x, ctx, t, remaining)
-    if lam_max <= 0.0:
-        return []
-
-    delays: List[float] = []
-    s = 0.0
-    while s < remaining:
-        s += rng.exponential(1.0 / lam_max)
-        if s >= remaining:
-            break
-        lam = kernel.lambda_(u, x, ctx, y_func(t + s), t, s)
-        if rng.uniform() < lam / lam_max:
-            delays.append(s)
-    return delays

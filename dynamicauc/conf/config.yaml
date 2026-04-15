@@ -11,6 +11,7 @@ defaults:
 campaign:
   horizon: 30.0          # campaign duration (arbitrary time units)
   user_features: [0.5, 0.3, 0.7]
+  max_history: 10        # max number of conversions returned in the observation at each step
   n_runs: 10
   seed: 42
 

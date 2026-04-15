@@ -69,16 +69,17 @@ from dynamicauc.primitives import (
 # ── Registry of presets ────────────────────────────────────────────────────────
 
 SCENARIO_PRESETS = {
-    "saturation-first-price-uniform": {
-        "description": "Saturation kernel with first-price auction and uniform competition",
-        "kernel": {"name": "saturation", "params": {"base_rate": 0.5, "saturation_scale": 10.0, "delay_rate": 0.1}},
-        "auction": {"name": "first-price"},
+    "saturation-second-price-uniform": {
+        "description": "Saturation kernel with second-price auction and uniform competition",
+        "kernel": {"name": "saturation", "params": {"base_rate": 0.5, "saturation_scale": 10.0, "delay_rate": 0.5}},
+        "auction": {"name": "second-price"},
         "competition": {"name": "uniform", "params": {"low": 0.0, "high": 1.0}},
         "arrival": {"name": "poisson", "params": {"breakpoints": [5.0], "intensities": [0.1, 1.2]}},
         "display": {"name": "iid", "params": {"dim": 3}},
         "exogenous": {"name": "trivial"},
-        "horizon": 10.0,
+        "horizon": 50.0,
         "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 3}},
+        "max_history": 10,
     },
     "recency-second-price-lognormal": {
         "description": "Recency kernel with second-price auction and lognormal competition",
@@ -90,6 +91,7 @@ SCENARIO_PRESETS = {
         "exogenous": {"name": "trivial"},
         "horizon": 30.0,
         "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 3}},
+        "max_history": 10,
     },
     "mixed-second-price-exponential": {
         "description": "Mixed kernel (immediate + delayed) with second-price and exponential competition",
@@ -107,6 +109,7 @@ SCENARIO_PRESETS = {
         "exogenous": {"name": "trivial"},
         "horizon": 20.0,
         "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 2}},
+        "max_history": 10,
     },
 }
 
@@ -209,6 +212,7 @@ class ScenarioBuilder:
         self._exogenous: Optional[ExogenousProcess] = None
         self._horizon: float = 10.0
         self._user_feature_generator: Optional[UserFeatureGenerator] = None
+        self._max_history: int = 10
 
     def with_kernel(self, name: str, **params) -> ScenarioBuilder:
         """Set the reward kernel."""
@@ -250,6 +254,11 @@ class ScenarioBuilder:
         self._user_feature_generator = create_user_feature_generator(name, **params)
         return self
 
+    def with_max_history(self, max_history: int) -> ScenarioBuilder:
+        """Set the maximum conversion history capacity for observations."""
+        self._max_history = max_history
+        return self
+
     def build(self) -> Scenario:
         """Build the scenario."""
         # Apply defaults if not set
@@ -269,6 +278,8 @@ class ScenarioBuilder:
             self._user_feature_generator = UniformUser(full_dim=3, observable_dim=3)
         if self._horizon is None:
             self._horizon = 10.0
+        if self._max_history is None:
+            self._max_history = 10
 
         return Scenario(
             auction=self._auction,
@@ -279,6 +290,7 @@ class ScenarioBuilder:
             exogenous=self._exogenous,
             horizon=self._horizon,
             user_feature_generator=self._user_feature_generator,
+            max_history=self._max_history,
         )
 
 
@@ -364,6 +376,8 @@ def make(scenario_id: str, **overrides) -> Scenario:
     # 3. Standard top-level overrides (horizon, user_features)
     if "horizon" in overrides:
         preset["horizon"] = overrides.pop("horizon")
+    if "max_history" in overrides:
+        preset["max_history"] = overrides.pop("max_history")
 
     # 4. Build the scenario using the updated preset dict
     builder = ScenarioBuilder()
@@ -391,6 +405,7 @@ def make(scenario_id: str, **overrides) -> Scenario:
     builder.with_user_features(user_cfg["name"], **user_cfg.get("params", {}))
     
     builder.with_horizon(preset.get("horizon", 10.0))
+    builder.with_max_history(preset.get("max_history", 10))
 
     return builder.build()
 

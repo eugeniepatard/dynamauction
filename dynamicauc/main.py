@@ -34,7 +34,9 @@ def main(cfg: DictConfig) -> None:
         kernel=instantiate(cfg.kernel),
         display_sampler=instantiate(cfg.display),
         exogenous=instantiate(cfg.exogenous),
+        horizon=cfg.campaign.horizon,
         user_feature_generator=instantiate(cfg.user),
+        max_history=cfg.campaign.max_history,
     )
 
     auctions_df, displays_df, conversions_df, summary_df = Simulator(scenario, policy, cfg.campaign).run()

@@ -24,6 +24,7 @@ class Scenario:
     exogenous: ExogenousProcess
     horizon: float
     user_feature_generator: UserFeatureGenerator
+    max_history: int
 
 @dataclass
 class AuctionState:

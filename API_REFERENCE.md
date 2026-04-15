@@ -73,6 +73,7 @@ Method 2: BUILDER (Flexible, readable, recommended for custom setups)
         .with_policy("fipla")
         .with_horizon(15.0)
         .with_user_features("uniform", full_dim=3, observable_dim=3)
+        .with_max_history(10)
         .build()
     )
 
@@ -139,6 +140,7 @@ Basic simulation:
 
 Campaign config parameters:
     - horizon: Campaign duration (time units)
+    - max_history: Max number of conversion times in step observations
     - n_runs: Number of independent campaign runs
     - seed: Random seed for reproducibility
 

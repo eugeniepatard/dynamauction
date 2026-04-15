@@ -60,6 +60,7 @@ def example_builder_pattern():
         .with_exogenous("trivial")
         .with_horizon(15.0)
         .with_user_features("uniform", full_dim=3, observable_dim=3)
+        .with_max_history(10)
         .build()
     )
     

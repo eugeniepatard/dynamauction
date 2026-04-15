@@ -6,8 +6,7 @@ from gymnasium import spaces
 import numpy as np
 from numpy.random import seed, Generator
 
-from dynamicauc.dataclasses import AuctionState
-from dynamicauc.simulator import Scenario, Simulator
+from dynamicauc.dataclasses import AuctionState, Scenario
 from dynamicauc.primitives import RewardKernel
 
 
@@ -40,9 +39,8 @@ class AuctionEnv(Env):
             "expected_reward": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
             # observation fields for delayed reward feedback
             "cumulative_reward_since_last_step": spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32),
-            "conversion_times_since_last_step": spaces.Sequence(
-                spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32) # For variable-length list of conversion times
-            ),
+            # We allow up to `max_history` conversions to be returned in the observation at each step, padded with zeros if fewer conversions occurred.
+            "conversion_times_since_last_step": spaces.Box(low=0.0, high=scenario.horizon, shape=(scenario.max_history,), dtype=np.float32), # up to 10 conversions per step, padded with zeros
         })
         # --------------------------------------------------------
 
@@ -210,7 +208,7 @@ class AuctionEnv(Env):
         u = self.user_features
         x = self.state.display_features
 
-        auction_data, _, conversions_data, new_ctx = self._run_single_auction(
+        auction_data, display_data, conversions_data, new_ctx = self._run_single_auction(
             bid=action,
             auction_state=self.state,
             u=u,
@@ -256,6 +254,7 @@ class AuctionEnv(Env):
         # 4. Prepare info for debugging/benchmarking
         info = {
             "auction": auction_data,
+            "display": display_data,
             "conversions_count": len(conversions_data),
             "actual_conversions": conversions_data,
         }
@@ -280,6 +279,14 @@ class AuctionEnv(Env):
             self.scenario.horizon,
         )
         u_obs = self.scenario.user_feature_generator.get_observable_features(self.user_features)
+
+        # Keep only the most recent `max_history` matured conversion times, and pad with zeros if fewer.
+        times = list(self.matured_conversions_times) # Create local copy
+        if len(times) > self.scenario.max_history:
+            times = times[-self.scenario.max_history:]
+        else:
+            times += [0.0] * (self.scenario.max_history - len(times))
+
         return {
             "t": np.array([self.state.t], dtype=np.float32),
             "ctx": np.array([self.state.ctx], dtype=np.float32),
@@ -289,13 +296,8 @@ class AuctionEnv(Env):
             "y_now": np.array([self.state.y_func(self.state.t)], dtype=np.float32),
             "expected_reward": np.array([expected_reward], dtype=np.float32),
             "cumulative_reward_since_last_step": np.array([self.matured_conversions_reward], dtype=np.float32),
-            "conversion_times_since_last_step": tuple(
-                np.array([t], dtype=np.float32) for t in self.matured_conversions_times
-            ),
+            "conversion_times_since_last_step": np.array(times, dtype=np.float32),
         }
-    def _sample_user(self):
-        # placeholder: replace with your arrival model
-        return ...
 
     @staticmethod
     def _sample_delayed(
