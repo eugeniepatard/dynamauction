@@ -41,7 +41,7 @@ def run_benchmark_anarchy(policies : Dict[str, dac.BiddingPolicy],
                     obs, net_reward, done, _, info = env.step(bid)
                     cum_utility += net_reward
                     expected_value = env.unwrapped.kernel.expected_reward(
-                        obs["user_features"], obs["display_features"], 
+                        env.unwrapped.user_features, obs["display_features"], 
                         obs["ctx"].item(), env.unwrapped.state.y_func, 
                         obs["t"].item(), scenario_base.horizon
                     )

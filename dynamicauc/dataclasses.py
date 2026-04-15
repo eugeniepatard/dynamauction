@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
-from dynamicauc.policies import BiddingPolicy
 from dynamicauc.primitives import (
     AuctionRule,
     ArrivalProcess,
@@ -10,7 +9,10 @@ from dynamicauc.primitives import (
     DisplaySampler,
     ExogenousProcess,
     RewardKernel,
+    UserFeatureGenerator,
 )
+
+# TODO : horizon => classe / horizon = nombre aléatoire loi exp / ou constant
 
 @dataclass
 class Scenario:
@@ -21,7 +23,7 @@ class Scenario:
     display_sampler: DisplaySampler
     exogenous: ExogenousProcess
     horizon: float
-    user_features: np.ndarray
+    user_feature_generator: UserFeatureGenerator
 
 @dataclass
 class AuctionState:
@@ -30,4 +32,3 @@ class AuctionState:
     step_idx: int
     y_func: Callable[[float], float]
     display_features : np.ndarray
-

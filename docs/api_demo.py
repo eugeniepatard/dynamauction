@@ -59,7 +59,7 @@ def example_builder_pattern():
         .with_display("iid", dim=3)
         .with_exogenous("trivial")
         .with_horizon(15.0)
-        .with_user_features([0.5, 0.8, 0.02])
+        .with_user_features("uniform", full_dim=3, observable_dim=3)
         .build()
     )
     
@@ -90,11 +90,11 @@ def example_preset_with_overrides():
     scenario = dac.make(
         "saturation-first-price-uniform",
         horizon=20.0,
-        user_features=[0.3, 0.7, 0.5],
+        user_params_observable_dim=2,
     )
     
     print("Scenario horizon:", scenario.horizon)
-    print("Scenario user features:", scenario.user_features)
+    print("Scenario user generator:", scenario.user_feature_generator)
     return scenario
 
 

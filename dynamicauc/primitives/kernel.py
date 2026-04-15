@@ -11,7 +11,11 @@ import numpy as np
 class RewardKernel(ABC):
     """
     Abstract reward kernel K(u, x, ctx, y(·), t, ·).
-
+    
+    The kernel's methods depend on the complete user feature vector `u`, which may
+    contain components that are not observable by bidding policies. This allows for
+    modeling information asymmetry.
+    
     The kernel decomposes (Lebesgue) as:
         K(·, ds) = κ(u, x, ctx, y(t)) δ_0(ds)
                  + λ(u, x, ctx, y(t+s), t, s) ds
@@ -26,7 +30,10 @@ class RewardKernel(ABC):
 
     @abstractmethod
     def kappa(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float) -> float:
-        """Immediate conversion weight κ(u, x, ctx, y(t_i))."""
+        """
+        Immediate conversion weight κ(u, x, ctx, y(t_i)).
+        `u` is the complete user feature vector.
+        """
         ...
 
     @abstractmethod
@@ -39,7 +46,10 @@ class RewardKernel(ABC):
         t: float,
         s: float,
     ) -> float:
-        """Delayed conversion intensity λ(u, x, ctx, y(t+s), t, s) at delay s."""
+        """
+        Delayed conversion intensity λ(u, x, ctx, y(t+s), t, s) at delay s.
+        `u` is the complete user feature vector.
+        """
         ...
 
     @abstractmethod
@@ -51,7 +61,10 @@ class RewardKernel(ABC):
         t: float,
         remaining: float,
     ) -> float:
-        """Upper bound on λ over s ∈ [0, remaining]. Used by Ogata thinning."""
+        """
+        Upper bound on λ over s ∈ [0, remaining]. Used by Ogata thinning.
+        `u` is the complete user feature vector.
+        """
         ...
 
     @abstractmethod
@@ -76,6 +89,7 @@ class RewardKernel(ABC):
         """
         Expected total reward from display (x, t) up to horizon.
         Computed as κ + ∫₀^{T−t} λ ds via scipy numerical integration.
+        `u` is the complete user feature vector.
         """
         from scipy.integrate import quad
 

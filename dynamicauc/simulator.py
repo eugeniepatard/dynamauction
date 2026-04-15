@@ -33,15 +33,13 @@ class Simulator:
         conversions_df : one row per conversion event
         summary_df     : one row per run with aggregate statistics
         """
-        # Use user_features from scenario, but allow override from campaign_cfg
-        if "user_features" in self.cfg:
-            u = np.array(self.cfg["user_features"], dtype=float)
-        else:
-            u = self.scenario.user_features.astype(float)
-
         horizon = float(self.cfg.horizon)
         n_runs = int(self.cfg.n_runs)
         base_seed = int(self.cfg.seed)
+
+        # Generate one user for the entire set of simulation runs
+        user_rng = np.random.default_rng(base_seed)
+        u = self.scenario.user_feature_generator.generate(user_rng)
 
         all_auctions: List[pd.DataFrame] = []
         all_displays: List[pd.DataFrame] = []
@@ -109,12 +107,13 @@ class Simulator:
             x = sc.display_sampler.sample(rng)
             
             # Construct Observation exactly like AuctionEnv does
+            u_obs = sc.user_feature_generator.get_observable_features(u)
             expected_reward = sc.kernel.expected_reward(u, x, ctx, y_func, t, horizon)
             obs = {
                 "t": np.array([t], dtype=np.float32),
                 "ctx": np.array([ctx], dtype=np.float32),
                 "step": auction_id,
-                "user_features": u.astype(np.float32),
+                "user_features": u_obs.astype(np.float32),
                 "display_features": x.astype(np.float32),
                 "y_now": np.array([y_func(t)], dtype=np.float32),
                 "horizon": np.array([horizon], dtype=np.float32),

@@ -32,6 +32,9 @@ from dynamicauc.primitives import (
     FixedSampler,
     # Exogenous processes
     TrivialProcess,
+    # User
+    UserFeatureGenerator,
+    UniformUser,
 )
 
 __version__ = version("dynamicauc")
@@ -63,6 +66,8 @@ __all__ = [
     "CatalogueSampler",
     "FixedSampler",
     "TrivialProcess",
+    "UserFeatureGenerator",
+    "UniformUser",
 ]
 
 from gymnasium.envs.registration import register

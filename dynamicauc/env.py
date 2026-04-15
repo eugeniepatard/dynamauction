@@ -14,8 +14,6 @@ from dynamicauc.primitives import RewardKernel
 ObsType = Dict[str, Any]
 ActType = float
 
-#TODO: Function to initialize the user features => same user features for all runs it seems
-
 class AuctionEnv(Env):
     """
     Gym-style environment for repeated auctions with delayed rewards studying one user features.
@@ -38,7 +36,7 @@ class AuctionEnv(Env):
             "t": spaces.Box(low=0.0, high=scenario.horizon, shape=(1,), dtype=np.float32),
             "ctx": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
             "step": spaces.Discrete(100000),
-            "user_features": spaces.Box(low=-np.inf, high=np.inf, shape=scenario.user_features.shape, dtype=np.float32),
+            "user_features": spaces.Box(low=-np.inf, high=np.inf, shape=(scenario.user_feature_generator.observable_dim,), dtype=np.float32),
             "display_features": spaces.Box(low=-np.inf, high=np.inf, shape=(self.scenario.display_sampler.dim,), dtype=np.float32),
             "y_now": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
             "horizon": spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32),
@@ -47,6 +45,7 @@ class AuctionEnv(Env):
         # --------------------------------------------------------
 
         self.state: Optional[AuctionState] = None
+        self.user_features: Optional[np.ndarray] = None # Full user features for the episode
         self.auction_times: Optional[np.ndarray] = None
 
     def reset(self, seed: Optional[int] = None, options: dict[str, Any] | None = None) -> Tuple[Any, dict[str, Any]]:
@@ -54,6 +53,9 @@ class AuctionEnv(Env):
         super().reset(seed=seed)
         if seed is not None:
             self.rng = np.random.default_rng(seed)
+
+        # Generate a new user for this episode
+        self.user_features = self.scenario.user_feature_generator.generate(self.rng)
 
         self.auction_times = self.scenario.arrival.sample_times(self.scenario.horizon, self.rng)
         self.scenario.exogenous.generate(self.scenario.horizon, self.rng)
@@ -195,7 +197,7 @@ class AuctionEnv(Env):
         t = self.state.t
         ctx = self.state.ctx
         y_func = self.state.y_func
-        u = self.scenario.user_features
+        u = self.user_features
         x = self.state.display_features
 
         auction_data, _, conversions_data, new_ctx = self._run_single_auction(
@@ -266,21 +268,22 @@ class AuctionEnv(Env):
         # Pre-compute the expected reward, as this requires the y_func callable
         # which cannot be part of the observation space itself.
         expected_reward = self.scenario.kernel.expected_reward(
-            self.scenario.user_features,
+            self.user_features,
             self.state.display_features,
             self.state.ctx,
             self.state.y_func,
             self.state.t,
             self.scenario.horizon,
         )
+        u_obs = self.scenario.user_feature_generator.get_observable_features(self.user_features)
         return {
             "t": np.array([self.state.t], dtype=np.float32),
             "ctx": np.array([self.state.ctx], dtype=np.float32),
             "step": int(self.state.step_idx),
-            "user_features": self.scenario.user_features.astype(np.float32),
+            "user_features": u_obs.astype(np.float32),
             "display_features": self.state.display_features.astype(np.float32),
             "y_now": np.array([self.state.y_func(self.state.t)], dtype=np.float32),
-            "horizon": np.array([self.scenario.horizon], dtype=np.float32),
+            "horizon": np.array([self.scenario.horizon], dtype=np.float32), # TODO : a enlever
             "expected_reward": np.array([expected_reward], dtype=np.float32),
         }
     def _sample_user(self):

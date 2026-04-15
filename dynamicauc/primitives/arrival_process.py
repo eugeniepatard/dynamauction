@@ -33,3 +33,5 @@ class PiecewiseConstantPoisson(ArrivalProcess):
             n = rng.poisson(mu * (t1 - t0))
             times.extend(rng.uniform(t0, t1, n).tolist())
         return np.sort(times)
+
+# TODO : Ajouter pas de temps déterministe 

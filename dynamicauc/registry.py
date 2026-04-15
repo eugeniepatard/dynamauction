@@ -36,6 +36,8 @@ from dynamicauc.policies import BiddingPolicy, FiPlaPolicy
 from dynamicauc.primitives import (
     AuctionRule,
     ArrivalProcess,
+    UserFeatureGenerator,
+    UniformUser,
     CompetitionDistribution,
     DisplaySampler,
     ExogenousProcess,
@@ -76,7 +78,7 @@ SCENARIO_PRESETS = {
         "display": {"name": "iid", "params": {"dim": 3}},
         "exogenous": {"name": "trivial"},
         "horizon": 10.0,
-        "user_features": [0.5, 0.8, 0.02],
+        "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 3}},
     },
     "recency-second-price-lognormal": {
         "description": "Recency kernel with second-price auction and lognormal competition",
@@ -87,7 +89,7 @@ SCENARIO_PRESETS = {
         "display": {"name": "iid", "params": {"dim": 3}},
         "exogenous": {"name": "trivial"},
         "horizon": 30.0,
-        "user_features": [0.5, 0.5, 0.5],
+        "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 3}},
     },
     "mixed-second-price-exponential": {
         "description": "Mixed kernel (immediate + delayed) with second-price and exponential competition",
@@ -104,7 +106,7 @@ SCENARIO_PRESETS = {
         "display": {"name": "iid", "params": {"dim": 3}},
         "exogenous": {"name": "trivial"},
         "horizon": 20.0,
-        "user_features": [0.5, 0.3, 0.2],
+        "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 2}},
     },
 }
 
@@ -185,6 +187,14 @@ def create_policy(name: str, **kwargs) -> BiddingPolicy:
         raise ValueError(f"Unknown policy: {name}")
 
 
+def create_user_feature_generator(name: str, **kwargs) -> UserFeatureGenerator:
+    """Create a UserFeatureGenerator by name and parameters."""
+    if name == "uniform":
+        return UniformUser(**kwargs)
+    else:
+        raise ValueError(f"Unknown user feature generator: {name}")
+
+
 # ── Scenario builder (fluent API) ──────────────────────────────────────────────
 
 class ScenarioBuilder:
@@ -198,7 +208,7 @@ class ScenarioBuilder:
         self._display_sampler: Optional[DisplaySampler] = None
         self._exogenous: Optional[ExogenousProcess] = None
         self._horizon: float = 10.0
-        self._user_features: Optional[np.ndarray] = None
+        self._user_feature_generator: Optional[UserFeatureGenerator] = None
 
     def with_kernel(self, name: str, **params) -> ScenarioBuilder:
         """Set the reward kernel."""
@@ -235,9 +245,9 @@ class ScenarioBuilder:
         self._horizon = horizon
         return self
 
-    def with_user_features(self, features: List[float]) -> ScenarioBuilder:
-        """Set the user features."""
-        self._user_features = np.array(features, dtype=np.float32)
+    def with_user_features(self, name: str, **params) -> ScenarioBuilder:
+        """Set the user feature generator."""
+        self._user_feature_generator = create_user_feature_generator(name, **params)
         return self
 
     def build(self) -> Scenario:
@@ -255,8 +265,8 @@ class ScenarioBuilder:
             self._display_sampler = IIDUniformSampler(dim=3)
         if self._exogenous is None:
             self._exogenous = TrivialProcess()
-        if self._user_features is None:
-            self._user_features = np.array([0.5, 0.5, 0.5], dtype=np.float32)
+        if self._user_feature_generator is None:
+            self._user_feature_generator = UniformUser(full_dim=3, observable_dim=3)
         if self._horizon is None:
             self._horizon = 10.0
 
@@ -268,7 +278,7 @@ class ScenarioBuilder:
             display_sampler=self._display_sampler,
             exogenous=self._exogenous,
             horizon=self._horizon,
-            user_features=self._user_features,
+            user_feature_generator=self._user_feature_generator,
         )
 
 
@@ -354,8 +364,6 @@ def make(scenario_id: str, **overrides) -> Scenario:
     # 3. Standard top-level overrides (horizon, user_features)
     if "horizon" in overrides:
         preset["horizon"] = overrides.pop("horizon")
-    if "user_features" in overrides:
-        preset["user_features"] = overrides.pop("user_features")
 
     # 4. Build the scenario using the updated preset dict
     builder = ScenarioBuilder()
@@ -379,8 +387,10 @@ def make(scenario_id: str, **overrides) -> Scenario:
     exo_cfg = preset.pop("exogenous")
     builder.with_exogenous(exo_cfg["name"], **exo_cfg.get("params", {}))
     
+    user_cfg = preset.pop("user")
+    builder.with_user_features(user_cfg["name"], **user_cfg.get("params", {}))
+    
     builder.with_horizon(preset.get("horizon", 10.0))
-    builder.with_user_features(preset.get("user_features", [0.5]*3))
 
     return builder.build()
 
