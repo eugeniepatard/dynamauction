@@ -212,6 +212,8 @@ Observation space:
     - user_features: Observable user feature vector
     - display_features: Current display features
     - y_now: Exogenous process value
+    - cumulative_reward_since_last_step: Sum of delayed conversions that matured since the last step.
+    - conversion_times_since_last_step: List of times for the matured conversions.
 
 # TODO : Enlever cette partie après
 ═══════════════════════════════════════════════════════════════════════════════

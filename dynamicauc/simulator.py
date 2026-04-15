@@ -91,6 +91,9 @@ class Simulator:
         rng: np.random.Generator,
     ) -> Tuple[List[dict], List[dict], List[dict]]:
 
+        pending_conversions: List[float] = []
+        t_previous = 0.0
+
         sc = self.scenario
         sc.exogenous.generate(horizon, rng)
         y_func = sc.exogenous.y
@@ -102,21 +105,29 @@ class Simulator:
         displays: List[dict] = []
         conversions: List[dict] = []
 
-        for auction_id, t in enumerate(auction_times):
-            t = float(t)
+        for auction_id, t_current in enumerate(auction_times):
+            t_current = float(t_current)
             x = sc.display_sampler.sample(rng)
             
+            # Find delayed rewards that matured in the interval (t_previous, t_current]
+            matured_times = sorted([c for c in pending_conversions if c > t_previous and c <= t_current])
+            delayed_reward_for_obs = float(len(matured_times))
+
             # Construct Observation exactly like AuctionEnv does
             u_obs = sc.user_feature_generator.get_observable_features(u)
-            expected_reward = sc.kernel.expected_reward(u, x, ctx, y_func, t, horizon)
+            expected_reward = sc.kernel.expected_reward(u, x, ctx, y_func, t_current, horizon)
             obs = {
-                "t": np.array([t], dtype=np.float32),
+                "t": np.array([t_current], dtype=np.float32),
                 "ctx": np.array([ctx], dtype=np.float32),
                 "step": auction_id,
                 "user_features": u_obs.astype(np.float32),
                 "display_features": x.astype(np.float32),
-                "y_now": np.array([y_func(t)], dtype=np.float32),
+                "y_now": np.array([y_func(t_current)], dtype=np.float32),
                 "expected_reward": np.array([expected_reward], dtype=np.float32),
+                "cumulative_reward_since_last_step": np.array([delayed_reward_for_obs], dtype=np.float32),
+                "conversion_times_since_last_step": tuple(
+                    np.array([t], dtype=np.float32) for t in matured_times
+                ),
             }
             
             if hasattr(policy, "bid"):
@@ -127,12 +138,12 @@ class Simulator:
             B = sc.competition.sample(rng)
             won = sc.auction.win(bid, B)
             payment = sc.auction.payment(bid, B) if won else 0.0
-            y_t = y_func(t)
+            y_t = y_func(t_current)
 
             auctions.append(dict(
                 run_id=run_id,
                 auction_id=auction_id,
-                time=t,
+                time=t_current,
                 bid=bid,
                 competing_bid=B,
                 won=won,
@@ -145,7 +156,7 @@ class Simulator:
                 displays.append(dict(
                     run_id=run_id,
                     auction_id=auction_id,
-                    time=t,
+                    time=t_current,
                     context=ctx,
                     y=y_t,
                     **{f"x_{j}": float(v) for j, v in enumerate(x)},
@@ -157,24 +168,29 @@ class Simulator:
                     conversions.append(dict(
                         run_id=run_id,
                         auction_id=auction_id,
-                        display_time=t,
-                        conversion_time=t,
+                        display_time=t_current,
+                        conversion_time=t_current,
                         delay=0.0,
                         is_immediate=True,
                     ))
 
                 # Delayed conversions via Ogata thinning
-                for s in sample_delayed(sc.kernel, u, x, ctx, y_func, t, horizon, rng):
+                new_delayed_times = sample_delayed(sc.kernel, u, x, ctx, y_func, t_current, horizon, rng)
+                pending_conversions.extend([t_current + s for s in new_delayed_times])
+
+                for s in new_delayed_times:
                     conversions.append(dict(
                         run_id=run_id,
                         auction_id=auction_id,
-                        display_time=t,
-                        conversion_time=t + s,
+                        display_time=t_current,
+                        conversion_time=t_current + s,
                         delay=s,
                         is_immediate=False,
                     ))
 
-                ctx = sc.kernel.update_context(ctx, x, t)
+                ctx = sc.kernel.update_context(ctx, x, t_current)
+            
+            t_previous = t_current
 
         return auctions, displays, conversions
 

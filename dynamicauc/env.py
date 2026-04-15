@@ -19,14 +19,12 @@ class AuctionEnv(Env):
     Gym-style environment for repeated auctions with delayed rewards studying one user features.
     """
 
-    def __init__(self, scenario: Scenario,
-                 stochastic_reward: bool = True,):
+    def __init__(self, scenario: Scenario,):
         
         super().__init__()
 
         self.scenario = scenario
         self.rng : Optional[Generator] = None
-        self.stochastic_reward : bool = stochastic_reward
         
         self.kernel: RewardKernel = scenario.kernel
 
@@ -40,12 +38,22 @@ class AuctionEnv(Env):
             "display_features": spaces.Box(low=-np.inf, high=np.inf, shape=(self.scenario.display_sampler.dim,), dtype=np.float32),
             "y_now": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
             "expected_reward": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
+            # observation fields for delayed reward feedback
+            "cumulative_reward_since_last_step": spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32),
+            "conversion_times_since_last_step": spaces.Sequence(
+                spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32) # For variable-length list of conversion times
+            ),
         })
         # --------------------------------------------------------
 
         self.state: Optional[AuctionState] = None
         self.user_features: Optional[np.ndarray] = None # Full user features for the episode
         self.auction_times: Optional[np.ndarray] = None
+        self.pending_conversions: List[float] = []
+        
+        # State for matured delayed rewards, to be included in the next observation
+        self.matured_conversions_reward: float = 0.0
+        self.matured_conversions_times: List[float] = []
 
     def reset(self, seed: Optional[int] = None, options: dict[str, Any] | None = None) -> Tuple[Any, dict[str, Any]]:
         # ---- Gym reset() logic -----
@@ -55,6 +63,9 @@ class AuctionEnv(Env):
 
         # Generate a new user for this episode
         self.user_features = self.scenario.user_feature_generator.generate(self.rng)
+        self.pending_conversions = []
+        self.matured_conversions_reward = 0.0
+        self.matured_conversions_times = []
 
         self.auction_times = self.scenario.arrival.sample_times(self.scenario.horizon, self.rng)
         self.scenario.exogenous.generate(self.scenario.horizon, self.rng)
@@ -175,7 +186,7 @@ class AuctionEnv(Env):
         
             Returns
             -------
-            obs : dict
+            obs : ObsType
                 Observation of the current state, including: 
                     - current time t
                     - current context ctx
@@ -184,7 +195,7 @@ class AuctionEnv(Env):
                     - display features
                     - exogenous process function y(·)
                     - campaign horizon T
-            reward : float
+            net_reward : float
                 Reward obtained from the last action.
             done : bool
                 Whether the episode has ended (campaign is over).
@@ -193,7 +204,7 @@ class AuctionEnv(Env):
         """
         assert self.state is not None, "Call reset() first"
 
-        t = self.state.t
+        t_previous = self.state.t
         ctx = self.state.ctx
         y_func = self.state.y_func
         u = self.user_features
@@ -209,27 +220,17 @@ class AuctionEnv(Env):
             rng=self.rng,
         )
 
-        if self.stochastic_reward:
-            # Realized conversions (κ realized + λ realized via thinning)
-            # Each entry in conversions_data is 1 conversion event
-            if auction_data["won"]:
-                reward = float(len(conversions_data))
-                net_reward = reward - auction_data['payment']
-            else:
-                net_reward = 0.0
-        else:
-            # Deterministic: κ + Integral of λ
-            # This is the "cleanest" signal for theoretical benchmarking
-            if auction_data["won"]:
-                reward = self.kernel.expected_reward(
-                    u, x, ctx, y_func, t, self.scenario.horizon
-                )
-                net_reward = reward - auction_data['payment']
-            else:
-                net_reward = 0.0
+        if auction_data["won"]:
+            # Immediate conversions are those with delay=0.
+            immediate_conversions = [c for c in conversions_data if c["is_immediate"]]
+            immediate_reward = float(len(immediate_conversions))
+            net_reward = immediate_reward - auction_data['payment']
 
-        # net_profit = reward - cost.
-        
+            # Delayed conversions are added to a pending list to be observed later.
+            delayed_conversions = [c for c in conversions_data if not c["is_immediate"]]
+            self.pending_conversions.extend([c["conversion_time"] for c in delayed_conversions])
+        else:
+            net_reward = 0.0
 
         self.state.step_idx += 1
         
@@ -241,10 +242,13 @@ class AuctionEnv(Env):
             t_next = self.scenario.horizon
             done = True
         
-        # Truncated is almost always False in the core environment
+        # Find delayed conversions that matured between the previous and next auction time.
+        self.matured_conversions_times = sorted([c for c in self.pending_conversions if c > t_previous and c <= t_next])
+        self.matured_conversions_reward = float(len(self.matured_conversions_times))
+        self.pending_conversions = [c for c in self.pending_conversions if c > t_next]
+
         truncated = False
 
-        # Update state for next step
         self.state.t = t_next
         self.state.ctx = new_ctx # Update context if auction was won
         self.state.display_features = self.scenario.display_sampler.sample(self.rng)
@@ -253,19 +257,20 @@ class AuctionEnv(Env):
         info = {
             "auction": auction_data,
             "conversions_count": len(conversions_data),
-            "actual_conversions": conversions_data, # List of delay info
-            "is_stochastic": self.stochastic_reward
+            "actual_conversions": conversions_data,
         }
 
-        return self._get_obs(), net_reward, done, truncated, info
+        obs = self._get_obs()
+
+        return obs, net_reward, done, truncated, info
 
     def _get_obs(self) -> ObsType:
         """Construct the observation dictionary from the current state.
         This includes the current time, context, step index, user features, 
-        display features, exogenous process function, and campaign horizon."""
+        display features, exogenous process function, and matured delayed rewards
+        from the previous interval.
+        """
 
-        # Pre-compute the expected reward, as this requires the y_func callable
-        # which cannot be part of the observation space itself.
         expected_reward = self.scenario.kernel.expected_reward(
             self.user_features,
             self.state.display_features,
@@ -283,6 +288,10 @@ class AuctionEnv(Env):
             "display_features": self.state.display_features.astype(np.float32),
             "y_now": np.array([self.state.y_func(self.state.t)], dtype=np.float32),
             "expected_reward": np.array([expected_reward], dtype=np.float32),
+            "cumulative_reward_since_last_step": np.array([self.matured_conversions_reward], dtype=np.float32),
+            "conversion_times_since_last_step": tuple(
+                np.array([t], dtype=np.float32) for t in self.matured_conversions_times
+            ),
         }
     def _sample_user(self):
         # placeholder: replace with your arrival model
@@ -306,6 +315,15 @@ class AuctionEnv(Env):
         1. Compute λ_max, an upper bound on λ(s) over s ∈ [0, horizon−t].
         2. Draw candidate times from a homogeneous Poisson(λ_max) process.
         3. Accept candidate at delay s with probability λ(s) / λ_max.
+
+        Returns
+        -------
+            delays : List[float]
+                List of accepted conversion delays (in time units) for this display.
+        Notes
+        -----
+        - If the kernel's λ is zero or negative over the entire interval, this will return an empty list.
+        - The returned delays are relative to the display time t (i.e., actual conversion times would be t + s for s in delays).
         """
         remaining = horizon - t
         if remaining <= 0.0:
