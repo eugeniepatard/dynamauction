@@ -24,9 +24,10 @@ def example_preset_quick_start():
     
     # Create scenario from preset
     scenario = dac.make("saturation-first-price-uniform")
+    policy = dac.FiPlaPolicy() # Policies are now separate from scenarios
     
     # Run a single simulation
-    sim = Simulator(scenario, campaign_cfg={
+    sim = Simulator(scenario, policy, campaign_cfg={
         "horizon": 10.0,
         "n_runs": 5,
         "seed": 42,
@@ -48,6 +49,7 @@ def example_builder_pattern():
     import dynamicauc as dac
     from dynamicauc.simulator import Simulator
     
+    # Note: .with_policy() is no longer part of the builder
     scenario = (
         dac.ScenarioBuilder()
         .with_kernel("saturation", base_rate=0.5, saturation_scale=10.0)
@@ -56,13 +58,14 @@ def example_builder_pattern():
         .with_arrival("poisson", breakpoints=[5.0], intensities=[0.1, 1.2])
         .with_display("iid", dim=3)
         .with_exogenous("trivial")
-        .with_policy("fipla")
         .with_horizon(15.0)
         .with_user_features([0.5, 0.8, 0.02])
         .build()
     )
     
-    sim = Simulator(scenario, campaign_cfg={
+    # Instantiate a policy to use with the simulator
+    policy = dac.FiPlaPolicy()
+    sim = Simulator(scenario, policy, campaign_cfg={
         "horizon": 15.0,
         "n_runs": 10,
         "seed": 123,
@@ -122,17 +125,12 @@ def example_gym_environment():
     total_cost = 0.0
     step_count = 0
     
+    # For the gym env, we can still use a policy object to decide bids
+    policy = dac.FiPlaPolicy()
+    
     while not done and not truncated and step_count < 10:
         # Use policy to decide bid
-        bid = scenario.policy.bid(
-            u=obs["user_features"],
-            x=obs["display_features"],
-            ctx=obs["ctx"].item(),
-            y_func=env.unwrapped.state.y_func,
-            t=obs["t"].item(),
-            horizon=obs["horizon"].item(),
-            scenario=scenario,
-        )
+        bid = policy.bid(obs)
         
         obs, reward, done, truncated, info = env.step(bid)
         total_reward += reward
@@ -155,40 +153,34 @@ def example_policy_comparison():
     import dynamicauc as dac
     from dynamicauc.simulator import Simulator
     from dynamicauc.policies import FiPlaPolicy
+    from dynamicauc.policies import ConstantPolicy, RandomPolicy
     
     # Create base scenario
     scenario = dac.make("saturation-first-price-uniform")
     
     # Compare different policies
-    policies = [
-        ("FiPla", dac.FiPlaPolicy()),
-        # You could add more policies here:
-        # ("ConstantBid", ConstantBidPolicy(0.5)),
-        # ("Random", RandomBidPolicy()),
-    ]
+    policies = {
+        "FiPla": FiPlaPolicy(),
+        "ConstantBid": ConstantPolicy(0.5),
+        "Random": RandomPolicy(),
+    }
     
-    results = {}
-    for policy_name, policy in policies:
-        # Swap policy in scenario
-        scenario.policy = policy
-        
-        sim = Simulator(scenario, campaign_cfg={
-            "horizon": 10.0,
-            "n_runs": 20,
-            "seed": 42,
-        })
-        _, _, _, summary_df = sim.run()
-        
-        results[policy_name] = {
-            "mean_conversions": summary_df["n_conversions"].mean(),
-            "mean_spend": summary_df["total_spend"].mean(),
-            "std_conversions": summary_df["n_conversions"].std(),
-        }
+    # Pass the dictionary of policies directly to the Simulator
+    sim = Simulator(scenario, policies, campaign_cfg={
+        "horizon": 10.0,
+        "n_runs": 20,
+        "seed": 42,
+    })
+    _, _, _, summary_df = sim.run()
+    
+    # Group by policy to compute mean/std
+    results = summary_df.groupby("policy").agg({
+        "n_conversions": ["mean", "std"],
+        "total_spend": ["mean"]
+    })
     
     print("Policy comparison results:")
-    for policy_name, metrics in results.items():
-        print(f"  {policy_name}: conversions={metrics['mean_conversions']:.2f}, "
-              f"spend={metrics['mean_spend']:.2f}")
+    print(results)
     
     return results
 

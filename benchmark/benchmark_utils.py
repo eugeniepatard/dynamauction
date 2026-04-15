@@ -36,11 +36,7 @@ def run_benchmark_anarchy(policies : Dict[str, dac.BiddingPolicy],
                 done = False
                 
                 while not done:
-                    bid = policy.bid(
-                        obs["user_features"], obs["display_features"], 
-                        obs["ctx"].item(), env.unwrapped.state.y_func, 
-                        obs["t"].item(), scenario_base
-                    )
+                    bid = policy.bid(obs)
                     
                     obs, net_reward, done, _, info = env.step(bid)
                     cum_utility += net_reward
