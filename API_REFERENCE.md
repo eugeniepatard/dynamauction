@@ -212,7 +212,6 @@ Observation space:
     - user_features: Observable user feature vector
     - display_features: Current display features
     - y_now: Exogenous process value
-    - horizon: Campaign horizon
 
 # TODO : Enlever cette partie après
 ═══════════════════════════════════════════════════════════════════════════════

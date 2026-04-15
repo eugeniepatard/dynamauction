@@ -116,7 +116,6 @@ class Simulator:
                 "user_features": u_obs.astype(np.float32),
                 "display_features": x.astype(np.float32),
                 "y_now": np.array([y_func(t)], dtype=np.float32),
-                "horizon": np.array([horizon], dtype=np.float32),
                 "expected_reward": np.array([expected_reward], dtype=np.float32),
             }
             

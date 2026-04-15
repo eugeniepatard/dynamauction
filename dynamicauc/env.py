@@ -39,7 +39,6 @@ class AuctionEnv(Env):
             "user_features": spaces.Box(low=-np.inf, high=np.inf, shape=(scenario.user_feature_generator.observable_dim,), dtype=np.float32),
             "display_features": spaces.Box(low=-np.inf, high=np.inf, shape=(self.scenario.display_sampler.dim,), dtype=np.float32),
             "y_now": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
-            "horizon": spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32),
             "expected_reward": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
         })
         # --------------------------------------------------------
@@ -283,7 +282,6 @@ class AuctionEnv(Env):
             "user_features": u_obs.astype(np.float32),
             "display_features": self.state.display_features.astype(np.float32),
             "y_now": np.array([self.state.y_func(self.state.t)], dtype=np.float32),
-            "horizon": np.array([self.scenario.horizon], dtype=np.float32), # TODO : a enlever
             "expected_reward": np.array([expected_reward], dtype=np.float32),
         }
     def _sample_user(self):
