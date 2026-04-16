@@ -58,6 +58,13 @@ class Simulator:
             d_df = pd.DataFrame(policy_displays)
             c_df = pd.DataFrame(policy_conversions)
             s_df = self._summarise(a_df, c_df, n_runs)
+
+            # This converts [True] -> True and [0.123] -> 0.123
+            for df in [a_df, d_df]:
+                if not df.empty:
+                    for col in ['bid', 'won']:
+                        if col in df.columns:
+                            df[col] = df[col].apply(lambda x: x[0] if isinstance(x, (list, np.ndarray)) else x)
             
             if len(self.policies) > 1 or policy_name != "default":
                 a_df["policy"] = policy_name

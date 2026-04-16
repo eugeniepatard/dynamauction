@@ -34,7 +34,7 @@ def main(cfg: DictConfig) -> None:
         kernel=instantiate(cfg.kernel),
         display_sampler=instantiate(cfg.display),
         exogenous=instantiate(cfg.exogenous),
-        horizon=cfg.campaign.horizon,
+        horizon_generator=instantiate(cfg.horizon),
         user_feature_generator=instantiate(cfg.user),
         max_history=cfg.campaign.max_history,
     )

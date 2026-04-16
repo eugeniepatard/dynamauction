@@ -58,7 +58,7 @@ def example_builder_pattern():
         .with_arrival("poisson", breakpoints=[5.0], intensities=[0.1, 1.2])
         .with_display("iid", dim=3)
         .with_exogenous("trivial")
-        .with_horizon(15.0)
+        .with_horizon("fixed", value=15.0)
         .with_user_features("uniform", full_dim=3, observable_dim=3)
         .with_max_history(10)
         .build()
@@ -90,11 +90,11 @@ def example_preset_with_overrides():
     # Start from preset, override horizon
     scenario = dac.make(
         "saturation-first-price-uniform",
-        horizon=20.0,
+        horizon_params_value=20.0,
         user_params_observable_dim=2,
     )
     
-    print("Scenario horizon:", scenario.horizon)
+    print("Scenario horizon generator:", scenario.horizon_generator)
     print("Scenario user generator:", scenario.user_feature_generator)
     return scenario
 

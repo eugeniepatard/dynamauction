@@ -26,12 +26,13 @@ class AuctionEnv(Env):
         self.rng : Optional[Generator] = None
         
         self.kernel: RewardKernel = scenario.kernel
+        self.conversion_value = scenario.conversion_value
 
         # --------------Gym initialization params -----------------
         # TODO : paramétrer la lower and upper bound de l'action space
         self.action_space = spaces.Box(low=0.0, high=1e10, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Dict({
-            "t": spaces.Box(low=0.0, high=scenario.horizon, shape=(1,), dtype=np.float32),
+            "t": spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32),
             "ctx": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
             "step": spaces.Discrete(100000),
             "user_features": spaces.Box(low=-np.inf, high=np.inf, shape=(scenario.user_feature_generator.observable_dim,), dtype=np.float32),
@@ -41,12 +42,13 @@ class AuctionEnv(Env):
             # observation fields for delayed reward feedback
             "cumulative_reward_since_last_step": spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32),
             # We allow up to `max_history` conversions to be returned in the observation at each step, padded with zeros if fewer conversions occurred.
-            "conversion_times_since_last_step": spaces.Box(low=0.0, high=scenario.horizon, shape=(scenario.max_history,), dtype=np.float32), # up to 10 conversions per step, padded with zeros
+            "conversion_times_since_last_step": spaces.Box(low=0.0, high=np.inf, shape=(scenario.max_history,), dtype=np.float32), # up to 10 conversions per step, padded with zeros
         })
         # --------------------------------------------------------
 
         self.state: Optional[AuctionState] = None
         self.user_features: Optional[np.ndarray] = None # Full user features for the episode
+        self.horizon: Optional[float] = None # Horizon for the episode
         self.auction_times: Optional[np.ndarray] = None
         self.pending_conversions: List[float] = []
         
@@ -66,8 +68,9 @@ class AuctionEnv(Env):
         self.matured_conversions_reward = 0.0
         self.matured_conversions_times = []
 
-        self.auction_times = self.scenario.arrival.sample_times(self.scenario.horizon, self.rng)
-        self.scenario.exogenous.generate(self.scenario.horizon, self.rng)
+        self.horizon = self.scenario.horizon_generator.sample(self.rng)
+        self.auction_times = self.scenario.arrival.sample_times(self.horizon, self.rng)
+        self.scenario.exogenous.generate(self.horizon, self.rng)
         y_func = self.scenario.exogenous.y
 
         self.state = AuctionState(
@@ -78,6 +81,7 @@ class AuctionEnv(Env):
             display_features=self.scenario.display_sampler.sample(self.rng),)
         
         infos = {
+            "horizon": self.horizon,
             "auction_times": self.auction_times,
         }
 
@@ -215,21 +219,24 @@ class AuctionEnv(Env):
             u=u,
             x=x,
             y_func=y_func,
-            horizon=self.scenario.horizon,
+            horizon=self.horizon,
             rng=self.rng,
         )
 
         if auction_data["won"]:
             # Immediate conversions are those with delay=0.
             immediate_conversions = [c for c in conversions_data if c["is_immediate"]]
-            immediate_reward = float(len(immediate_conversions))
-            net_reward = immediate_reward - auction_data['payment']
+            immediate_gross_reward = float(len(immediate_conversions)) * self.conversion_value
+            immediate_net_reward = immediate_gross_reward - auction_data['payment']
 
             # Delayed conversions are added to a pending list to be observed later.
             delayed_conversions = [c for c in conversions_data if not c["is_immediate"]]
             self.pending_conversions.extend([c["conversion_time"] for c in delayed_conversions])
         else:
-            net_reward = 0.0
+            immediate_net_reward = 0.0
+
+        # The total reward for the agent is the net immediate utility + the value of matured delayed conversions
+        net_reward = immediate_net_reward + self.matured_conversions_reward
 
         self.state.step_idx += 1
         
@@ -238,12 +245,12 @@ class AuctionEnv(Env):
             t_next = self.auction_times[self.state.step_idx]
             done = False
         else:
-            t_next = self.scenario.horizon
+            t_next = self.horizon
             done = True
         
         # Find delayed conversions that matured between the previous and next auction time.
         self.matured_conversions_times = sorted([c for c in self.pending_conversions if c > t_previous and c <= t_next])
-        self.matured_conversions_reward = float(len(self.matured_conversions_times))
+        self.matured_conversions_reward = float(len(self.matured_conversions_times)) * self.conversion_value
         self.pending_conversions = [c for c in self.pending_conversions if c > t_next]
 
         truncated = False
@@ -257,7 +264,7 @@ class AuctionEnv(Env):
             "auction": auction_data,
             "display": display_data,
             "conversions_count": len(conversions_data),
-            "actual_conversions": conversions_data,
+            "actual_conversions": conversions_data
         }
 
         obs = self._get_obs()
@@ -277,7 +284,7 @@ class AuctionEnv(Env):
             self.state.ctx,
             self.state.y_func,
             self.state.t,
-            self.scenario.horizon,
+            self.horizon,
         )
         u_obs = self.scenario.user_feature_generator.get_observable_features(self.user_features)
 

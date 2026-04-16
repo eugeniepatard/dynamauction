@@ -6,11 +6,11 @@ defaults:
   - display: iid
   - exogenous: trivial
   - policy: fipla
+  - horizon: fixed
   - user: uniform
   - _self_
 
 campaign:
-  horizon: 30.0          # campaign duration (arbitrary time units)
   max_history: 10        # max number of conversions returned in the observation at each step
   n_runs: 10
   seed: 42
