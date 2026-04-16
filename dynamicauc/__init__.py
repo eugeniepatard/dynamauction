@@ -1,6 +1,6 @@
 from importlib.metadata import version
 
-from dynamicauc.registry import (
+from dynamicauc.scenarios import (
     make,
     ScenarioBuilder,
     list_scenarios,

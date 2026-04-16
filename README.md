@@ -36,6 +36,7 @@ The repository is organized as follows:
     - `display_sampler.py`: Samplers for display and user features.
     - `exogenous_process.py`: Models for exogenous factors affecting conversion probabilities.
   - `policies.py`: Bidding strategies and baseline policies.
+  - `scenarios/`: Definitions for preset scenarios.
   - `simulator.py`: Main engine for running repeated auction campaigns.
   - `env.py`: Gymnasium-compatible environment for Reinforcement Learning.
   - `registry.py`: Factory system for scenario components.
@@ -48,4 +49,3 @@ The repository is organized as follows:
 For a detailed breakdown of the API, please refer to [API_REFERENCE.md](./API_REFERENCE.md), or explore the `examples/` directory for practical demonstrations.
 
 You can also run the provided Jupyter notebooks to see how to set up and execute simulations, as well as how to train and evaluate bidding strategies using the Gymnasium environments with `docs/dynamicauc_tutorial.ipynb` or `docs/simulation_tutorial.ipynb`.
-
