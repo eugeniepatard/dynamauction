@@ -71,7 +71,7 @@ Method 2: BUILDER (Flexible, readable, recommended for custom setups)
         .with_display("iid", dim=3)
         .with_exogenous("trivial")
         .with_policy("fipla")
-        .with_horizon(15.0)
+        .with_horizon("fixed", value=15.0)
         .with_user_features("uniform", full_dim=3, observable_dim=3)
         .with_max_history(10)
         .build()
@@ -93,7 +93,7 @@ Method 3: HYBRID (Start from preset, customize parameters)
 
     scenario = dac.make(
         "saturation-first-price-uniform",
-        horizon=20.0,              # Global override
+        horizon_params_value=20.0,  # Nested override: horizon.params.value
         user_params_observable_dim=2, # Nested override: user.params.observable_dim
         kernel_base_rate=0.8,       # Nested override: kernel.params.base_rate
         competition_high=50.0       # Nested override: competition.params.high
