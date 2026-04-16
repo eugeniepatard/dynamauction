@@ -135,8 +135,8 @@ class Simulator:
     ) -> pd.DataFrame:
         records = []
         for run_id in range(n_runs):
-            a = auctions[auctions.run_id == run_id] if not auctions.empty else auctions
-            c = conversions[conversions.run_id == run_id] if not conversions.empty else conversions
+            a = auctions[auctions["run_id"] == run_id] if not auctions.empty else auctions
+            c = conversions[conversions["run_id"] == run_id] if not conversions.empty else conversions
             
             n_auc = len(a)
             

@@ -12,6 +12,10 @@ from dynamicauc.primitives import RewardKernel
 
 ObsType = Dict[str, Any]
 ActType = float
+OBSERVATION_KEYS= ["t", "ctx", "step", "user_features", 
+                   "display_features", "y_now", "expected_reward", 
+                   "cumulative_reward_since_last_step", 
+                   "conversion_times_since_last_step"]
 
 class AuctionEnv(Env):
     """
@@ -30,19 +34,19 @@ class AuctionEnv(Env):
 
         # --------------Gym initialization params -----------------
         # TODO : paramétrer la lower and upper bound de l'action space
-        self.action_space = spaces.Box(low=0.0, high=1e10, shape=(1,), dtype=np.float32)
+        self.action_space = spaces.Box(low=0.0, high=1e12, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Dict({
-            "t": spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32),
-            "ctx": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
+            "t": spaces.Box(low=0.0, high=1e12, shape=(1,), dtype=np.float32),
+            "ctx": spaces.Box(low=-1e12, high=1e12, shape=(1,), dtype=np.float32),
             "step": spaces.Discrete(100000),
-            "user_features": spaces.Box(low=-np.inf, high=np.inf, shape=(scenario.user_feature_generator.observable_dim,), dtype=np.float32),
-            "display_features": spaces.Box(low=-np.inf, high=np.inf, shape=(self.scenario.display_sampler.dim,), dtype=np.float32),
-            "y_now": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
-            "expected_reward": spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32),
+            "user_features": spaces.Box(low=-1e12, high=1e12, shape=(scenario.user_feature_generator.observable_dim,), dtype=np.float32),
+            "display_features": spaces.Box(low=-1e12, high=1e12, shape=(self.scenario.display_sampler.dim,), dtype=np.float32),
+            "y_now": spaces.Box(low=-1e12, high=1e12, shape=(1,), dtype=np.float32),
+            "expected_reward": spaces.Box(low=-1e12, high=1e12, shape=(1,), dtype=np.float32),
             # observation fields for delayed reward feedback
-            "cumulative_reward_since_last_step": spaces.Box(low=0.0, high=np.inf, shape=(1,), dtype=np.float32),
+            "cumulative_reward_since_last_step": spaces.Box(low=0.0, high=1e12, shape=(1,), dtype=np.float32),
             # We allow up to `max_history` conversions to be returned in the observation at each step, padded with zeros if fewer conversions occurred.
-            "conversion_times_since_last_step": spaces.Box(low=0.0, high=np.inf, shape=(scenario.max_history,), dtype=np.float32), # up to 10 conversions per step, padded with zeros
+            "conversion_times_since_last_step": spaces.Box(low=0.0, high=1e12, shape=(scenario.max_history,), dtype=np.float32), # up to 10 conversions per step, padded with zeros
         })
         # --------------------------------------------------------
 
@@ -61,6 +65,8 @@ class AuctionEnv(Env):
         super().reset(seed=seed)
         if seed is not None:
             self.rng = np.random.default_rng(seed)
+        else:
+            self.rng = np.random.default_rng(seed=42)
 
         # Generate a new user for this episode
         self.user_features = self.scenario.user_feature_generator.generate(self.rng)
@@ -295,17 +301,18 @@ class AuctionEnv(Env):
         else:
             times += [0.0] * (self.scenario.max_history - len(times))
 
-        return {
+        obs : Dict[str, Any] =  {
             "t": np.array([self.state.t], dtype=np.float32),
             "ctx": np.array([self.state.ctx], dtype=np.float32),
-            "step": int(self.state.step_idx),
+            "step": np.int64(self.state.step_idx),
             "user_features": u_obs.astype(np.float32),
             "display_features": self.state.display_features.astype(np.float32),
             "y_now": np.array([self.state.y_func(self.state.t)], dtype=np.float32),
-            "expected_reward": np.array([expected_reward], dtype=np.float32),
+            "expected_reward": np.array([float(expected_reward)], dtype=np.float32),
             "cumulative_reward_since_last_step": np.array([self.matured_conversions_reward], dtype=np.float32),
             "conversion_times_since_last_step": np.array(times, dtype=np.float32),
         }
+        return obs
 
     @staticmethod
     def _sample_delayed(

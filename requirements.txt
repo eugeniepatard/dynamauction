@@ -9,3 +9,6 @@ gymnasium
 # Benchmark
 tabulate
 seaborn
+
+# Testing
+pytest

@@ -9,7 +9,7 @@ from dynamicauc.scenarios import (
 )
 from dynamicauc.dataclasses import Scenario
 from dynamicauc.simulator import Simulator
-from dynamicauc.env import AuctionEnv
+from dynamicauc.env import AuctionEnv, OBSERVATION_KEYS
 from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
 from dynamicauc.primitives import (
     # Auction rules
@@ -68,6 +68,8 @@ __all__ = [
     "TrivialProcess",
     "UserFeatureGenerator",
     "UniformUser",
+    AuctionEnv,
+    OBSERVATION_KEYS,
 ]
 
 from gymnasium.envs.registration import register
