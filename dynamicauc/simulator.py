@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Callable, List, Any, Dict, Tuple, Union, TYPE_CHECKING
 
 from dynamicauc.env import AuctionEnv
-from dynamicauc.policies import BiddingPolicy
+from dynamicauc.baseline.policies import BiddingPolicy
 
 import numpy as np
 import pandas as pd

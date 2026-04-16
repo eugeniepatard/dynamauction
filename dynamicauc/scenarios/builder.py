@@ -33,7 +33,7 @@ import numpy as np
 
 from dynamicauc.dataclasses import Scenario
 from dynamicauc.scenarios.presets import SCENARIO_PRESETS
-from dynamicauc.policies import BiddingPolicy, FiPlaPolicy
+from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy
 from dynamicauc.primitives import (
     AuctionRule,
     ArrivalProcess,

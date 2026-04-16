@@ -153,8 +153,8 @@ def example_policy_comparison():
     """
     import dynamicauc as dac
     from dynamicauc.simulator import Simulator
-    from dynamicauc.policies import FiPlaPolicy
-    from dynamicauc.policies import ConstantPolicy, RandomPolicy
+    from dynamicauc.baseline.policies import FiPlaPolicy
+    from dynamicauc.baseline.policies import ConstantPolicy, RandomPolicy
     
     # Create base scenario
     scenario = dac.make("saturation-first-price-uniform")

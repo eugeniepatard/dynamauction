@@ -1,5 +1,5 @@
 from .presets import SCENARIO_PRESETS
-from .registry import (
+from .builder import (
     make,
     ScenarioBuilder,
     list_scenarios,

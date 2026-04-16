@@ -10,7 +10,7 @@ from dynamicauc.scenarios import (
 from dynamicauc.dataclasses import Scenario
 from dynamicauc.simulator import Simulator
 from dynamicauc.env import AuctionEnv
-from dynamicauc.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
+from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
 from dynamicauc.primitives import (
     # Auction rules
     FirstPriceAuction,
