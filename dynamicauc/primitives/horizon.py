@@ -20,10 +20,11 @@ class FixedHorizon(HorizonGenerator):
 
 
 class ExponentialHorizon(HorizonGenerator):
-    """Horizon T sampled from an exponential distribution."""
+    """Horizon T sampled from an exponential distribution.
+    Parameterized by mean eta, so that E[T] = eta."""
 
-    def __init__(self, mean: float):
-        self.mean = mean
+    def __init__(self, eta: float):
+        self.eta = eta
 
     def sample(self, rng: np.random.Generator) -> float:
-        return float(rng.exponential(self.mean))
+        return float(rng.exponential(self.eta))

@@ -33,3 +33,4 @@ class ExponentialCompetition(CompetitionDistribution):
 
     def sample(self, rng: np.random.Generator) -> float:
         return float(rng.exponential(self.scale))
+# TODO : rajouter constant 

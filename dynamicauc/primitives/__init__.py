@@ -5,10 +5,10 @@ exogenous processes, display samplers, and reward kernels.
 from .auctions import AuctionRule, FirstPriceAuction, SecondPriceAuction
 from .competition import CompetitionDistribution, UniformCompetition, LogNormalCompetition, ExponentialCompetition
 from .exogenous_process import ExogenousProcess, CompetitorClickProcess, TrivialProcess
-from .arrival_process import ArrivalProcess, PiecewiseConstantPoisson
+from .arrival_process import ArrivalProcess, PiecewiseConstantPoisson, ConstantPoisson
 from .kernel import RewardKernel, SaturationKernel, MixedKernel, RecencyDisplayKernel, CompetitorExtinctionKernel
-from .display_sampler import DisplaySampler, IIDUniformSampler, CatalogueSampler, FixedSampler
-from .user import UserFeatureGenerator, UniformUser
+from .display_sampler import DisplaySampler, IIDUniformSampler, CatalogueSampler, FixedSampler, NormalSampler
+from .user import UserFeatureGenerator, UniformUser, NormalUser, FixedUser
 from .horizon import HorizonGenerator, FixedHorizon, ExponentialHorizon
 from . import auctions
 from . import competition

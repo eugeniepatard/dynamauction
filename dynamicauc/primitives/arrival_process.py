@@ -34,4 +34,12 @@ class PiecewiseConstantPoisson(ArrivalProcess):
             times.extend(rng.uniform(t0, t1, n).tolist())
         return np.sort(times)
 
-# TODO : Ajouter pas de temps déterministe 
+class ConstantPoisson(ArrivalProcess):
+    """Homogeneous Poisson process with constant rate."""
+
+    def __init__(self, rate: float):
+        self.rate = rate
+
+    def sample_times(self, horizon: float, rng: np.random.Generator) -> np.ndarray:
+        n = rng.poisson(self.rate * horizon)
+        return np.sort(rng.uniform(0.0, horizon, n))

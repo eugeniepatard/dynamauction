@@ -57,3 +57,18 @@ class FixedSampler(DisplaySampler):
 
     def sample(self, rng: np.random.Generator) -> np.ndarray:
         return self._x.copy()
+
+class NormalSampler(DisplaySampler):
+    """x_i ~ N(mu, sigma^2 I) i.i.d. at each auction."""
+
+    def __init__(self, dim: int = 3, mu: float = 0.5, sigma: float = 0.25):
+        self._dim = dim
+        self._mu = mu
+        self._sigma = sigma
+    
+    @property
+    def dim(self) -> int:
+        return self._dim
+
+    def sample(self, rng: np.random.Generator) -> np.ndarray:
+        return rng.normal(self._mu, self._sigma, self._dim)

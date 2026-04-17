@@ -39,6 +39,8 @@ from dynamicauc.primitives import (
     ArrivalProcess,
     UserFeatureGenerator,
     UniformUser,
+    NormalUser,
+    FixedUser,
     HorizonGenerator,
     FixedHorizon,
     ExponentialHorizon,
@@ -55,6 +57,7 @@ from dynamicauc.primitives import (
     ExponentialCompetition,
     # Arrival
     PiecewiseConstantPoisson,
+    ConstantPoisson,
     # Kernels
     SaturationKernel,
     RecencyDisplayKernel,
@@ -64,6 +67,7 @@ from dynamicauc.primitives import (
     IIDUniformSampler,
     CatalogueSampler,
     FixedSampler,
+    NormalSampler,
     # Exogenous
     TrivialProcess,
 )
@@ -112,8 +116,10 @@ def create_competition(name: str, **kwargs) -> CompetitionDistribution:
 
 def create_arrival(name: str, **kwargs) -> ArrivalProcess:
     """Create an ArrivalProcess by name and parameters."""
-    if name == "poisson":
+    if name == "pwpoisson":
         return PiecewiseConstantPoisson(**kwargs)
+    elif name == "cstpoisson":
+        return ConstantPoisson(**kwargs)
     else:
         raise ValueError(f"Unknown arrival: {name}")
 
@@ -126,6 +132,8 @@ def create_display_sampler(name: str, **kwargs) -> DisplaySampler:
         return CatalogueSampler(**kwargs)
     elif name == "fixed":
         return FixedSampler(**kwargs)
+    elif name == "normal":
+        return NormalSampler(**kwargs)
     else:
         raise ValueError(f"Unknown display sampler: {name}")
 
@@ -150,6 +158,10 @@ def create_user_feature_generator(name: str, **kwargs) -> UserFeatureGenerator:
     """Create a UserFeatureGenerator by name and parameters."""
     if name == "uniform":
         return UniformUser(**kwargs)
+    elif name == "normal":
+        return NormalUser(**kwargs)
+    elif name == "fixed":
+        return FixedUser(**kwargs)
     else:
         raise ValueError(f"Unknown user feature generator: {name}")
 

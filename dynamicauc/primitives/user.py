@@ -30,3 +30,36 @@ class UniformUser(UserFeatureGenerator):
 
     def get_observable_features(self, full_features: np.ndarray) -> np.ndarray:
         return full_features[:self.observable_dim]
+
+class NormalUser(UserFeatureGenerator):
+    """
+    Generates user features from a normal distribution.
+    The first `observable_dim` features are observable, the rest are hidden.
+    """
+    def __init__(self, full_dim: int, observable_dim: int, mu: float = 0.0, sigma: float = 1.0):
+        if observable_dim > full_dim:
+            raise ValueError("observable_dim cannot be greater than full_dim")
+        self.full_dim = full_dim
+        self.observable_dim = observable_dim
+        self.mu = mu
+        self.sigma = sigma
+
+    def generate(self, rng: np.random.Generator) -> np.ndarray:
+        return rng.normal(self.mu, self.sigma, self.full_dim).astype(np.float32)
+
+    def get_observable_features(self, full_features: np.ndarray) -> np.ndarray:
+        return full_features[:self.observable_dim]
+
+class FixedUser(UserFeatureGenerator):
+    """Always return the same user feature vector."""
+    def __init__(self, features: np.ndarray, observable_dim: int):
+        if observable_dim > len(features):
+            raise ValueError("observable_dim cannot be greater than the length of features")
+        self.features = features.astype(np.float32)
+        self.observable_dim = observable_dim
+
+    def generate(self, rng: np.random.Generator) -> np.ndarray:
+        return self.features.copy()
+
+    def get_observable_features(self, full_features: np.ndarray) -> np.ndarray:
+        return full_features[:self.observable_dim]
