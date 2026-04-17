@@ -16,6 +16,7 @@ OBSERVATION_KEYS= ["t", "ctx", "step", "user_features",
                    "display_features", "y_now", "expected_reward", 
                    "cumulative_reward_since_last_step", 
                    "conversion_times_since_last_step"]
+# TODO : Réunir les paramètres de l'env dans State
 
 class AuctionEnv(Env):
     """
@@ -59,6 +60,7 @@ class AuctionEnv(Env):
         # State for matured delayed rewards, to be included in the next observation
         self.matured_conversions_reward: float = 0.0
         self.matured_conversions_times: List[float] = []
+        self.t_past_won_auctions: List[float] = []
 
     def reset(self, seed: Optional[int] = None, options: dict[str, Any] | None = None) -> Tuple[Any, dict[str, Any]]:
         # ---- Gym reset() logic -----
@@ -73,6 +75,7 @@ class AuctionEnv(Env):
         self.pending_conversions = []
         self.matured_conversions_reward = 0.0
         self.matured_conversions_times = []
+        self.t_past_won_auctions = []
 
         self.horizon = self.scenario.horizon_generator.sample(self.rng)
         self.auction_times = self.scenario.arrival.sample_times(self.horizon, self.rng)
@@ -81,7 +84,7 @@ class AuctionEnv(Env):
 
         self.state = AuctionState(
             t=self.auction_times[0] if len(self.auction_times) > 0 else 0.0,
-            ctx=self.kernel.initial_context(),
+            ctx=self.scenario.gamma.initiate_context(),
             step_idx=0,
             y_func=y_func,
             display_features=self.scenario.display_sampler.sample(self.rng),)
@@ -185,7 +188,8 @@ class AuctionEnv(Env):
                     is_immediate=False,
                 ))
 
-            new_ctx = sc.kernel.update_context(auction_state.ctx, x, auction_state.t)
+            new_ctx = sc.gamma.update_context(auction_state.ctx, x, u, auction_state.t, self.t_past_won_auctions)
+            self.t_past_won_auctions.append(auction_state.t)
 
         return auction_data, display_data, conversions_data, new_ctx
 

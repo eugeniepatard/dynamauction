@@ -34,11 +34,13 @@ def mock_scenario():
     scenario.exogenous.generate = MagicMock()
     
     # Kernel properties
-    scenario.kernel.initial_context.return_value = 0.0
     scenario.kernel.kappa.return_value = 0.0
     scenario.kernel.lambda_.return_value = 1.0
     scenario.kernel.lambda_upper_bound.return_value = 1.0
-    scenario.kernel.update_context.side_effect = lambda ctx, x, t: ctx + 1.0
+    
+    scenario.gamma = MagicMock()
+    scenario.gamma.initiate_context.return_value = 0.0
+    scenario.gamma.update_context.side_effect = lambda ctx, x, u, t, t_past: ctx + 1.0
     
     # Competition & Auction
     scenario.competition.sample.return_value = 0.5

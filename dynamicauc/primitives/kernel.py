@@ -5,6 +5,7 @@ from typing import Callable, List
 
 import numpy as np
 
+from dynamicauc.primitives.gamma import Gamma, AdditiveGamma, LastWonTimeGamma, ConstantGamma
 
 # ── Reward kernels ─────────────────────────────────────────────────────────────
 
@@ -24,8 +25,6 @@ class RewardKernel(ABC):
       kappa              – immediate conversion weight
       lambda_            – delayed conversion intensity
       lambda_upper_bound – upper bound on lambda_ (for Ogata thinning)
-      update_context     – how a won display updates the carry-over context
-      initial_context    – context value before any display
     """
 
     @abstractmethod
@@ -67,16 +66,6 @@ class RewardKernel(ABC):
         """
         ...
 
-    @abstractmethod
-    def update_context(self, ctx: float, x: np.ndarray, t_display: float) -> float:
-        """Return updated carry-over context after a won display at t_display."""
-        ...
-
-    @abstractmethod
-    def initial_context(self) -> float:
-        """Initial carry-over context (before any display)."""
-        ...
-
     def expected_reward(
         self,
         u: np.ndarray,
@@ -110,7 +99,6 @@ class SaturationKernel(RewardKernel):
     """
     (S) Saturation by cumulative exposure.
 
-    ctx  = number of past won displays.
     κ    = 0
     λ    = base_rate · exp(−ctx / saturation_scale) · delay_rate · exp(−delay_rate · s)
     """
@@ -143,18 +131,11 @@ class SaturationKernel(RewardKernel):
     ) -> float:
         return self.base_rate * np.exp(-ctx / self.saturation_scale) * self.delay_rate
 
-    def update_context(self, ctx: float, x: np.ndarray, t_display: float) -> float:
-        return ctx + 1.0
-
-    def initial_context(self) -> float:
-        return 0.0
-
 
 class RecencyDisplayKernel(RewardKernel):
     """
     (R) Recency of last display.
 
-    ctx  = time of the last won display (−inf before any display).
     τ    = t_i − ctx  (gap since previous display; treated as ∞ at campaign start)
     κ    = 0
     λ    = (1 − exp(−α·τ)) · delay_rate · exp(−delay_rate · s)
@@ -181,12 +162,6 @@ class RecencyDisplayKernel(RewardKernel):
         self, u: np.ndarray, x: np.ndarray, ctx: float, t: float, remaining: float
     ) -> float:
         return self._recency_factor(ctx, t) * self.delay_rate
-
-    def update_context(self, ctx: float, x: np.ndarray, t_display: float) -> float:
-        return t_display
-
-    def initial_context(self) -> float:
-        return float("-inf")
 
 
 class CompetitorExtinctionKernel(RewardKernel):
@@ -221,12 +196,6 @@ class CompetitorExtinctionKernel(RewardKernel):
         # Conservative: assume no competitor click (C = 0 throughout)
         return self.base_rate * self.delay_rate
 
-    def update_context(self, ctx: float, x: np.ndarray, t_display: float) -> float:
-        return ctx
-
-    def initial_context(self) -> float:
-        return 0.0
-
 
 class MixedKernel(RewardKernel):
     """
@@ -252,11 +221,5 @@ class MixedKernel(RewardKernel):
         self, u: np.ndarray, x: np.ndarray, ctx: float, t: float, remaining: float
     ) -> float:
         return self.base_kernel.lambda_upper_bound(u, x, ctx, t, remaining)
-
-    def update_context(self, ctx: float, x: np.ndarray, t_display: float) -> float:
-        return self.base_kernel.update_context(ctx, x, t_display)
-
-    def initial_context(self) -> float:
-        return self.base_kernel.initial_context()
     
 # TODO: Ajouter un kernel pour étudier l'hétérogénéité des users.

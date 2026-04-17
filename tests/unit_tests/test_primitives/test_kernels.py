@@ -28,14 +28,6 @@ def constant_y():
 
 class TestSaturationKernel:
     @staticmethod
-    def test_context_update():
-        kernel = SaturationKernel()
-        ctx = kernel.initial_context()
-        assert ctx == 0.0
-        ctx = kernel.update_context(ctx, np.array([]), 1.0)
-        assert ctx == 1.0
-
-    @staticmethod
     def test_lambda_decay(user_vec, x_vec, constant_y):
         kernel = SaturationKernel(base_rate=1.0, delay_rate=0.5, saturation_scale=10.0)
         # At s=0, lambda should be base_rate * exp(-ctx/scale) * delay_rate
@@ -71,7 +63,7 @@ class TestRecencyDisplayKernel:
     def test_initial_recency():
         kernel = RecencyDisplayKernel(alpha=1.0)
         # Should be 1.0 when ctx is -inf
-        assert kernel._recency_factor(kernel.initial_context(), 10.0) == 1.0
+        assert kernel._recency_factor(float("-inf"), 10.0) == 1.0
 
 
     @staticmethod
@@ -137,13 +129,6 @@ class TestMixedKernel:
         mixed_expected = mixed.expected_reward(user_vec, x_vec, 0.0, constant_y, 0, 100)
         
         assert pytest.approx(mixed_expected) == kappa_val + base_expected
-
-    @staticmethod
-    def test_context_delegation():
-        base = RecencyDisplayKernel()
-        mixed = MixedKernel(base)
-        assert mixed.initial_context() == base.initial_context()
-        assert mixed.update_context(0.0, np.array([]), 5.0) == 5.0
 
 # --- General Statistical Property Test ---
 

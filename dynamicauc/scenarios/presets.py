@@ -18,6 +18,7 @@ SCENARIO_PRESETS = {
         "exogenous": {"name": "trivial"},
         "horizon" : {"name": "exponential", "params": {"eta": 50.0}},
         "user" : {"name": "normal", "params": {"full_dim": 3, "observable_dim": 3, "mu": 0.0, "sigma": 1.0}},
+        "gamma": {"name": "additive"},
         "max_history": 1,},
 
     "saturation-second-price-uniform": {
@@ -30,6 +31,7 @@ SCENARIO_PRESETS = {
         "exogenous": {"name": "trivial"},
         "horizon": {"name": "fixed", "params": {"value": 50.0}},
         "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 3}},
+        "gamma": {"name": "additive"},
         "max_history": 10,
     },
     "recency-second-price-lognormal": {
@@ -42,6 +44,7 @@ SCENARIO_PRESETS = {
         "exogenous": {"name": "trivial"},
         "horizon": {"name": "fixed", "params": {"value": 30.0}},
         "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 3}},
+        "gamma": {"name": "last-won-time"},
         "max_history": 10,
     },
     "mixed-second-price-exponential": {
@@ -60,6 +63,7 @@ SCENARIO_PRESETS = {
         "exogenous": {"name": "trivial"},
         "horizon": {"name": "fixed", "params": {"value": 20.0}},
         "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 2}},
+        "gamma": {"name": "additive"},
         "max_history": 10,
     },
 }

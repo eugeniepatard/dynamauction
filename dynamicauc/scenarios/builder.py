@@ -63,6 +63,12 @@ from dynamicauc.primitives import (
     RecencyDisplayKernel,
     CompetitorExtinctionKernel,
     MixedKernel,
+    # Gammas
+    Gamma,
+    AdditiveGamma,
+    MultiplicativeGamma,
+    LastWonTimeGamma,
+    ConstantGamma,
     # Display samplers
     IIDUniformSampler,
     CatalogueSampler,
@@ -75,6 +81,19 @@ from dynamicauc.primitives import (
 # TODO : Créer un builder utilisant un fichier yaml
 
 # ── Registry creators (primitive factories) ────────────────────────────────────
+
+def create_gamma(name: str, **kwargs) -> Gamma:
+    """Create a Gamma by name and parameters."""
+    if name == "additive":
+        return AdditiveGamma(**kwargs)
+    elif name == "multiplicative":
+        return MultiplicativeGamma(**kwargs)
+    elif name == "last-won-time":
+        return LastWonTimeGamma(**kwargs)
+    elif name == "constant":
+        return ConstantGamma(**kwargs)
+    else:
+        raise ValueError(f"Unknown gamma: {name}")
 
 def create_kernel(name: str, **kwargs) -> RewardKernel:
     """Create a RewardKernel by name and parameters."""
@@ -190,11 +209,17 @@ class ScenarioBuilder:
         self._exogenous: Optional[ExogenousProcess] = None
         self._horizon_generator: Optional[HorizonGenerator] = None
         self._user_feature_generator: Optional[UserFeatureGenerator] = None
+        self._gamma: Optional[Gamma] = None
         self._max_history: int = 10
 
     def with_kernel(self, name: str, **params) -> ScenarioBuilder:
         """Set the reward kernel."""
         self._kernel = create_kernel(name, **params)
+        return self
+
+    def with_gamma(self, name: str, **params) -> ScenarioBuilder:
+        """Set the gamma function."""
+        self._gamma = create_gamma(name, **params)
         return self
 
     def with_auction(self, name: str, **params) -> ScenarioBuilder:
@@ -256,6 +281,8 @@ class ScenarioBuilder:
             self._horizon_generator = FixedHorizon(value=10.0)
         if self._user_feature_generator is None:
             self._user_feature_generator = UniformUser(full_dim=3, observable_dim=3)
+        if self._gamma is None:
+            self._gamma = AdditiveGamma()
         if self._max_history is None:
             self._max_history = 10
 
@@ -268,6 +295,7 @@ class ScenarioBuilder:
             exogenous=self._exogenous,
             horizon_generator=self._horizon_generator,
             user_feature_generator=self._user_feature_generator,
+            gamma=self._gamma,
             max_history=self._max_history,
         )
 
@@ -376,6 +404,9 @@ def make(scenario_id: str, **overrides) -> Scenario:
     
     exo_cfg = preset.pop("exogenous")
     builder.with_exogenous(exo_cfg["name"], **exo_cfg.get("params", {}))
+    
+    g_cfg = preset.pop("gamma", {"name": "additive"})
+    builder.with_gamma(g_cfg["name"], **g_cfg.get("params", {}))
     
     user_cfg = preset.pop("user")
     builder.with_user_features(user_cfg["name"], **user_cfg.get("params", {}))

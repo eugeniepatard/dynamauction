@@ -11,6 +11,7 @@ from dynamicauc.primitives import (
     RewardKernel,
     HorizonGenerator,
     UserFeatureGenerator,
+    Gamma
 )
 
 @dataclass
@@ -23,6 +24,7 @@ class Scenario:
     exogenous: ExogenousProcess
     horizon_generator: HorizonGenerator
     user_feature_generator: UserFeatureGenerator
+    gamma: Gamma
     max_history: int
     conversion_value: float = 1.0
 
