@@ -6,7 +6,8 @@ from dynamicauc import (
     SaturationKernel, 
     RecencyDisplayKernel, 
     CompetitorExtinctionKernel, 
-    MixedKernel
+    MixedKernel,
+    SurvivalKernel
 )
 
 # --- Mock Helpers ---
@@ -130,15 +131,44 @@ class TestMixedKernel:
         
         assert pytest.approx(mixed_expected) == kappa_val + base_expected
 
+# --- Tests for SurvivalKernel ---
+
+class TestSurvivalKernel:
+    @staticmethod
+    def test_conversion_probability(user_vec, x_vec):
+        kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]), alpha=1.0)
+        # user_vec = [1.0, 0.5] (sum=1.5), x_vec = [0.0, 1.0] (sum=1.0)
+        # ctx = 0.5 -> prob = 0.5 * 1.5 * 1.0 = 0.75
+        prob = kernel.conversion_probability(user_vec, x_vec, ctx=0.5)
+        assert pytest.approx(prob) == 0.75
+        
+        # test clipping
+        prob_clip = kernel.conversion_probability(user_vec, x_vec, ctx=2.0)
+        assert prob_clip == 1.0
+        
+    @staticmethod
+    def test_expected_reward(user_vec, x_vec, constant_y):
+        kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]), alpha=1.0)
+        # Using horizon that allows exponential to decay fully
+        expected = 0.75 * (1.0 - np.exp(-100.0))
+        actual = kernel.expected_reward(user_vec, x_vec, ctx=0.5, y_func=constant_y, t=0.0, horizon=100.0)
+        assert pytest.approx(actual, rel=1e-3) == expected
+
 # --- General Statistical Property Test ---
 
-@pytest.mark.parametrize("kernel_class", [SaturationKernel, RecencyDisplayKernel, CompetitorExtinctionKernel, MixedKernel])
+@pytest.mark.parametrize("kernel_class", [SaturationKernel, RecencyDisplayKernel, CompetitorExtinctionKernel, MixedKernel, SurvivalKernel])
 def test_lambda_upper_bound_validity(kernel_class, user_vec, x_vec, constant_y):
     """
     Property: lambda(s) must always be <= lambda_upper_bound for thinning to work.
     """
-    kernel = kernel_class(base_kernel=SaturationKernel()) if kernel_class == MixedKernel else kernel_class()
-    ctx = 0.0 if kernel_class == SaturationKernel else 5.0
+    if kernel_class == MixedKernel:
+        kernel = MixedKernel(base_kernel=SaturationKernel())
+    elif kernel_class == SurvivalKernel:
+        kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]))
+    else:
+        kernel = kernel_class()
+
+    ctx = 0.5 if kernel_class == SurvivalKernel else (0.0 if kernel_class == SaturationKernel else 5.0)
     t = 10.0
     
     bound = kernel.lambda_upper_bound(user_vec, x_vec, ctx, t, remaining=5.0)

@@ -2,7 +2,8 @@ import pytest
 import numpy as np
 from unittest.mock import MagicMock
 from gymnasium.utils.env_checker import check_env
-from dynamicauc import AuctionEnv, Scenario, OBSERVATION_KEYS
+from dynamicauc import AuctionEnv, OBSERVATION_KEYS
+from dynamicauc.env import OgataThinningSampler
 
 @pytest.fixture
 def mock_scenario():
@@ -96,7 +97,8 @@ def test_delayed_reward_out_of_window(mock_scenario):
     # We force the delayed sampler to return a delay of 0.5s
     # so conversion occurs at 1.0 (t) + 0.5 (s) = 1.5.
     # This falls between t=1.0 and t_next=2.0.
-    env._sample_delayed = MagicMock(return_value=[0.5])
+    env.delay_sampler = MagicMock()
+    env.delay_sampler.sample.return_value = [0.5]
     
     obs, reward, _, _, info = env.step(action=1.0)
     
@@ -135,10 +137,11 @@ def test_ogata_thinning_statistical_properties():
     u, x = np.array([]), np.array([])
     y_func = lambda t: 0
     horizon = 100.0
+    sampler = OgataThinningSampler()
     
     sample_counts = []
     for _ in range(200):
-        delays = AuctionEnv._sample_delayed(kernel, u, x, 0.0, y_func, 0.0, horizon, rng)
+        delays = sampler.sample(kernel, u, x, 0.0, y_func, 0.0, horizon, rng)
         sample_counts.append(len(delays))
     
     mean_samples = np.mean(sample_counts)

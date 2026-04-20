@@ -7,7 +7,7 @@ from .competition import CompetitionDistribution, UniformCompetition, LogNormalC
 from .exogenous_process import ExogenousProcess, CompetitorClickProcess, TrivialProcess
 from .arrival_process import ArrivalProcess, PiecewiseConstantPoisson, ConstantPoisson
 from .gamma import Gamma, AdditiveGamma, MultiplicativeGamma, LastWonTimeGamma, ConstantGamma
-from .kernel import RewardKernel, SaturationKernel, MixedKernel, RecencyDisplayKernel, CompetitorExtinctionKernel
+from .kernel import RewardKernel, SaturationKernel, MixedKernel, RecencyDisplayKernel, CompetitorExtinctionKernel, SurvivalKernel
 from .display_sampler import DisplaySampler, IIDUniformSampler, CatalogueSampler, FixedSampler, NormalSampler
 from .user import UserFeatureGenerator, UniformUser, NormalUser, FixedUser
 from .horizon import HorizonGenerator, FixedHorizon, ExponentialHorizon

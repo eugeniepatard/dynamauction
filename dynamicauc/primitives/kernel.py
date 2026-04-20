@@ -221,5 +221,55 @@ class MixedKernel(RewardKernel):
         self, u: np.ndarray, x: np.ndarray, ctx: float, t: float, remaining: float
     ) -> float:
         return self.base_kernel.lambda_upper_bound(u, x, ctx, t, remaining)
-    
-# TODO: Ajouter un kernel pour étudier l'hétérogénéité des users.
+
+
+class SurvivalKernel(RewardKernel):
+    """
+    Hazard-based survival kernel (Cox-style).
+    Each display generates at most one conversion.
+
+    f(x, u, history) = gamma(history) * (U . W_u^T) * (X . W_x^T)
+    h(s) = alpha (Exponential baseline hazard)
+    """
+
+    def __init__(self, w_u: np.ndarray, w_x: np.ndarray, alpha: float = 1.0):
+        self.w_u = np.asarray(w_u, dtype=float)
+        self.w_x = np.asarray(w_x, dtype=float)
+        self.alpha = alpha
+
+    def conversion_probability(self, u: np.ndarray, x: np.ndarray, ctx: float) -> float:
+        """Compute conversion scaling factor f(x, u, history) and clip to [0, 1]."""
+        g_u = np.dot(u, self.w_u)
+        g_x = np.dot(x, self.w_x)
+        # ctx corresponds to gamma(history) factor which inherently models recency/saturation
+        prob = ctx * g_u * g_x
+        return float(np.clip(prob, 0.0, 1.0))
+
+    def sample_survival(
+        self, u: np.ndarray, x: np.ndarray, ctx: float, t: float, horizon: float, rng: np.random.Generator
+    ) -> List[float]:
+        """Sample at most 1 conversion delay based on the survival formulation."""
+        prob = self.conversion_probability(u, x, ctx)
+        if rng.uniform() < prob:
+            delay = rng.exponential(1.0 / self.alpha) # TODO : préciser si alpha est E(X) ou 1/E(X)
+            if t + delay <= horizon:
+                return [delay]
+        return []
+
+    def kappa(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float) -> float:
+        return 0.0
+
+    def lambda_(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float, t: float, s: float) -> float:
+        f = self.conversion_probability(u, x, ctx)
+        return f * self.alpha * np.exp(-self.alpha * s)
+
+    def lambda_upper_bound(self, u: np.ndarray, x: np.ndarray, ctx: float, t: float, remaining: float) -> float:
+        f = self.conversion_probability(u, x, ctx)
+        return f * self.alpha
+
+    def expected_reward(self, u: np.ndarray, x: np.ndarray, ctx: float, y_func: Callable[[float], float], t: float, horizon: float) -> float:
+        f = self.conversion_probability(u, x, ctx)
+        remaining = horizon - t
+        if remaining <= 0.0:
+            return 0.0
+        return f * (1.0 - np.exp(-self.alpha * remaining))

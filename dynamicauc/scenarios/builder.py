@@ -63,6 +63,7 @@ from dynamicauc.primitives import (
     RecencyDisplayKernel,
     CompetitorExtinctionKernel,
     MixedKernel,
+    SurvivalKernel,
     # Gammas
     Gamma,
     AdditiveGamma,
@@ -103,6 +104,8 @@ def create_kernel(name: str, **kwargs) -> RewardKernel:
         return RecencyDisplayKernel(**kwargs)
     elif name == "competitor-extinction":
         return CompetitorExtinctionKernel(**kwargs)
+    elif name == "survival":
+        return SurvivalKernel(**kwargs)
     elif name == "mixed":
         base_kernel_cfg = kwargs.pop("base_kernel")
         base_kernel = create_kernel(base_kernel_cfg["name"], **base_kernel_cfg.get("params", {}))

@@ -26,6 +26,7 @@ from dynamicauc.primitives import (
     RecencyDisplayKernel,
     CompetitorExtinctionKernel,
     MixedKernel,
+    SurvivalKernel,
     # Gammas
     Gamma,
     AdditiveGamma,
@@ -68,6 +69,7 @@ __all__ = [
     "RecencyDisplayKernel",
     "CompetitorExtinctionKernel",
     "MixedKernel",
+    "SurvivalKernel",
     "Gamma",
     "AdditiveGamma",
     "MultiplicativeGamma",
