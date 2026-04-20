@@ -25,7 +25,7 @@ The fastest way to get started:
     from dynamicauc.simulator import Simulator
     
     # Create a scenario from preset
-    scenario = dac.make("saturation-first-price-uniform")
+    scenario = dac.make("saturation-second-price-uniform")
     
     # Run simulations
     sim = Simulator(scenario, campaign_cfg={
@@ -43,19 +43,21 @@ The fastest way to get started:
 Method 1: PRESET (Fastest, reproducible, good for benchmarks)
 ──────────────────────────────────────────────────────────────
 
-    scenario = dac.make("saturation-first-price-uniform")
+    scenario = dac.make("saturation-second-price-uniform")
     
 Available presets:
-    - "saturation-first-price-uniform"
+    - "paper-experiment-scenario"
+    - "saturation-second-price-uniform"
     - "recency-second-price-lognormal"
-    - "mixed-first-price-exponential"
+    - "mixed-second-price-exponential"
+    - "survival-second-price-lognormal"
 
 List all:
     print(dac.list_scenarios())
     print(dac.describe_scenarios())
 
 Get preset info:
-    info = dac.get_scenario_info("saturation-first-price-uniform")
+    info = dac.get_scenario_info("saturation-second-price-uniform")
     print(info["description"])
 
 
@@ -67,25 +69,27 @@ Method 2: BUILDER (Flexible, readable, recommended for custom setups)
         .with_kernel("saturation", base_rate=0.5, saturation_scale=10.0)
         .with_auction("first-price")
         .with_competition("uniform", low=0.0, high=20.0)
-        .with_arrival("poisson", breakpoints=[5.0], intensities=[0.1, 1.2])
+        .with_arrival("pwpoisson", breakpoints=[5.0], intensities=[0.1, 1.2])
         .with_display("iid", dim=3)
         .with_exogenous("trivial")
-        .with_policy("fipla")
         .with_horizon("fixed", value=15.0)
         .with_user_features("uniform", full_dim=3, observable_dim=3)
+        .with_probe("poisson")
+        .with_delay_sampler("single")
         .with_max_history(10)
         .build()
     )
 
 Available components:
     
-    Kernels: "saturation", "recency", "competitor-extinction", "mixed"
+    Kernels: "saturation", "recency", "competitor-extinction", "mixed", "survival"
     Auctions: "first-price", "second-price"
     Competition: "uniform", "lognormal", "exponential"
-    Arrival: "poisson"
-    Display: "iid", "catalogue", "fixed"
+    Arrival: "pwpoisson", "cstpoisson"
+    Display: "iid", "catalogue", "fixed", "normal"
     Exogenous: "trivial"
-    Policy: "fipla"
+    Probe: "poisson", "survival"
+    DelaySampler: "single", "multi"
 
 
 Method 3: HYBRID (Start from preset, customize parameters)
@@ -106,14 +110,15 @@ Method 3: HYBRID (Start from preset, customize parameters)
 
 The registry provides factory functions for each primitive type:
 
-    from dynamicauc.registry import (
+    from dynamicauc.scenarios.builder import (
         create_kernel,
         create_auction,
         create_competition,
         create_arrival,
         create_display_sampler,
         create_exogenous,
-        create_policy,
+        create_probe,
+        create_delay_sampler,
     )
     
     # Create individual primitives
@@ -193,7 +198,7 @@ Use the Gym environment for step-by-step simulation:
     import gymnasium as gym
     import dynamicauc as dac
     
-    scenario = dac.make("saturation-first-price-uniform")
+    scenario = dac.make("saturation-second-price-uniform")
     env = gym.make("DynamicAuction-v0", scenario=scenario, stochastic_reward=True)
     
     obs, info = env.reset(seed=42)
