@@ -11,7 +11,9 @@ from dynamicauc.primitives import (
     RewardKernel,
     HorizonGenerator,
     UserFeatureGenerator,
-    Gamma
+    Gamma,
+    ConversionProbe,
+    DelaySampler,
 )
 
 @dataclass
@@ -26,6 +28,8 @@ class Scenario:
     user_feature_generator: UserFeatureGenerator
     gamma: Gamma
     max_history: int
+    probe: ConversionProbe = None
+    delay_sampler: DelaySampler = None
     conversion_value: float = 1.0
 
 @dataclass

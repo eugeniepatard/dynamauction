@@ -229,7 +229,7 @@ class SurvivalKernel(RewardKernel):
     Each display generates at most one conversion.
 
     f(x, u, history) = gamma(history) * (U . W_u^T) * (X . W_x^T)
-    h(s) = alpha (Exponential baseline hazard)
+    h(s) = alpha (Exponential baseline hazard) : s ~ Exp(1 / alpha)
     """
 
     def __init__(self, w_u: np.ndarray, w_x: np.ndarray, alpha: float = 1.0):
@@ -244,17 +244,6 @@ class SurvivalKernel(RewardKernel):
         # ctx corresponds to gamma(history) factor which inherently models recency/saturation
         prob = ctx * g_u * g_x
         return float(np.clip(prob, 0.0, 1.0))
-
-    def sample_survival(
-        self, u: np.ndarray, x: np.ndarray, ctx: float, t: float, horizon: float, rng: np.random.Generator
-    ) -> List[float]:
-        """Sample at most 1 conversion delay based on the survival formulation."""
-        prob = self.conversion_probability(u, x, ctx)
-        if rng.uniform() < prob:
-            delay = rng.exponential(1.0 / self.alpha) # TODO : préciser si alpha est E(X) ou 1/E(X)
-            if t + delay <= horizon:
-                return [delay]
-        return []
 
     def kappa(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float) -> float:
         return 0.0

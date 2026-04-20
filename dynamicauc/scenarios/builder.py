@@ -5,21 +5,23 @@ Examples
 --------
     # Quick start with presets
     scenario = make("saturation-first-price-uniform")
-    
-    # Or use builder pattern
+
+    # Or use builder pattern — call order does not matter
     scenario = (
         ScenarioBuilder()
         .with_kernel("saturation", base_rate=0.5)
         .with_auction("first-price")
         .with_competition("uniform", low=0.0, high=20.0)
-        .with_arrival("poisson", breakpoints=[5.0], intensities=[0.1, 1.2])
+        .with_arrival("pwpoisson", breakpoints=[5.0], intensities=[0.1, 1.2])
         .with_display("catalogue", creatives=[[1.0, 0.0], [0.0, 1.0]])
         .with_exogenous("trivial")
         .with_horizon("fixed", value=10.0)
         .with_user_features("uniform", full_dim=3, observable_dim=3)
+        .with_probe("poisson")
+        .with_delay_sampler("single")
         .build()
     )
-    
+
     # List available configurations
     list_scenarios()
     get_scenario_info("saturation-first-price-uniform")
@@ -77,6 +79,14 @@ from dynamicauc.primitives import (
     NormalSampler,
     # Exogenous
     TrivialProcess,
+    # Conversion probes
+    ConversionProbe,
+    PoissonProbe,
+    SurvivalProbe,
+    # Delay samplers
+    DelaySampler,
+    SingleConversionSampler,
+    MultiConversionSampler,
 )
 
 # TODO : Créer un builder utilisant un fichier yaml
@@ -94,7 +104,8 @@ def create_gamma(name: str, **kwargs) -> Gamma:
     elif name == "constant":
         return ConstantGamma(**kwargs)
     else:
-        raise ValueError(f"Unknown gamma: {name}")
+        raise ValueError(f"Unknown gamma: {name!r}")
+
 
 def create_kernel(name: str, **kwargs) -> RewardKernel:
     """Create a RewardKernel by name and parameters."""
@@ -111,7 +122,7 @@ def create_kernel(name: str, **kwargs) -> RewardKernel:
         base_kernel = create_kernel(base_kernel_cfg["name"], **base_kernel_cfg.get("params", {}))
         return MixedKernel(base_kernel=base_kernel, **kwargs)
     else:
-        raise ValueError(f"Unknown kernel: {name}")
+        raise ValueError(f"Unknown kernel: {name!r}")
 
 
 def create_auction(name: str, **kwargs) -> AuctionRule:
@@ -121,7 +132,7 @@ def create_auction(name: str, **kwargs) -> AuctionRule:
     elif name == "second-price":
         return SecondPriceAuction(**kwargs)
     else:
-        raise ValueError(f"Unknown auction: {name}")
+        raise ValueError(f"Unknown auction: {name!r}")
 
 
 def create_competition(name: str, **kwargs) -> CompetitionDistribution:
@@ -133,7 +144,7 @@ def create_competition(name: str, **kwargs) -> CompetitionDistribution:
     elif name == "exponential":
         return ExponentialCompetition(**kwargs)
     else:
-        raise ValueError(f"Unknown competition: {name}")
+        raise ValueError(f"Unknown competition: {name!r}")
 
 
 def create_arrival(name: str, **kwargs) -> ArrivalProcess:
@@ -143,7 +154,7 @@ def create_arrival(name: str, **kwargs) -> ArrivalProcess:
     elif name == "cstpoisson":
         return ConstantPoisson(**kwargs)
     else:
-        raise ValueError(f"Unknown arrival: {name}")
+        raise ValueError(f"Unknown arrival: {name!r}")
 
 
 def create_display_sampler(name: str, **kwargs) -> DisplaySampler:
@@ -157,7 +168,7 @@ def create_display_sampler(name: str, **kwargs) -> DisplaySampler:
     elif name == "normal":
         return NormalSampler(**kwargs)
     else:
-        raise ValueError(f"Unknown display sampler: {name}")
+        raise ValueError(f"Unknown display sampler: {name!r}")
 
 
 def create_exogenous(name: str, **kwargs) -> ExogenousProcess:
@@ -165,7 +176,7 @@ def create_exogenous(name: str, **kwargs) -> ExogenousProcess:
     if name == "trivial":
         return TrivialProcess(**kwargs)
     else:
-        raise ValueError(f"Unknown exogenous: {name}")
+        raise ValueError(f"Unknown exogenous: {name!r}")
 
 
 def create_policy(name: str, **kwargs) -> BiddingPolicy:
@@ -173,7 +184,7 @@ def create_policy(name: str, **kwargs) -> BiddingPolicy:
     if name == "fipla":
         return FiPlaPolicy(**kwargs)
     else:
-        raise ValueError(f"Unknown policy: {name}")
+        raise ValueError(f"Unknown policy: {name!r}")
 
 
 def create_user_feature_generator(name: str, **kwargs) -> UserFeatureGenerator:
@@ -185,7 +196,7 @@ def create_user_feature_generator(name: str, **kwargs) -> UserFeatureGenerator:
     elif name == "fixed":
         return FixedUser(**kwargs)
     else:
-        raise ValueError(f"Unknown user feature generator: {name}")
+        raise ValueError(f"Unknown user feature generator: {name!r}")
 
 
 def create_horizon_generator(name: str, **kwargs) -> HorizonGenerator:
@@ -195,13 +206,48 @@ def create_horizon_generator(name: str, **kwargs) -> HorizonGenerator:
     elif name == "exponential":
         return ExponentialHorizon(**kwargs)
     else:
-        raise ValueError(f"Unknown horizon generator: {name}")
+        raise ValueError(f"Unknown horizon generator: {name!r}")
+
+
+def create_probe(name: str, kernel: RewardKernel, **kwargs) -> ConversionProbe:
+    """
+    Create a ConversionProbe by name, wrapping a fully-constructed kernel.
+
+    Always call this *after* the kernel has been finalised (i.e. inside build()).
+    """
+    if name == "poisson":
+        return PoissonProbe(kernel=kernel, **kwargs)
+    elif name == "survival":
+        return SurvivalProbe(kernel=kernel, **kwargs)
+    else:
+        raise ValueError(f"Unknown probe: {name!r}")
+
+
+def create_delay_sampler(name: str, **kwargs) -> DelaySampler:
+    """
+    Create a DelaySampler by name.
+
+    Note: SingleConversionSampler and MultiConversionSampler receive the probe
+    at runtime via sample(), not at construction time, so no probe is passed here.
+    """
+    if name == "single":
+        return SingleConversionSampler(**kwargs)
+    elif name == "multi":
+        return MultiConversionSampler(**kwargs)
+    else:
+        raise ValueError(f"Unknown delay sampler: {name!r}")
 
 
 # ── Scenario builder (fluent API) ──────────────────────────────────────────────
 
 class ScenarioBuilder:
-    """Fluent builder for constructing scenarios programmatically."""
+    """
+    Fluent builder for constructing Scenario objects programmatically.
+
+    Call order is irrelevant: probe and delay_sampler configurations are stored
+    as (name, params) tuples and resolved inside build() after all components
+    (especially the kernel) have been finalised and defaults applied.
+    """
 
     def __init__(self):
         self._kernel: Optional[RewardKernel] = None
@@ -214,6 +260,11 @@ class ScenarioBuilder:
         self._user_feature_generator: Optional[UserFeatureGenerator] = None
         self._gamma: Optional[Gamma] = None
         self._max_history: int = 10
+        # Deferred: resolved in build() so call order never matters
+        self._probe_cfg: Optional[Tuple[str, dict]] = None
+        self._delay_sampler_cfg: Optional[Tuple[str, dict]] = None
+
+    # ── Component setters ──────────────────────────────────────────────────────
 
     def with_kernel(self, name: str, **params) -> ScenarioBuilder:
         """Set the reward kernel."""
@@ -265,9 +316,31 @@ class ScenarioBuilder:
         self._max_history = max_history
         return self
 
+    def with_probe(self, name: str, **params) -> ScenarioBuilder:
+        """
+        Set the conversion probe by name.
+        """
+        self._probe_cfg = (name, params)
+        return self
+
+    def with_delay_sampler(self, name: str, **params) -> ScenarioBuilder:
+        """
+        Set the delay sampler by name ('single' or 'multi').
+        """
+        self._delay_sampler_cfg = (name, params)
+        return self
+
+    # ── Build ──────────────────────────────────────────────────────────────────
+
     def build(self) -> Scenario:
-        """Build the scenario."""
-        # Apply defaults if not set
+        """
+        Finalise and return the Scenario.
+
+        Resolution order inside build():
+          1. All primitive components (kernel first, then the rest).
+          2. Probe  — needs the finalised kernel.
+          3. DelaySampler — independent of probe at construction time.
+        """
         if self._kernel is None:
             self._kernel = SaturationKernel()
         if self._auction is None:
@@ -289,6 +362,18 @@ class ScenarioBuilder:
         if self._max_history is None:
             self._max_history = 10
 
+        if self._probe_cfg is not None:
+            probe_name, probe_params = self._probe_cfg
+            probe: ConversionProbe = create_probe(probe_name, self._kernel, **probe_params)
+        else:
+            probe = PoissonProbe(kernel=self._kernel)
+
+        if self._delay_sampler_cfg is not None:
+            ds_name, ds_params = self._delay_sampler_cfg
+            delay_sampler: DelaySampler = create_delay_sampler(ds_name, **ds_params)
+        else:
+            delay_sampler = SingleConversionSampler()
+
         return Scenario(
             auction=self._auction,
             competition=self._competition,
@@ -300,6 +385,8 @@ class ScenarioBuilder:
             user_feature_generator=self._user_feature_generator,
             gamma=self._gamma,
             max_history=self._max_history,
+            probe=probe,
+            delay_sampler=delay_sampler,
         )
 
 
@@ -312,39 +399,43 @@ def make(scenario_id: str, **overrides) -> Scenario:
     Parameters
     ----------
     scenario_id : str
-        Preset scenario identifier (e.g., "saturation-first-price-uniform")
-    **overrides : dict
-        Optional parameter overrides (e.g., horizon=20.0, user_features=[0.1, 0.2])
+        Preset scenario identifier (e.g., "saturation-first-price-uniform").
+    **overrides :
+        Optional parameter overrides using underscore-separated paths,
+        e.g. ``kernel_base_rate=0.5``, ``horizon_value=20.0``, ``max_history=5``.
 
     Returns
     -------
-    scenario : Scenario
+    Scenario
 
     Examples
     --------
     >>> scenario = make("saturation-first-price-uniform")
-    >>> scenario = make("saturation-first-price-uniform", horizon_params_value=20.0)
+    >>> scenario = make("saturation-first-price-uniform", horizon_value=20.0)
     """
     if scenario_id not in SCENARIO_PRESETS:
-        raise ValueError(f"Unknown scenario: {scenario_id}")
+        raise ValueError(f"Unknown scenario: {scenario_id!r}")
 
-    # 1. Deep copy the preset to avoid side effects
-    import copy
     preset = copy.deepcopy(SCENARIO_PRESETS[scenario_id])
     preset.pop("description", None)
 
-    def set_nested_value(d: dict, path_parts: list, value: Any):
+    # ── Nested override helper ─────────────────────────────────────────────────
+
+    def set_nested_value(d: dict, path_parts: list, value: Any) -> None:
         """
-        Surgically injects values into nested components.
+        Surgically inject a value into a nested preset dict.
+
+        Tries to match the longest prefix of path_parts to an existing key
+        (at top level or inside 'params'), then recurses into sub-dicts.
+        Falls back to writing an unknown key into 'params'.
         """
         for i in range(len(path_parts), 0, -1):
             candidate_key = "_".join(path_parts[:i])
             remaining_path = path_parts[i:]
 
-            # Check if candidate_key exists in the current dictionary or its 'params'
             target = None
             in_params = False
-            
+
             if candidate_key in d:
                 target = d[candidate_key]
             elif "params" in d and candidate_key in d["params"]:
@@ -353,73 +444,83 @@ def make(scenario_id: str, **overrides) -> Scenario:
 
             if target is not None:
                 if not remaining_path:
-                    # BASE CASE: We found the actual parameter to set
-                    if "params" not in d: d["params"] = {}
-                    # If it was already in params, set it there, else set it in d
+                    # Base case: set the value
+                    if "params" not in d:
+                        d["params"] = {}
                     if in_params:
                         d["params"][candidate_key] = value
                     else:
-                        # If it's a top level attr of the dict (not a sub-component)
                         d[candidate_key] = value
                     return
-                
-                # RECURSIVE STEP: We found a sub-dictionary (like base_kernel)
+                # Recursive case: descend into a sub-dict
                 if isinstance(target, dict):
-                    return set_nested_value(target, remaining_path, value)
+                    set_nested_value(target, remaining_path, value)
+                    return
 
-        # If no match found at all, it's a new parameter at the current level
-        if "params" not in d: d["params"] = {}
+        # No match: add as a new param
+        if "params" not in d:
+            d["params"] = {}
         d["params"]["_".join(path_parts)] = value
-    # -----------------------
 
-    # 2. Process underscore overrides (e.g., kernel_base_kernel_saturation_scale)
+    # ── Apply overrides ────────────────────────────────────────────────────────
+
     for key, value in list(overrides.items()):
         if "_" in key:
             parts = key.split("_")
             prefix = parts[0]
             if prefix in preset:
-                # We pass everything after the prefix (e.g., ["base", "kernel", "saturation", "scale"])
                 set_nested_value(preset[prefix], parts[1:], value)
-                overrides.pop(key)
+                del overrides[key]
 
-    # 3. Standard top-level overrides (horizon, user_features)
     if "max_history" in overrides:
         preset["max_history"] = overrides.pop("max_history")
 
-    # 4. Build the scenario using the updated preset dict
+    # ── Assemble via builder ───────────────────────────────────────────────────
+
     builder = ScenarioBuilder()
-    
-    # Kernel (Mixed or otherwise) now receives the correctly nested 'base_kernel' dict
+
     k_cfg = preset.pop("kernel")
     builder.with_kernel(k_cfg["name"], **k_cfg.get("params", {}))
-    
+
     a_cfg = preset.pop("auction")
     builder.with_auction(a_cfg["name"], **a_cfg.get("params", {}))
-    
+
     c_cfg = preset.pop("competition")
     builder.with_competition(c_cfg["name"], **c_cfg.get("params", {}))
-    
+
     arr_cfg = preset.pop("arrival")
     builder.with_arrival(arr_cfg["name"], **arr_cfg.get("params", {}))
-    
+
     disp_cfg = preset.pop("display")
     builder.with_display(disp_cfg["name"], **disp_cfg.get("params", {}))
-    
+
     exo_cfg = preset.pop("exogenous")
     builder.with_exogenous(exo_cfg["name"], **exo_cfg.get("params", {}))
-    
+
     g_cfg = preset.pop("gamma", {"name": "additive"})
     builder.with_gamma(g_cfg["name"], **g_cfg.get("params", {}))
-    
+
     user_cfg = preset.pop("user")
     builder.with_user_features(user_cfg["name"], **user_cfg.get("params", {}))
-    
+
     h_cfg = preset.pop("horizon")
     builder.with_horizon(h_cfg["name"], **h_cfg.get("params", {}))
-    
+
     builder.with_max_history(preset.get("max_history", 10))
 
+    # Probe and delay sampler are optional in presets
+    if "probe" in preset:
+        p_cfg = preset.pop("probe")
+        builder.with_probe(p_cfg["name"], **p_cfg.get("params", {}))
+
+    if "delay_sampler" in preset:
+        ds_cfg = preset.pop("delay_sampler")
+        builder.with_delay_sampler(ds_cfg["name"], **ds_cfg.get("params", {}))
+
     return builder.build()
+
+
+# ── Inspection helpers ─────────────────────────────────────────────────────────
 
 def list_scenarios() -> List[str]:
     """Return list of available scenario preset IDs."""
@@ -429,11 +530,16 @@ def list_scenarios() -> List[str]:
 def get_scenario_info(scenario_id: str, verbose: bool = True) -> Dict[str, Any]:
     """
     Get the full specification of a scenario preset.
-    If verbose=True, prints a formatted tree of all parameters.
+
+    Parameters
+    ----------
+    scenario_id : str
+    verbose : bool
+        If True, prints a formatted parameter tree to stdout.
     """
     if scenario_id not in SCENARIO_PRESETS:
-        raise ValueError(f"Unknown scenario: {scenario_id}")
-    
+        raise ValueError(f"Unknown scenario: {scenario_id!r}")
+
     preset = SCENARIO_PRESETS[scenario_id]
 
     if verbose:
@@ -442,32 +548,27 @@ def get_scenario_info(scenario_id: str, verbose: bool = True) -> Dict[str, Any]:
         print(f"Description: {preset.get('description', 'N/A')}")
         print("-" * 60)
 
-        def print_nested(d, indent=0):
+        def print_nested(d: dict, indent: int = 0) -> None:
             for key, value in d.items():
-                if key == "description": continue
+                if key == "description":
+                    continue
                 if isinstance(value, dict):
                     print("  " * indent + f"{key}:")
                     print_nested(value, indent + 1)
                 else:
                     print("  " * indent + f"{key}: {value}")
 
-        # Start printing from the top level (excluding description)
-        content = {k: v for k, v in preset.items() if k != 'description'}
-        print_nested(content)
+        print_nested({k: v for k, v in preset.items() if k != "description"})
         print("=" * 60 + "\n")
 
     return preset
 
 
-# ── Pretty printing ────────────────────────────────────────────────────────────
-
 def describe_scenarios() -> str:
-    """Return a concise list of IDs and descriptions."""
+    """Return a concise table of IDs and descriptions."""
     lines = ["Available Scenarios", "=" * 60]
     for scenario_id in list_scenarios():
-        # verbose=False prevents the full parameter tree from printing
         info = get_scenario_info(scenario_id, verbose=False)
         lines.append(f"{scenario_id:<35} | {info.get('description', 'N/A')}")
-    
     lines.append("\n* Use get_scenario_info(scenario_id) for full technical specs.")
     return "\n".join(lines)

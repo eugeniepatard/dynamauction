@@ -19,53 +19,6 @@ OBSERVATION_KEYS= ["t", "ctx", "step", "user_features",
                    "conversion_times_since_last_step"]
 # TODO : Réunir les paramètres de l'env dans State
 
-# TODO : Changer le delaysapler dans un autre fichier
-
-class DelaySampler(ABC):
-    """Strategy for sampling delayed conversions."""
-    @abstractmethod
-    def sample(
-        self, kernel: RewardKernel, u: np.ndarray, x: np.ndarray, ctx: float, 
-        y_func: Callable[[float], float], t: float, horizon: float, rng: np.random.Generator
-    ) -> List[float]:
-        pass
-
-class OgataThinningSampler(DelaySampler):
-    """Samples delays using Ogata's thinning algorithm for general point processes."""
-    def sample(
-        self, kernel: RewardKernel, u: np.ndarray, x: np.ndarray, ctx: float, 
-        y_func: Callable[[float], float], t: float, horizon: float, rng: np.random.Generator
-    ) -> List[float]:
-        remaining = horizon - t
-        if remaining <= 0.0:
-            return []
-        lam_max = kernel.lambda_upper_bound(u, x, ctx, t, remaining)
-        if lam_max <= 0.0:
-            return []
-
-        delays: List[float] = []
-        s = 0.0
-        while s < remaining:
-            s += rng.exponential(1.0 / lam_max)
-            if s >= remaining:
-                break
-            lam = kernel.lambda_(u, x, ctx, y_func(t + s), t, s)
-            if rng.uniform() < lam / lam_max:
-                delays.append(s)
-        return delays
-
-class SurvivalSampler(DelaySampler):
-    """Samples delays for survival/hazard-based kernels (at most 1 conversion)."""
-    def sample(
-        self, kernel: RewardKernel, u: np.ndarray, x: np.ndarray, ctx: float, 
-        y_func: Callable[[float], float], t: float, horizon: float, rng: np.random.Generator
-    ) -> List[float]:
-        if hasattr(kernel, "sample_survival"):
-            return kernel.sample_survival(u, x, ctx, t, horizon, rng)
-        else:
-            raise TypeError("Kernel does not support survival sampling. Implement `sample_survival`.")
-
-
 class AuctionEnv(Env):
     """
     Gym-style environment for repeated auctions with delayed rewards studying one user features.
@@ -80,11 +33,8 @@ class AuctionEnv(Env):
         
         self.kernel: RewardKernel = scenario.kernel
         self.conversion_value = scenario.conversion_value
-
-        if hasattr(self.kernel, "sample_survival"):
-            self.delay_sampler = SurvivalSampler()
-        else:
-            self.delay_sampler = OgataThinningSampler()
+        self.probe = scenario.probe
+        self.delay_sampler = scenario.delay_sampler
 
         # --------------Gym initialization params -----------------
         # TODO : paramétrer la lower and upper bound de l'action space
@@ -231,7 +181,7 @@ class AuctionEnv(Env):
                 ))
 
             # Handle Delayed conversions via the configured sampler 
-            for s in self.delay_sampler.sample(sc.kernel, u, x, auction_state.ctx, y_func, auction_state.t, horizon, rng):
+            for s in self.delay_sampler.sample(self.probe, u, x, auction_state.ctx, y_func, auction_state.t, horizon, rng):
                 conversions_data.append(dict(
                     step=auction_state.t,
                     auction_id=auction_state.step_idx,

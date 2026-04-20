@@ -3,13 +3,13 @@ import numpy as np
 from unittest.mock import MagicMock
 from gymnasium.utils.env_checker import check_env
 from dynamicauc import AuctionEnv, OBSERVATION_KEYS
-from dynamicauc.env import OgataThinningSampler
+from dynamicauc.primitives import PoissonProbe
 
 @pytest.fixture
 def mock_scenario():
     # Use a plain MagicMock or a loosely defined spec
     scenario = MagicMock()
-    
+
     # 1. Manually create the nested mocks that the Env expects
     scenario.user_feature_generator = MagicMock()
     scenario.display_sampler = MagicMock()
@@ -19,38 +19,44 @@ def mock_scenario():
     scenario.kernel = MagicMock()
     scenario.competition = MagicMock()
     scenario.auction = MagicMock()
+    scenario.probe = MagicMock()
+    scenario.delay_sampler = MagicMock()
 
     # 2. Setup simple return values
     scenario.user_feature_generator.generate.return_value = np.array([1.0, 0.5])
     scenario.user_feature_generator.get_observable_features.return_value = np.array([1.0])
     scenario.user_feature_generator.observable_dim = 1
-    
+
     scenario.display_sampler.sample.return_value = np.array([0.1])
     scenario.display_sampler.dim = 1
-    
+
     scenario.horizon_generator.sample.return_value = 10.0
     scenario.arrival.sample_times.return_value = np.array([1.0, 2.0, 5.0])
-    
+
     scenario.exogenous.y = lambda t: 0.0
     scenario.exogenous.generate = MagicMock()
-    
+
     # Kernel properties
     scenario.kernel.kappa.return_value = 0.0
     scenario.kernel.lambda_.return_value = 1.0
     scenario.kernel.lambda_upper_bound.return_value = 1.0
-    
+    scenario.kernel.expected_reward.return_value = 0.5
+
     scenario.gamma = MagicMock()
     scenario.gamma.initiate_context.return_value = 0.0
     scenario.gamma.update_context.side_effect = lambda ctx, x, u, t, t_past: ctx + 1.0
-    
+
     # Competition & Auction
     scenario.competition.sample.return_value = 0.5
     scenario.auction.win.side_effect = lambda bid, comp: bid > comp
     scenario.auction.payment.side_effect = lambda bid, comp: comp
-    
+
+    # Delay sampler returns no delays by default
+    scenario.delay_sampler.sample.return_value = []
+
     scenario.max_history = 5
     scenario.conversion_value = 10.0
-    
+
     return scenario
 
 def test_gym_api_conformity(mock_scenario):
@@ -122,27 +128,27 @@ def test_episode_termination(mock_scenario):
     assert done3 is True
     assert obs["t"] == env.horizon
 
-# --- Statistical Test for Ogata Thinning ---
+# --- Statistical Test for PoissonProbe (Ogata thinning) ---
 
-def test_ogata_thinning_statistical_properties():
+def test_poisson_probe_statistical_properties():
     """
-    If lambda is constant 1.0 and horizon is large, 
-    number of samples should follow Poisson(1.0 * horizon).
+    PoissonProbe with constant lambda=1.0 over a large horizon should produce
+    counts that follow Poisson(1.0 * horizon).
     """
     kernel = MagicMock()
     kernel.lambda_.return_value = 1.0
     kernel.lambda_upper_bound.return_value = 1.0
-    
+
+    probe = PoissonProbe(kernel=kernel)
     rng = np.random.default_rng(42)
     u, x = np.array([]), np.array([])
     y_func = lambda t: 0
     horizon = 100.0
-    sampler = OgataThinningSampler()
-    
+
     sample_counts = []
     for _ in range(200):
-        delays = sampler.sample(kernel, u, x, 0.0, y_func, 0.0, horizon, rng)
+        delays = probe.sample_all(u, x, 0.0, y_func, 0.0, horizon, rng)
         sample_counts.append(len(delays))
-    
+
     mean_samples = np.mean(sample_counts)
     assert 95 <= mean_samples <= 105

@@ -17,3 +17,37 @@ def test_scenario_builder():
     assert scenario is not None
     assert scenario.auction.__class__.__name__ == "FirstPriceAuction"
     assert scenario.horizon_generator.__class__.__name__ == "FixedHorizon"
+
+def test_builder_defaults_probe_and_delay_sampler():
+    scenario = dac.ScenarioBuilder().build()
+    assert scenario.probe.__class__.__name__ == "PoissonProbe"
+    assert scenario.delay_sampler.__class__.__name__ == "SingleConversionSampler"
+
+def test_builder_with_poisson_probe_and_single_sampler():
+    scenario = (
+        dac.ScenarioBuilder()
+        .with_kernel("saturation", base_rate=0.5)
+        .with_probe("poisson")
+        .with_delay_sampler("single")
+        .build()
+    )
+    assert scenario.probe.__class__.__name__ == "PoissonProbe"
+    assert scenario.delay_sampler.__class__.__name__ == "SingleConversionSampler"
+
+def test_builder_with_survival_probe_and_multi_sampler():
+    import numpy as np
+    scenario = (
+        dac.ScenarioBuilder()
+        .with_kernel("survival", w_u=np.ones(3), w_x=np.ones(3), alpha=1.0)
+        .with_probe("survival")
+        .with_delay_sampler("multi")
+        .build()
+    )
+    assert scenario.probe.__class__.__name__ == "SurvivalProbe"
+    assert scenario.delay_sampler.__class__.__name__ == "MultiConversionSampler"
+
+def test_make_paper_experiment_scenario():
+    scenario = dac.make("paper-experiment-scenario")
+    assert scenario is not None
+    assert scenario.kernel.__class__.__name__ == "MixedKernel"
+    assert scenario.max_history == 1
