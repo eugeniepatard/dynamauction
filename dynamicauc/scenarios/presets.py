@@ -3,15 +3,9 @@ Registry of preset scenarios.
 """
 
 SCENARIO_PRESETS = {
-    "paper-experiment-scenario": {
-        "description": "Basic scenario used in the paper experiments",
-        "kernel": {
-            "name": "mixed",
-            "params": {
-                "kappa_base_rate": 0.0,
-                "base_kernel": {"name": "saturation", "params": {"base_rate": 0.5, "saturation_scale": 10.0, "delay_rate": 0.5}},
-            },
-        },
+    "survival-second-price-exponential": {
+        "description": "Survival kernel with single conversion per display, second-price and lognormal competition",
+        "kernel": {"name": "survival", "params": {"w_u": [1.0, 1.0, 1.0], "w_x": [1.0, 1.0, 1.0], "alpha": 1.0}},
         "auction": {"name": "second-price"},
         "competition": {"name": "lognormal", "params": {"mu": 0.0, "sigma": 1.0}},
         "arrival": {"name": "cstpoisson", "params": {"rate": 1.0}},
@@ -21,8 +15,8 @@ SCENARIO_PRESETS = {
         "user": {"name": "normal", "params": {"full_dim": 3, "observable_dim": 3, "mu": 0.0, "sigma": 1.0}},
         "gamma": {"name": "additive"},
         "max_history": 1,
-        "probe": {"name": "poisson"},
-        "delay_sampler": {"name": "multi"},
+        "probe": {"name": "survival"},
+        "delay_sampler": {"name": "single"},
     },
 
     "saturation-second-price-uniform": {
@@ -75,20 +69,5 @@ SCENARIO_PRESETS = {
         "max_history": 10,
         "probe": {"name": "poisson"},
         "delay_sampler": {"name": "multi"},
-    },
-    "survival-second-price-lognormal": {
-        "description": "Survival kernel with single conversion per display, second-price and lognormal competition",
-        "kernel": {"name": "survival", "params": {"w_u": [1.0, 1.0, 1.0], "w_x": [1.0, 1.0, 1.0], "alpha": 1.0}},
-        "auction": {"name": "second-price"},
-        "competition": {"name": "lognormal", "params": {"mu": 0.0, "sigma": 1.0}},
-        "arrival": {"name": "cstpoisson", "params": {"rate": 1.0}},
-        "display": {"name": "iid", "params": {"dim": 3}},
-        "exogenous": {"name": "trivial"},
-        "horizon": {"name": "fixed", "params": {"value": 30.0}},
-        "user": {"name": "uniform", "params": {"full_dim": 3, "observable_dim": 3}},
-        "gamma": {"name": "additive"},
-        "max_history": 10,
-        "probe": {"name": "survival"},
-        "delay_sampler": {"name": "single"},
     },
 }
