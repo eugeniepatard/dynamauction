@@ -7,6 +7,7 @@ from dynamicauc.scenarios import (
     get_scenario_info,
     describe_scenarios,
 )
+from dynamicauc.wrappers import FlatAuctionObsWrapper, BidScaleWrapper
 from dynamicauc.dataclasses import Scenario
 from dynamicauc.simulator import Simulator
 from dynamicauc.env import AuctionEnv, OBSERVATION_KEYS
@@ -82,6 +83,10 @@ __all__ = [
     "UserFeatureGenerator",
     "UniformUser",
     AuctionEnv,
+    ConstantPolicy,
+    RandomPolicy,
+    FlatAuctionObsWrapper,
+    BidScaleWrapper,
     OBSERVATION_KEYS,
 ]
 
