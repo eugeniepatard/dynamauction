@@ -8,3 +8,8 @@ simulate/outputs/
 docs/outputs/
 benchmark/plots/*
 !benchmark/plots/.gitkeep
+outputs/*
+benchmark/logs/*
+benchmark/models/*
+benchmark/outputs/*
+benchmark/results/*
