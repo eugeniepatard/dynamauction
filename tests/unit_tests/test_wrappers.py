@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 from dynamicauc import AuctionEnv, FlatAuctionObsWrapper, BidScaleWrapper
 
 
-# TODO : Rechecker les tests
+# TODO : Rechecker les tests + ajouter tests pour SB3 wrappers (VecNormalize, EvalCallback)
 
 @pytest.fixture
 def mock_scenario():

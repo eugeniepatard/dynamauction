@@ -4,6 +4,4 @@
 stable-baselines3[extra]>=2.3.0   # PPO, SAC, TD3 + TensorBoard callback
 shimmy>=0.2.0                      # Gymnasium/Gym compatibility
 
-# Open RL Benchmark
-rliable>=1.0.4
 tensorboard>=2.14.0

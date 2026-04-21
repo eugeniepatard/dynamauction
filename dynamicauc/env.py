@@ -29,7 +29,7 @@ class AuctionEnv(Env):
         super().__init__()
 
         self.scenario = scenario
-        self.rng : Optional[Generator] = None
+        self.rng : Generator = np.random.default_rng()
         
         self.kernel: RewardKernel = scenario.kernel
         self.conversion_value = scenario.conversion_value
@@ -70,8 +70,6 @@ class AuctionEnv(Env):
         super().reset(seed=seed)
         if seed is not None:
             self.rng = np.random.default_rng(seed)
-        else:
-            self.rng = np.random.default_rng(seed=42)
 
         # Generate a new user for this episode
         self.user_features = self.scenario.user_feature_generator.generate(self.rng)

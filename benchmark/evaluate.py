@@ -20,6 +20,7 @@ Quick start
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import pickle
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -31,55 +32,15 @@ from gymnasium import spaces
 import dynamicauc as dac
 from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
 
-from dynamicauc import FlatAuctionObsWrapper
-from .train_rl import (
+from benchmark.train_rl import (
     SCENARIO_ID,
     MODELS_DIR,
     load_model,
     _ALGO_CLS,
 )
+from dynamicauc.wrappers import SB3PolicyWrapper
 
 RESULTS_DIR = Path(__file__).parent / "results"
-
-
-# ── SB3 policy wrapper ─────────────────────────────────────────────────────────
-
-class SB3PolicyWrapper(BiddingPolicy):
-    """
-    Adapt a trained Stable-Baselines3 model to the ``BiddingPolicy`` interface.
-
-    The model was trained with ``FlatAuctionObsWrapper`` applied; this class
-    replicates that flattening exactly so that we can evaluate in a raw-Dict env.
-
-    Parameters
-    ----------
-    model : SB3 model (PPO / SAC / TD3)
-    raw_obs_space : gymnasium.spaces.Dict
-        The *original* observation space of ``AuctionEnv`` (before any wrapper).
-    """
-
-    def __init__(self, model, raw_obs_space: spaces.Dict) -> None:
-        self._model   = model
-        self._keys    = list(raw_obs_space.spaces.keys())
-        self._sp_dict = raw_obs_space.spaces
-
-    # ------------------------------------------------------------------
-    def _flatten(self, obs: Dict[str, Any]) -> np.ndarray:
-        """Mirror FlatAuctionObsWrapper.observation() exactly."""
-        parts = []
-        for key in self._keys:
-            v  = obs[key]
-            sp = self._sp_dict[key]
-            if isinstance(sp, spaces.Discrete):
-                parts.append(np.array([float(v)], dtype=np.float32))
-            else:
-                parts.append(np.asarray(v, dtype=np.float32).ravel())
-        return np.concatenate(parts)
-
-    def bid(self, observations: Dict[str, Any]) -> float:
-        flat = self._flatten(observations)
-        action, _ = self._model.predict(flat, deterministic=True)
-        return float(np.asarray(action).ravel()[0])
 
 
 # ── Evaluation configuration ───────────────────────────────────────────────────
@@ -101,20 +62,20 @@ def _run_episode(
 ) -> pd.DataFrame:
     obs, _info = env.reset(seed=seed)
     cum_reward  = 0.0
-    done        = False
     step        = 0
+    done        = False
     rows: List[dict] = []
 
     while not done:
         bid    = policy.bid(obs)
-        action = np.float32(bid)
+        action = np.array([bid], dtype=np.float32)
         obs, reward, done, _truncated, info = env.step(action)
         cum_reward += float(reward)
         step       += 1
         rows.append({
             "policy":          policy_name,
             "seed":            seed,
-            "step":            step,
+            "step":            obs["step"],
             "t":               float(obs["t"].ravel()[0]),
             "reward":          float(reward),
             "cum_reward":      cum_reward,
@@ -182,8 +143,13 @@ def get_rl_policies(
         if not Path(str(model_path) + ".zip").exists():
             print(f"  [WARNING] No saved model for {algo.upper()} at {model_path}.zip — skipping.")
             continue
-        model            = load_model(algo)
-        policies[algo.upper()] = SB3PolicyWrapper(model, obs_space)
+        obs_rms = None
+        obs_rms_path = MODELS_DIR / algo / "obs_rms.pkl"
+        if obs_rms_path.exists():
+            with open(obs_rms_path, "rb") as f:
+                obs_rms = pickle.load(f)
+        model = load_model(algo)
+        policies[algo.upper()] = SB3PolicyWrapper(model, obs_space, obs_rms=obs_rms)
         print(f"  Loaded {algo.upper()} ← {model_path}.zip")
 
     return policies

@@ -1,7 +1,9 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-from typing import List
+from typing import Any, Dict, List
+
+from dynamicauc.baseline.policies import BiddingPolicy
 
 """
 Wrappers for dynamicauc gym environments.
@@ -65,3 +67,48 @@ class BidScaleWrapper(gym.ActionWrapper):
 
     def action(self, action: np.ndarray) -> np.ndarray:
         return np.clip(action, 0.0, self._max_bid).astype(np.float32)
+
+# ── Policy wrapper ─────────────────────────────────────────────────────────────
+
+class SB3PolicyWrapper(BiddingPolicy):
+    """
+    Adapt a trained Stable-Baselines3 model to the ``BiddingPolicy`` interface.
+
+    The model was trained with ``FlatAuctionObsWrapper`` applied; this class
+    replicates that flattening exactly so that we can evaluate in a raw-Dict env.
+
+    Parameters
+    ----------
+    model : SB3 model (PPO / SAC / TD3)
+    raw_obs_space : gymnasium.spaces.Dict
+        The *original* observation space of ``AuctionEnv`` (before any wrapper).
+    """
+
+    def __init__(self, model, raw_obs_space: spaces.Dict, obs_rms=None) -> None:
+        self._model   = model
+        self._keys    = list(raw_obs_space.spaces.keys())
+        self._sp_dict = raw_obs_space.spaces
+        self._obs_rms = obs_rms  # RunningMeanStd from VecNormalize, or None
+
+    # ------------------------------------------------------------------
+    def _flatten(self, obs: Dict[str, Any]) -> np.ndarray:
+        """Mirror FlatAuctionObsWrapper.observation() exactly."""
+        parts = []
+        for key in self._keys:
+            v  = obs[key]
+            sp = self._sp_dict[key]
+            if isinstance(sp, spaces.Discrete):
+                parts.append(np.array([float(v)], dtype=np.float32))
+            else:
+                parts.append(np.asarray(v, dtype=np.float32).ravel())
+        return np.concatenate(parts)
+
+    def bid(self, observations: Dict[str, Any]) -> float:
+        flat = self._flatten(observations)
+        if self._obs_rms is not None:
+            flat = np.clip(
+                (flat - self._obs_rms.mean) / np.sqrt(self._obs_rms.var + 1e-8),
+                -10.0, 10.0,
+            ).astype(np.float32)
+        action, _ = self._model.predict(flat, deterministic=True)
+        return float(np.asarray(action).ravel()[0])

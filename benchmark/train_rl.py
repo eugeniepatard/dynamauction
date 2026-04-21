@@ -10,19 +10,41 @@ Quick start
     from benchmark.train_rl import train, train_all, TrainingConfig
     model = train("ppo")
     models = train_all(["ppo", "sac", "td3"], TrainingConfig(total_timesteps=200_000))
+
+Train with Hydra CLI
+-------------------
+
+    Single run (default algo = ppo):
+        python -m benchmark.train_rl
+
+    Select algorithm:
+        python -m benchmark.train_rl algo=sac
+        python -m benchmark.train_rl algo=td3 training.total_timesteps=1000000
+
+    Train all algorithms in parallel (one process per algo):
+        python -m benchmark.train_rl 'algo=ppo,sac,td3' --multirun
+
+Visualize training curves with TensorBoard
+-------------------------------------------
+    tensorboard --logdir benchmark/logs/ (during training in another terminal)
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
+import pickle
 from pathlib import Path
 from typing import Dict, List, Optional
+from tqdm import tqdm
 
 import gymnasium as gym
 from stable_baselines3 import PPO, SAC, TD3
+from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.callbacks import EvalCallback
+from stable_baselines3.common.vec_env import VecNormalize
 import dynamicauc as dac
+from dynamicauc.primitives import FixedHorizon
 
 import hydra
 from omegaconf import DictConfig
@@ -37,6 +59,8 @@ SCENARIO_ID   = "survival-second-price-exponential"
 @dataclass
 class TrainingConfig:
     total_timesteps: int   = 500_000
+    use_vec_normalize: bool = True
+    fixed_horizon: Optional[float] = None   # set via Python API; Hydra users control horizon via scenario_overrides
     n_envs:          int   = 4
     seed:            int   = 42
     learning_rate:   float = 3e-4
@@ -44,9 +68,10 @@ class TrainingConfig:
     max_bid:         float = 5.0
 
     # PPO
-    ppo_n_steps:    int = 1024
-    ppo_batch_size: int = 128
-    ppo_n_epochs:   int = 10
+    ppo_n_steps:      int   = 1024
+    ppo_batch_size:   int   = 128
+    ppo_n_epochs:     int   = 10
+    ppo_gae_lambda:   float = 0.90
 
     # SAC / TD3
     off_policy_batch_size:     int = 256
@@ -56,14 +81,29 @@ class TrainingConfig:
     eval_freq:       int = 10_000
     n_eval_episodes: int = 20
 
+    verbose: bool = True
+
 _ALGO_CLS: Dict[str, type] = {"ppo": PPO, "sac": SAC, "td3": TD3}
+
+
+class _SyncNormEvalCallback(EvalCallback):
+    """EvalCallback that syncs VecNormalize obs statistics from train to eval env."""
+
+    def __init__(self, eval_env, train_env: VecNormalize, **kwargs):
+        super().__init__(eval_env, **kwargs)
+        self._train_venv = train_env
+
+    def _on_step(self) -> bool:
+        if isinstance(self._train_venv, VecNormalize) and isinstance(self.eval_env, VecNormalize):
+            self.eval_env.obs_rms = deepcopy(self._train_venv.obs_rms)
+        return super()._on_step()
 
 
 def _build_model(algo: str, env, cfg: TrainingConfig, log_dir: Path):
     common = dict(
         policy="MlpPolicy",
         env=env,
-        verbose=1,
+        verbose=1 if cfg.verbose else 0,
         seed=cfg.seed,
         learning_rate=cfg.learning_rate,
         gamma=cfg.gamma,
@@ -75,6 +115,7 @@ def _build_model(algo: str, env, cfg: TrainingConfig, log_dir: Path):
             n_steps=cfg.ppo_n_steps,
             batch_size=cfg.ppo_batch_size,
             n_epochs=cfg.ppo_n_epochs,
+            gae_lambda=cfg.ppo_gae_lambda,
         )
     if algo == "sac":
         return SAC(
@@ -125,6 +166,8 @@ def train(
         raise ValueError(f"Unknown algo {algo!r}. Choose from {list(_ALGO_CLS)}")
 
     scenario = dac.make(SCENARIO_ID, **(scenario_overrides or {}))
+    if cfg.fixed_horizon is not None:
+        scenario.horizon_generator = FixedHorizon(cfg.fixed_horizon)
 
     log_dir   = LOGS_DIR   / algo
     model_dir = MODELS_DIR / algo
@@ -142,10 +185,15 @@ def train(
         seed=cfg.seed + 9_999,
     )
 
+    if cfg.use_vec_normalize:
+        train_env = VecNormalize(train_env, norm_obs=True, norm_reward=True)
+        eval_env  = VecNormalize(eval_env,  norm_obs=True, norm_reward=False, training=False)
+
     model = _build_model(algo, train_env, cfg, log_dir)
 
-    eval_cb = EvalCallback(
-        eval_env,
+    EvalCbCls = _SyncNormEvalCallback if cfg.use_vec_normalize else EvalCallback
+
+    common_kwargs = dict(
         best_model_save_path=str(model_dir),
         log_path=str(log_dir),
         eval_freq=max(cfg.eval_freq // cfg.n_envs, 1),
@@ -153,27 +201,39 @@ def train(
         deterministic=True,
         render=False,
     )
+    if cfg.use_vec_normalize:
+        common_kwargs["train_env"] = train_env
 
-    print(f"\n{'='*60}")
-    print(f"  Algorithm : {algo.upper()}")
-    print(f"  Timesteps : {cfg.total_timesteps:,}")
-    print(f"  Scenario  : {SCENARIO_ID}")
-    print(f"  Models  → {model_dir}")
-    print(f"  Logs    → {log_dir}")
-    print(f"{'='*60}\n")
+    eval_cb = EvalCbCls(eval_env, **common_kwargs)
+
+    if cfg.verbose:
+        print(f"\n{'='*60}")
+        print(f"  Algorithm : {algo.upper()}")
+        print(f"  Timesteps : {cfg.total_timesteps:,}")
+        print(f"  Scenario  : {SCENARIO_ID}")
+        print(f"  Horizon   : {'fixed=' + str(cfg.fixed_horizon) if cfg.fixed_horizon else 'exponential'}")
+        print(f"  VecNorm   : {cfg.use_vec_normalize}")
+        print(f"  Models  → {model_dir}")
+        print(f"  Logs    → {log_dir}")
+        print(f"{'='*60}\n")
 
     model.learn(
         total_timesteps=cfg.total_timesteps,
         callback=eval_cb,
         tb_log_name=algo,
-        progress_bar=True,
+        progress_bar=cfg.verbose,
         reset_num_timesteps=True,
     )
 
+    if cfg.use_vec_normalize:
+        with open(model_dir / "obs_rms.pkl", "wb") as f:
+            pickle.dump(train_env.obs_rms, f)
+
     final_path = model_dir / "final_model"
     model.save(str(final_path))
-    print(f"[{algo.upper()}] Final model → {final_path}.zip")
-    print(f"[{algo.upper()}] Best  model → {model_dir / 'best_model'}.zip")
+    if cfg.verbose:
+        print(f"[{algo.upper()}] Final model → {final_path}.zip")
+        print(f"[{algo.upper()}] Best  model → {model_dir / 'best_model'}.zip")
 
     return model
 
@@ -184,7 +244,10 @@ def train_all(
     scenario_overrides: Optional[dict] = None,
 ) -> Dict[str, object]:
     """Train all listed algorithms sequentially. Returns ``{algo: model}``."""
-    return {a: train(a, cfg, scenario_overrides) for a in algos}
+    models = {}
+    for algo in tqdm(list(algos), desc="Algorithms", unit="algo", position=0, leave=True):
+        models[algo] = train(algo, cfg, scenario_overrides)
+    return models
 
 
 def load_model(algo: str, path: Optional[str | Path] = None) -> object:
@@ -208,17 +271,19 @@ def _cfg_to_training_config(cfg: DictConfig) -> TrainingConfig:
     a   = cfg.algo
     kw  = dict(
         total_timesteps=t.total_timesteps,
+        use_vec_normalize=t.use_vec_normalize,
         n_envs=t.n_envs,
         seed=t.seed,
         max_bid=t.max_bid,
         eval_freq=t.eval_freq,
         n_eval_episodes=t.n_eval_episodes,
+        verbose=t.verbose,
         learning_rate=a.learning_rate,
         gamma=a.gamma,
     )
     if a.name == "ppo":
         kw.update(ppo_n_steps=a.n_steps, ppo_batch_size=a.batch_size,
-                  ppo_n_epochs=a.n_epochs)
+                  ppo_n_epochs=a.n_epochs, ppo_gae_lambda=a.gae_lambda)
     else:
         kw.update(off_policy_batch_size=a.batch_size,
                   off_policy_learning_starts=a.learning_starts)
@@ -227,19 +292,7 @@ def _cfg_to_training_config(cfg: DictConfig) -> TrainingConfig:
 
 @hydra.main(version_base=None, config_path="conf", config_name="train")
 def main(cfg: DictConfig) -> None:
-    """
-    Train one algorithm with the config resolved by Hydra.
-
-    Single run (default algo = ppo):
-        python -m benchmark.train_rl
-
-    Select algorithm:
-        python -m benchmark.train_rl algo=sac
-        python -m benchmark.train_rl algo=td3 training.total_timesteps=1000000
-
-    Train all algorithms in parallel (one process per algo):
-        python -m benchmark.train_rl 'algo=ppo,sac,td3' --multirun
-    """
+    
     training_cfg = _cfg_to_training_config(cfg)
     scenario_overrides = dict(cfg.scenario_overrides) if cfg.scenario_overrides else {}
     train(cfg.algo.name, training_cfg, scenario_overrides)
