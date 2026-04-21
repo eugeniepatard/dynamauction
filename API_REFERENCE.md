@@ -227,3 +227,52 @@ Reward:
     - Stochastic reward based on the kernel and probe dynamics. Immediate conversions yield reward at the same step, while delayed conversions yield reward in future steps when they mature.
 
 **Note** : To learn how to use more in depth the dynamicauc gym environment, please refer to the `docs/dynamicauc_tutorial.ipynb` notebook.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+7. WRAPPERS
+═══════════════════════════════════════════════════════════════════════════════
+
+Three wrappers ship with dynamicauc to bridge the raw AuctionEnv with RL
+libraries and evaluation tools.
+
+    from dynamicauc import FlatAuctionObsWrapper, BidScaleWrapper
+    from dynamicauc.wrappers import SB3PolicyWrapper
+
+FlatAuctionObsWrapper (ObservationWrapper)
+──────────────────────────────────────────
+Flattens the raw Dict observation space into a 1-D float32 vector.
+Discrete fields are cast to float; Box fields are concatenated in insertion
+order. Required by any MLP-based RL policy (PPO, SAC, TD3).
+
+    env = gym.make("DynamicAuction-v0", scenario=scenario)
+    env = FlatAuctionObsWrapper(env)
+    # env.observation_space → Box(-inf, inf, shape=(N,), float32)
+
+BidScaleWrapper (ActionWrapper)
+────────────────────────────────
+Clips the action space from [0, 1e12] (raw env) to [0, max_bid].
+Prevents exploration in an unbounded range that destabilises RL training.
+Set max_bid to a value slightly above the expected optimal bid (e.g. 3× the
+median competing bid).
+
+    env = BidScaleWrapper(env, max_bid=3.0)
+    # env.action_space → Box(0, 3.0, shape=(1,), float32)
+
+SB3PolicyWrapper (BiddingPolicy adapter)
+─────────────────────────────────────────
+Adapts a trained SB3 model to the BiddingPolicy interface so it can be
+evaluated in a raw-Dict env (no wrappers). Replicates FlatAuctionObsWrapper
+internally and optionally applies VecNormalize statistics saved at train time.
+
+    import pickle
+    with open("models/ppo/obs_rms.pkl", "rb") as f:
+        obs_rms = pickle.load(f)
+
+    raw_env = gym.make("DynamicAuction-v0", scenario=scenario)
+    policy  = SB3PolicyWrapper(model, raw_env.observation_space, obs_rms=obs_rms)
+    bid     = policy.bid(obs)   # obs is a raw Dict
+
+Recommended training stack:
+
+    AuctionEnv → FlatAuctionObsWrapper → BidScaleWrapper → Monitor → VecNormalize

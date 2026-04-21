@@ -397,6 +397,74 @@ def plot_context_dynamics(
         _save(fig, filename)
     return fig
 
+def plot_bid_distributions(
+    df:       pd.DataFrame,
+    policies: Optional[List[str]] = None,
+    title:    str                 = "Bid Distributions vs Competing Bids",
+    save:     bool                = True,
+    filename: str                 = "bid_distributions.pdf",
+) -> plt.Figure:
+    """
+    For each policy, plot the distribution of the agent's bids vs the
+    competing bid distribution (shared across all policies since it comes
+    from the scenario, not the policy).
+
+    One subplot per policy, all on the same x-axis scale for easy comparison.
+    The competing bid distribution is shown as a reference in every panel.
+    """
+    _style()
+
+    plot_df = df[df["policy"].isin(policies)].copy() if policies else df.copy()
+    policy_names = list(plot_df["policy"].unique())
+
+    competing = plot_df["competing_bid"].dropna().values
+
+    n      = len(policy_names)
+    ncols  = min(3, n)
+    nrows  = (n + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols,
+                             figsize=(5 * ncols, 4 * nrows),
+                             sharey=False)
+    axes = np.array(axes).ravel()  # always iterable
+
+    x_max = float(np.percentile(
+        np.concatenate([competing, plot_df["bid"].values]), 99
+    ))
+
+    for idx, policy in enumerate(policy_names):
+        ax      = axes[idx]
+        bids    = plot_df.loc[plot_df["policy"] == policy, "bid"].values
+        color   = _color(policy, idx)
+
+        sns.kdeplot(competing, ax=ax, color="grey", lw=1.5,
+                    linestyle="--", label="Competing bid", fill=True,
+                    alpha=0.15, clip=(0, x_max))
+
+        sns.kdeplot(bids, ax=ax, color=color, lw=2,
+                    label=f"{policy} bids", fill=True,
+                    alpha=0.30, clip=(0, x_max))
+
+        ax.axvline(bids.mean(),     color=color,  lw=1.5, ls="-",
+                   label=f"Mean bid = {bids.mean():.2f}")
+        ax.axvline(competing.mean(), color="grey", lw=1.5, ls="--",
+                   label=f"Mean competing = {competing.mean():.2f}")
+
+        ax.set_xlim(0, x_max)
+        ax.set_title(policy, fontweight="bold")
+        ax.set_xlabel("Bid value")
+        ax.set_ylabel("Density")
+        ax.legend(fontsize=8)
+
+    for idx in range(len(policy_names), len(axes)):
+        axes[idx].set_visible(False)
+
+    fig.suptitle(title, fontweight="bold", fontsize=13, y=1.02)
+    fig.tight_layout()
+
+    if save:
+        _save(fig, filename)
+    return fig
+
 def plot_win_rate(
     df:       pd.DataFrame,
     policies: Optional[List[str]] = None,

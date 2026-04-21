@@ -225,7 +225,7 @@ class AuctionEnv(Env):
         x = self.state.display_features
 
         auction_data, display_data, conversions_data, new_ctx = self._run_single_auction(
-            bid=action,
+            bid=float(np.asarray(action).ravel()[0]),
             auction_state=self.state,
             u=u,
             x=x,
@@ -275,7 +275,7 @@ class AuctionEnv(Env):
             "auction": auction_data,
             "display": display_data,
             "conversions_count": len(conversions_data),
-            "actual_conversions": conversions_data
+            "actual_conversions": conversions_data,
         }
 
         obs = self._get_obs()
@@ -289,7 +289,7 @@ class AuctionEnv(Env):
         from the previous interval.
         """
 
-        expected_reward = self.scenario.kernel.expected_reward(
+        expected_reward = self.conversion_value * self.scenario.kernel.expected_reward(
             self.user_features,
             self.state.display_features,
             self.state.ctx,

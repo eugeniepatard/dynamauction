@@ -43,16 +43,12 @@ from dynamicauc.wrappers import SB3PolicyWrapper
 RESULTS_DIR = Path(__file__).parent / "results"
 
 
-# ── Evaluation configuration ───────────────────────────────────────────────────
-
 @dataclass
 class EvalConfig:
     seeds:             List[int] = field(default_factory=lambda: list(range(30)))
     scenario_id:       str       = SCENARIO_ID
     scenario_overrides: dict     = field(default_factory=dict)
 
-
-# ── Core per-episode loop ──────────────────────────────────────────────────────
 
 def _run_episode(
     policy:      BiddingPolicy,
@@ -84,6 +80,7 @@ def _run_episode(
             "payment":         float(info["auction"]["payment"]),
             "ctx":             float(obs["ctx"].ravel()[0]),
             "expected_reward": float(obs["expected_reward"].ravel()[0]),
+            "competing_bid" : float(info["auction"]["competing_bid"]),
         })
 
     return pd.DataFrame(rows)
@@ -107,8 +104,6 @@ def evaluate_policy(
     env.close()
     return pd.concat(frames, ignore_index=True)
 
-
-# ── Policy registries ──────────────────────────────────────────────────────────
 
 def get_planning_policies() -> Dict[str, BiddingPolicy]:
     """
@@ -154,8 +149,6 @@ def get_rl_policies(
 
     return policies
 
-
-# ── Multi-policy benchmark ─────────────────────────────────────────────────────
 
 def benchmark(
     policies: Dict[str, BiddingPolicy],
@@ -262,7 +255,7 @@ def score_matrix(df: pd.DataFrame) -> Dict[str, np.ndarray]:
 
 # ── CLI entry-point ────────────────────────────────────────────────────────────
 
-if __name__ == "__main__":
+def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Run the full benchmark.")
@@ -273,3 +266,7 @@ if __name__ == "__main__":
 
     cfg = EvalConfig(seeds=list(range(args.n_seeds)))
     run_full_benchmark(algos=args.algos, cfg=cfg, save=not args.no_save)
+
+
+if __name__ == "__main__":
+    main()
