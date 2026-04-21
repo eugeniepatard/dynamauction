@@ -31,10 +31,10 @@ from gymnasium import spaces
 import dynamicauc as dac
 from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
 
+from dynamicauc import FlatAuctionObsWrapper
 from .train_rl import (
     SCENARIO_ID,
     MODELS_DIR,
-    FlatAuctionObsWrapper,
     load_model,
     _ALGO_CLS,
 )

@@ -1,0 +1,6 @@
+name: td3
+learning_rate: 3e-4
+gamma: 0.99
+# TD3-specific
+batch_size: 256
+learning_starts: 1000

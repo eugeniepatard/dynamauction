@@ -17,87 +17,22 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import numpy as np
 import gymnasium as gym
-from gymnasium import spaces
 from stable_baselines3 import PPO, SAC, TD3
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import EvalCallback
-
 import dynamicauc as dac
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
+import hydra
+from omegaconf import DictConfig
+
+
 BENCHMARK_DIR = Path(__file__).parent
 MODELS_DIR    = BENCHMARK_DIR / "models"
 LOGS_DIR      = BENCHMARK_DIR / "logs"
 
 SCENARIO_ID   = "survival-second-price-exponential"
-
-
-# ── Observation wrapper ────────────────────────────────────────────────────────
-
-class FlatAuctionObsWrapper(gym.ObservationWrapper):
-    """
-    Flatten the Dict observation space into a 1-D float32 vector.
-
-    The ``step`` field is Discrete(100000); FlattenObservation would one-hot
-    encode it to 100K dims.  Here it is kept as a single float scalar instead.
-    All Box fields are concatenated in insertion order.
-    """
-
-    def __init__(self, env: gym.Env) -> None:
-        super().__init__(env)
-        orig = env.observation_space
-        self._keys: List[str] = list(orig.spaces.keys())
-
-        dim = sum(
-            1 if isinstance(sp, spaces.Discrete) else int(np.prod(sp.shape))
-            for sp in orig.spaces.values()
-        )
-        self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(dim,), dtype=np.float32
-        )
-
-    def observation(self, obs: dict) -> np.ndarray:
-        parts = []
-        for key in self._keys:
-            v  = obs[key]
-            sp = self.env.observation_space.spaces[key]
-            if isinstance(sp, spaces.Discrete):
-                parts.append(np.array([float(v)], dtype=np.float32))
-            else:
-                parts.append(np.asarray(v, dtype=np.float32).ravel())
-        return np.concatenate(parts)
-
-
-# ── Action wrapper ─────────────────────────────────────────────────────────────
-
-class BidScaleWrapper(gym.ActionWrapper):
-    """
-    Restrict the bid action space to [0, max_bid].
-
-    The underlying env has action_space = Box([0, 1e12]), which is valid but
-    too wide for stable RL training.  Since expected bids under the survival
-    kernel are in [0, 1], max_bid=5 provides a generous safe margin.
-    The wrapper passes the bid through unchanged (just clips).
-    """
-
-    def __init__(self, env: gym.Env, max_bid: float = 5.0) -> None:
-        super().__init__(env)
-        self._max_bid = max_bid
-        self.action_space = spaces.Box(
-            low=np.float32(0.0),
-            high=np.float32(max_bid),
-            shape=(1,),
-            dtype=np.float32,
-        )
-
-    def action(self, action: np.ndarray) -> np.ndarray:
-        return np.clip(action, 0.0, self._max_bid).astype(np.float32)
-
-
-# ── Training configuration ─────────────────────────────────────────────────────
 
 @dataclass
 class TrainingConfig:
@@ -120,9 +55,6 @@ class TrainingConfig:
     # Evaluation during training
     eval_freq:       int = 10_000
     n_eval_episodes: int = 20
-
-
-# ── Algorithm registry ─────────────────────────────────────────────────────────
 
 _ALGO_CLS: Dict[str, type] = {"ppo": PPO, "sac": SAC, "td3": TD3}
 
@@ -161,13 +93,10 @@ def _build_model(algo: str, env, cfg: TrainingConfig, log_dir: Path):
 
 def _env_factory(scenario, max_bid: float) -> gym.Env:
     env = gym.make("DynamicAuction-v0", scenario=scenario)
-    env = FlatAuctionObsWrapper(env)
-    env = BidScaleWrapper(env, max_bid)
+    env = dac.FlatAuctionObsWrapper(env)
+    env = dac.BidScaleWrapper(env, max_bid)
     env = Monitor(env)
     return env
-
-
-# ── Public API ─────────────────────────────────────────────────────────────────
 
 def train(
     algo: str,
@@ -273,23 +202,48 @@ def load_model(algo: str, path: Optional[str | Path] = None) -> object:
         path = MODELS_DIR / algo / "best_model"
     return cls.load(str(path))
 
+def _cfg_to_training_config(cfg: DictConfig) -> TrainingConfig:
+    """Build a TrainingConfig from the Hydra DictConfig."""
+    t   = cfg.training
+    a   = cfg.algo
+    kw  = dict(
+        total_timesteps=t.total_timesteps,
+        n_envs=t.n_envs,
+        seed=t.seed,
+        max_bid=t.max_bid,
+        eval_freq=t.eval_freq,
+        n_eval_episodes=t.n_eval_episodes,
+        learning_rate=a.learning_rate,
+        gamma=a.gamma,
+    )
+    if a.name == "ppo":
+        kw.update(ppo_n_steps=a.n_steps, ppo_batch_size=a.batch_size,
+                  ppo_n_epochs=a.n_epochs)
+    else:
+        kw.update(off_policy_batch_size=a.batch_size,
+                  off_policy_learning_starts=a.learning_starts)
+    return TrainingConfig(**kw)
 
-# ── CLI entry-point ────────────────────────────────────────────────────────────
+
+@hydra.main(version_base=None, config_path="conf", config_name="train")
+def main(cfg: DictConfig) -> None:
+    """
+    Train one algorithm with the config resolved by Hydra.
+
+    Single run (default algo = ppo):
+        python -m benchmark.train_rl
+
+    Select algorithm:
+        python -m benchmark.train_rl algo=sac
+        python -m benchmark.train_rl algo=td3 training.total_timesteps=1000000
+
+    Train all algorithms in parallel (one process per algo):
+        python -m benchmark.train_rl 'algo=ppo,sac,td3' --multirun
+    """
+    training_cfg = _cfg_to_training_config(cfg)
+    scenario_overrides = dict(cfg.scenario_overrides) if cfg.scenario_overrides else {}
+    train(cfg.algo.name, training_cfg, scenario_overrides)
+
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Train RL bidding policies.")
-    parser.add_argument("--algos", nargs="+", default=["ppo", "sac", "td3"],
-                        help="Algorithms to train (default: ppo sac td3)")
-    parser.add_argument("--timesteps", type=int, default=500_000)
-    parser.add_argument("--n-envs",    type=int, default=4)
-    parser.add_argument("--seed",      type=int, default=42)
-    args = parser.parse_args()
-
-    cfg = TrainingConfig(
-        total_timesteps=args.timesteps,
-        n_envs=args.n_envs,
-        seed=args.seed,
-    )
-    train_all(args.algos, cfg)
+    main()

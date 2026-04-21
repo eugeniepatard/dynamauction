@@ -1,0 +1,7 @@
+name: ppo
+learning_rate: 3e-4
+gamma: 0.99
+# PPO-specific
+n_steps: 1024
+batch_size: 128
+n_epochs: 10

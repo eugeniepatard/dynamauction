@@ -1,0 +1,24 @@
+defaults:
+  - algo: ppo        # override with algo=sac, algo=td3
+  - _self_
+
+# ── Scenario ───────────────────────────────────────────────────────────────────
+scenario_id: survival-second-price-exponential
+scenario_overrides: {}           # e.g. {horizon_eta: 30.0}
+
+# ── Training budget & environment ─────────────────────────────────────────────
+training:
+  total_timesteps: 500_000
+  n_envs: 4
+  seed: 42
+  max_bid: 5.0
+  eval_freq: 10_000
+  n_eval_episodes: 20
+
+# ── Hydra output (keeps repo clean) ───────────────────────────────────────────
+hydra:
+  run:
+    dir: benchmark/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}_${algo.name}
+  sweep:
+    dir: benchmark/outputs/multirun/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${algo.name}

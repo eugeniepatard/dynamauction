@@ -26,8 +26,6 @@ from .train_rl import (
     train_all,
     load_model,
     TrainingConfig,
-    FlatAuctionObsWrapper,
-    BidScaleWrapper,
     SCENARIO_ID,
     MODELS_DIR,
     LOGS_DIR,
@@ -46,6 +44,7 @@ from .evaluate import (
     RESULTS_DIR,
 )
 
+from dynamicauc import FlatAuctionObsWrapper, BidScaleWrapper
 from . import plots
 
 __all__ = [
@@ -58,6 +57,9 @@ __all__ = [
     "get_rl_policies", "get_planning_policies",
     "episode_summary", "score_matrix",
     "SB3PolicyWrapper", "EvalConfig", "RESULTS_DIR",
+    # Wrappers (live in dynamicauc, re-exported here for convenience)
+    "FlatAuctionObsWrapper",
+    "BidScaleWrapper",
     # Plots module
     "plots",
 ]
