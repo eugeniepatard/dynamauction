@@ -213,7 +213,8 @@ def plot_cumulative_reward(
     _style()
     plot_df = df[df["policy"].isin(policies)].copy() if policies else df.copy()
 
-    t_grid = np.linspace(plot_df["t"].min(), plot_df["t"].max(), num_points)
+    mean_max_t = plot_df.groupby("seed")["t"].max().mean()
+    t_grid = np.linspace(plot_df["t"].min(), mean_max_t, num_points)
     fig, ax = plt.subplots(figsize=(8, 5))
 
     for i, (policy, grp) in enumerate(plot_df.groupby("policy")):
@@ -355,7 +356,7 @@ def plot_training_curves(
 def plot_context_dynamics(
     df:         pd.DataFrame,
     policies:   Optional[List[str]] = None,
-    num_points: int                 = 200,
+    num_points: int                 = 300,
     title:      str                 = "State Dynamics",
     save:       bool                = True,
     filename:   str                 = "context_dynamics.pdf",
@@ -368,7 +369,8 @@ def plot_context_dynamics(
     """
     _style()
     plot_df = df[df["policy"].isin(policies)].copy() if policies else df.copy()
-    t_grid  = np.linspace(plot_df["t"].min(), plot_df["t"].max(), num_points)
+    mean_max_t = plot_df.groupby("seed")["t"].max().mean()
+    t_grid = np.linspace(plot_df["t"].min(), mean_max_t, num_points)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 7), sharex=True)
     fig.suptitle(title, fontweight="bold", fontsize=13)

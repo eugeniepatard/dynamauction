@@ -48,6 +48,7 @@ class EvalConfig:
     seeds:             List[int] = field(default_factory=lambda: list(range(30)))
     scenario_id:       str       = SCENARIO_ID
     scenario_overrides: dict     = field(default_factory=dict)
+    max_bid:           float     = 5.0
 
 
 def _run_episode(
@@ -105,7 +106,7 @@ def evaluate_policy(
     return pd.concat(frames, ignore_index=True)
 
 
-def get_planning_policies() -> Dict[str, BiddingPolicy]:
+def get_planning_policies(cfg : EvalConfig) -> Dict[str, BiddingPolicy]:
     """
     Return the oracle / hand-crafted planning baselines.
 
@@ -113,8 +114,8 @@ def get_planning_policies() -> Dict[str, BiddingPolicy]:
     """
     return {
         "FiPla":         FiPlaPolicy(),
-        "Constant(0.5)": ConstantPolicy(0.5),
-        "Random":        RandomPolicy(2.0),
+        "Constant(0.5)": ConstantPolicy(cfg.max_bid * 0.1),
+        "Random":        RandomPolicy(cfg.max_bid * 0.2),
     }
 
 
@@ -202,7 +203,7 @@ def run_full_benchmark(
 
     policies: Dict[str, BiddingPolicy] = {}
     policies.update(get_rl_policies(scenario, list(algos)))
-    policies.update(get_planning_policies())
+    policies.update(get_planning_policies(cfg))
     if extra_policies:
         policies.update(extra_policies)
 

@@ -35,11 +35,13 @@ from dataclasses import dataclass
 import pickle
 from pathlib import Path
 from typing import Dict, List, Optional
+import numpy as np
 from tqdm import tqdm
 
 import gymnasium as gym
 from stable_baselines3 import PPO, SAC, TD3
 from stable_baselines3.common.callbacks import EvalCallback
+from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
@@ -74,8 +76,11 @@ class TrainingConfig:
     ppo_gae_lambda:   float = 0.90
 
     # SAC / TD3
-    off_policy_batch_size:     int = 256
-    off_policy_learning_starts: int = 1_000
+    off_policy_batch_size:      int   = 256
+    off_policy_learning_starts: int   = 1_000
+
+    # TD3
+    td3_action_noise_sigma: float = 0.1   # std in normalized [-1, 1] action space (~10% of bid range)
 
     # Evaluation during training
     eval_freq:       int = 10_000
@@ -124,10 +129,12 @@ def _build_model(algo: str, env, cfg: TrainingConfig, log_dir: Path):
             learning_starts=cfg.off_policy_learning_starts,
         )
     if algo == "td3":
+        sigma = cfg.td3_action_noise_sigma
         return TD3(
             **common,
             batch_size=cfg.off_policy_batch_size,
             learning_starts=cfg.off_policy_learning_starts,
+            action_noise=NormalActionNoise(mean=np.zeros(1), sigma=sigma * np.ones(1)),
         )
     raise ValueError(f"Unknown algo {algo!r}. Choose from {list(_ALGO_CLS)}")
 
@@ -287,6 +294,8 @@ def _cfg_to_training_config(cfg: DictConfig) -> TrainingConfig:
     else:
         kw.update(off_policy_batch_size=a.batch_size,
                   off_policy_learning_starts=a.learning_starts)
+        if a.name == "td3":
+            kw["td3_action_noise_sigma"] = a.action_noise_sigma
     return TrainingConfig(**kw)
 
 

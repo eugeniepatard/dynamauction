@@ -1,6 +1,7 @@
 name: td3
-learning_rate: 3e-4
+learning_rate: 1e-4
 gamma: 0.99
 # TD3-specific
 batch_size: 256
-learning_starts: 1000
+learning_starts: 5000
+action_noise_sigma: 0.1   # std of Gaussian noise in normalized [-1, 1] action space (~10% of bid range)
