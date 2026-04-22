@@ -16,6 +16,30 @@ Quick start
     df = run_full_benchmark()                          # uses best saved models
     from benchmark.evaluate import score_matrix
     scores = score_matrix(df)                          # {policy: (n_seeds,) array}
+
+Selecting baselines (CLI)
+-------------------------
+    python -m benchmark.evaluate --baselines fipla constant
+    python -m benchmark.evaluate --baselines fipla --constant-bid 0.3 --random-max-bid 2.0
+    python -m benchmark.evaluate --baselines none   # RL policies only
+
+Available baselines: fipla, constant, random
+
+Adding a custom policy (Python API only — cannot be done from the CLI)
+-----------------------------------------------------------------------
+The CLI cannot accept arbitrary Python objects, so custom policies must
+be passed via the Python API.  Write a small script, e.g. my_eval.py:
+
+    from benchmark.evaluate import run_full_benchmark, EvalConfig
+    from dynamicauc.baseline.policies import BiddingPolicy
+
+    class MyPolicy(BiddingPolicy):
+        def bid(self, obs):
+            return obs["expected_reward"].item() * 0.8
+
+    df = run_full_benchmark(extra_policies={"MyPolicy": MyPolicy()})
+
+Then run:  python my_eval.py
 """
 from __future__ import annotations
 
@@ -42,6 +66,23 @@ from dynamicauc.wrappers import SB3PolicyWrapper
 
 RESULTS_DIR = Path(__file__).parent / "results"
 
+AVAILABLE_BASELINES: List[str] = ["fipla", "constant", "random"]
+
+
+def _make_baseline(name: str, constant_bid: float, random_max_bid: float) -> tuple[str, BiddingPolicy]:
+    """Return (display_name, policy) for a named baseline."""
+    key = name.lower()
+    if key == "fipla":
+        return "FiPla", FiPlaPolicy()
+    if key == "constant":
+        return f"Constant({constant_bid})", ConstantPolicy(constant_bid)
+    if key == "random":
+        return "Random", RandomPolicy(random_max_bid)
+    raise ValueError(
+        f"Unknown baseline {name!r}. Available: {AVAILABLE_BASELINES}. "
+        "Pass a custom BiddingPolicy via extra_policies instead."
+    )
+
 
 @dataclass
 class EvalConfig:
@@ -49,6 +90,9 @@ class EvalConfig:
     scenario_id:       str       = SCENARIO_ID
     scenario_overrides: dict     = field(default_factory=dict)
     max_bid:           float     = 5.0
+    baselines:         List[str] = field(default_factory=lambda: list(AVAILABLE_BASELINES))
+    constant_bid:      float     = 0.5
+    random_max_bid:    float     = 1.0
 
 
 def _run_episode(
@@ -106,17 +150,21 @@ def evaluate_policy(
     return pd.concat(frames, ignore_index=True)
 
 
-def get_planning_policies(cfg : EvalConfig) -> Dict[str, BiddingPolicy]:
+def get_planning_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
     """
-    Return the oracle / hand-crafted planning baselines.
+    Return the selected baseline policies as a ``{display_name: policy}`` dict.
 
-    Add new baselines here to include them automatically in ``run_full_benchmark``.
+    Which baselines to include is controlled by ``cfg.baselines``
+    (a list of names from ``AVAILABLE_BASELINES``).  Pass an empty list
+    or ``["none"]`` to skip baselines entirely.
     """
-    return {
-        "FiPla":         FiPlaPolicy(),
-        "Constant(0.5)": ConstantPolicy(cfg.max_bid * 0.1),
-        "Random":        RandomPolicy(cfg.max_bid * 0.2),
-    }
+    if cfg.baselines == ["none"]:
+        return {}
+    policies: Dict[str, BiddingPolicy] = {}
+    for name in cfg.baselines:
+        label, policy = _make_baseline(name, cfg.constant_bid, cfg.random_max_bid)
+        policies[label] = policy
+    return policies
 
 
 def get_rl_policies(
@@ -259,13 +307,40 @@ def score_matrix(df: pd.DataFrame) -> Dict[str, np.ndarray]:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run the full benchmark.")
-    parser.add_argument("--algos",   nargs="+", default=["ppo", "sac", "td3"])
-    parser.add_argument("--n-seeds", type=int,  default=30)
-    parser.add_argument("--no-save", action="store_true")
+    parser = argparse.ArgumentParser(
+        description="Run the full benchmark.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            f"Available baselines: {', '.join(AVAILABLE_BASELINES)}\n"
+            "Pass --baselines none to skip baselines entirely.\n"
+            "\nExamples:\n"
+            "  python -m benchmark.evaluate\n"
+            "  python -m benchmark.evaluate --algos ppo sac --baselines fipla\n"
+            "  python -m benchmark.evaluate --baselines none\n"
+            "  python -m benchmark.evaluate --baselines constant --constant-bid 0.3\n"
+        ),
+    )
+    parser.add_argument("--algos",           nargs="+", default=["ppo", "sac", "td3"],
+                        help="RL algorithms to evaluate (must be trained first).")
+    parser.add_argument("--baselines",       nargs="+", default=AVAILABLE_BASELINES,
+                        metavar="BASELINE",
+                        help=f"Baseline policies to include. Available: {AVAILABLE_BASELINES}. Use 'none' to skip.")
+    parser.add_argument("--constant-bid",    type=float, default=0.5,
+                        help="Fixed bid value for the Constant baseline (default: 0.5).")
+    parser.add_argument("--random-max-bid",  type=float, default=1.0,
+                        help="Upper bound for the Random baseline (default: 1.0).")
+    parser.add_argument("--n-seeds",         type=int,   default=30,
+                        help="Number of evaluation seeds (default: 30).")
+    parser.add_argument("--no-save",         action="store_true",
+                        help="Do not write results to CSV.")
     args = parser.parse_args()
 
-    cfg = EvalConfig(seeds=list(range(args.n_seeds)))
+    cfg = EvalConfig(
+        seeds=list(range(args.n_seeds)),
+        baselines=args.baselines,
+        constant_bid=args.constant_bid,
+        random_max_bid=args.random_max_bid,
+    )
     run_full_benchmark(algos=args.algos, cfg=cfg, save=not args.no_save)
 
 

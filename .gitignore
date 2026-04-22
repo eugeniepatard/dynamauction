@@ -6,10 +6,7 @@ simulate/outputs/
 .venv/
 *.egg-info/
 docs/outputs/
-benchmark/plots/*
-!benchmark/plots/.gitkeep
 outputs/*
 benchmark/logs/*
 benchmark/models/*
 benchmark/outputs/*
-benchmark/results/*

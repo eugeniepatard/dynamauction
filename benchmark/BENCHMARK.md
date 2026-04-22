@@ -28,7 +28,7 @@ The raw `DynamicAuction-v0` Gymnasium environment is wrapped in the following or
 | Wrapper | Purpose |
 |---|---|
 | `FlatAuctionObsWrapper` | Flattens the Dict observation into a 1-D vector |
-| `BidScaleWrapper(max_bid=5.0)` | Maps the agent's action from `[-1, 1]` to `[0, max_bid]` |
+| `BidScaleWrapper(max_bid=5.0)` | Maps the agent's action from `[0, 1e12]` to `[0, max_bid]` for more stability in exploration during training|
 | `Monitor` (SB3) | Records episode statistics for TensorBoard |
 | `VecNormalize(norm_obs=True, norm_reward=True)` | Online running-mean normalization of observations and rewards |
 
@@ -107,7 +107,20 @@ All algorithms use Stable Baselines3 with an `MlpPolicy` (two hidden layers of 6
 Evaluation is run after training via `benchmark/evaluate.py`:
 
 ```bash
-python -m benchmark.evaluate --algos ppo sac td3 --n-seeds 30
+# Full benchmark (default: all RL algos + all baselines, 30 seeds)
+python -m benchmark.evaluate
+
+# Select specific RL algorithms and baselines
+python -m benchmark.evaluate --algos ppo sac --baselines fipla constant
+
+# Tune parameterized baselines
+python -m benchmark.evaluate --baselines constant random --constant-bid 0.3 --random-max-bid 2.0
+
+# RL policies only (no baselines)
+python -m benchmark.evaluate --baselines none
+
+# Custom number of seeds
+python -m benchmark.evaluate --n-seeds 50
 ```
 
 | Parameter | Value |
@@ -115,8 +128,37 @@ python -m benchmark.evaluate --algos ppo sac td3 --n-seeds 30
 | Evaluation seeds | 0 – 29 (30 independent episodes) |
 | Scenario | `survival-second-price-exponential` |
 | Max bid | 5.0 |
+| Default baselines | `fipla`, `constant` (bid=0.5), `random` (max=1.0) |
 
 Per-step metrics collected for each (policy, seed) pair: `reward`, `cumulative reward`, `won`, `bid`, `payment`, `ctx`, `expected_reward`, `competing_bid`.
+
+To add a fully custom policy, use the Python API (the CLI cannot accept arbitrary Python objects). Write a small script, e.g. `my_eval.py`:
+
+```python
+from benchmark.evaluate import run_full_benchmark, EvalConfig
+from dynamicauc.baseline.policies import BiddingPolicy
+
+class MyPolicy(BiddingPolicy):
+    def bid(self, obs):
+        return obs["expected_reward"].item() * 0.8
+
+df = run_full_benchmark(
+    algos=["ppo", "sac", "td3"],       # RL algorithms to load (must be trained)
+    cfg=EvalConfig(
+        seeds=list(range(30)),          # evaluation seeds
+        scenario_id="survival-second-price-exponential",
+        scenario_overrides={},          # e.g. {"horizon_eta": 30.0}
+        max_bid=5.0,
+        baselines=["fipla", "constant", "random"],  # or [] to skip
+        constant_bid=0.5,
+        random_max_bid=1.0,
+    ),
+    save=True,                          # write results/benchmark_results.csv
+    extra_policies={"MyPolicy": MyPolicy()},
+)
+```
+
+Then run: `python my_eval.py`
 
 ---
 
@@ -159,11 +201,7 @@ Results are written to `benchmark/results/benchmark_results.csv`.
 
 ### 4. Generate plots
 
-Open and execute `benchmark/benchmark_results.ipynb`, or run:
-
-```bash
-python -m benchmark.plots
-```
+Open and execute `benchmark/benchmark_results.ipynb`.
 
 Output PDFs are written to `benchmark/plots/`.
 
@@ -175,7 +213,24 @@ Pretrained model weights (PPO, SAC, TD3) are available at:
 
 > **[TODO: add Zenodo / HuggingFace DOI link here]**
 
-Download and place them under `benchmark/models/` to skip training and jump directly to step 3 above.
+Download and unpack them so the directory layout matches what `evaluate.py` expects:
+
+```
+benchmark/models/
+├── ppo/
+│   ├── best_model.zip   # SB3 model weights (loaded by evaluate.py)
+│   └── obs_rms.pkl      # VecNormalize observation statistics
+├── sac/
+│   ├── best_model.zip
+│   └── obs_rms.pkl
+└── td3/
+    ├── best_model.zip
+    └── obs_rms.pkl
+```
+
+`best_model.zip` is the checkpoint saved by SB3's `EvalCallback` at the timestep with the highest mean evaluation reward. `obs_rms.pkl` contains the running-mean/variance statistics of `VecNormalize` and must be loaded alongside the model to reproduce the correct observation normalization at inference time.
+
+Once in place, skip directly to step 3 (evaluation).
 
 ---
 
