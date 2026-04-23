@@ -7,11 +7,18 @@ from dynamicauc.scenarios import (
     get_scenario_info,
     describe_scenarios,
 )
-from dynamicauc.wrappers import FlatAuctionObsWrapper, BidScaleWrapper, SB3PolicyWrapper
+from dynamicauc.wrappers import FlatAuctionObsWrapper, BidScaleWrapper, SB3PolicyWrapper, MaskExpectedRewardWrapper
 from dynamicauc.dataclasses import Scenario
 from dynamicauc.simulator import Simulator
 from dynamicauc.env import AuctionEnv, OBSERVATION_KEYS
 from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
+from dynamicauc.baseline.baseline_algo import (
+    SimulationEstimator,
+    MLPValuationHead,
+    GreedyMyopicPolicy,
+    ShadingPolicy,
+    MPCPolicy,
+)
 from dynamicauc.primitives import (
     # Auction rules
     FirstPriceAuction,
@@ -86,9 +93,15 @@ __all__ = [
     ConstantPolicy,
     RandomPolicy,
     FlatAuctionObsWrapper,
+    MaskExpectedRewardWrapper,
     BidScaleWrapper,
     SB3PolicyWrapper,
     OBSERVATION_KEYS,
+    "SimulationEstimator",
+    "MLPValuationHead",
+    "GreedyMyopicPolicy",
+    "ShadingPolicy",
+    "MPCPolicy",
 ]
 
 from gymnasium.envs.registration import register

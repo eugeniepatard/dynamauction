@@ -273,6 +273,39 @@ internally and optionally applies VecNormalize statistics saved at train time.
     policy  = SB3PolicyWrapper(model, raw_env.observation_space, obs_rms=obs_rms)
     bid     = policy.bid(obs)   # obs is a raw Dict
 
-Recommended training stack:
+MaskExpectedRewardWrapper (ObservationWrapper)
+──────────────────────────────────────────────
+Removes ``expected_reward`` from the observation dict before it reaches the
+RL policy.
+
+``expected_reward`` is the kernel-integrated oracle value κ + ∫λ ds — the
+exact signal that ``FiPlaPolicy`` bids directly.  Exposing it to an RL agent
+gives it privileged information a real advertiser would not have, making the
+RL vs FiPla comparison unfair.  Apply this wrapper whenever RL policies
+should be evaluated on equal footing with FiPla.
+
+    env = gym.make("DynamicAuction-v0", scenario=scenario)
+    env = MaskExpectedRewardWrapper(env)   # ← drops expected_reward from obs
+    env = FlatAuctionObsWrapper(env)
+    # env.observation_space → Box of dim N-1  (expected_reward excluded)
+
+``FiPlaPolicy`` reads ``obs["expected_reward"]`` from the raw env and is
+unaffected by this wrapper.
+
+When evaluating a model trained with this wrapper via ``SB3PolicyWrapper``,
+pass ``exclude_keys=["expected_reward"]`` so evaluation flattening matches
+training flattening:
+
+    policy = SB3PolicyWrapper(
+        model, raw_env.observation_space,
+        obs_rms=obs_rms,
+        exclude_keys=["expected_reward"],   # ← must match training wrappers
+    )
+
+Recommended training stack for fair RL / FiPla comparison:
+
+    AuctionEnv → MaskExpectedRewardWrapper → FlatAuctionObsWrapper → BidScaleWrapper → Monitor → VecNormalize
+
+Recommended training stack (without mask, oracle access):
 
     AuctionEnv → FlatAuctionObsWrapper → BidScaleWrapper → Monitor → VecNormalize
