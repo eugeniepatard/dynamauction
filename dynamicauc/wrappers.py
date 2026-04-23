@@ -6,12 +6,13 @@ from typing import Any, Dict, List
 from dynamicauc.baseline.policies import BiddingPolicy
 
 """
-Wrappers for dynamicauc gym environments.
+Wrappers for the auction environment to connect it to RL algorithms more easily :
+
+- FlatAuctionObsWrapper: flatten the Dict obs space into a 1-D vector.
+- MaskExpectedRewardWrapper: remove the "expected_reward" field from the obs space, so that RL agents don't have privileged oracle information.
+- BidScaleWrapper: restrict the bid action space to [0, max_bid] for more stable RL training.
+- SB3PolicyWrapper: adapt a trained Stable-Baselines3 model to the BiddingPolicy interface
 """
-
-# TODO : Ajouter une partie sur les wrappers dans la doc et les tests unitaires.
-
-# ── Observation wrapper ────────────────────────────────────────────────────────
 
 class FlatAuctionObsWrapper(gym.ObservationWrapper):
     """
@@ -44,7 +45,47 @@ class FlatAuctionObsWrapper(gym.ObservationWrapper):
         return np.concatenate(parts)
 
 
-# ── Action wrapper ─────────────────────────────────────────────────────────────
+class MaskExpectedRewardWrapper(gym.ObservationWrapper):
+    """
+    Remove ``expected_reward`` from the observation space.
+
+    ``expected_reward`` is the kernel-integrated conversion value
+    κ + ∫λ ds — i.e. the exact oracle signal that ``FiPlaPolicy`` bids
+    directly.  Exposing it to RL agents gives them privileged information
+    a real advertiser would not have, making the RL vs FiPla comparison
+    unfair.
+
+    Apply this wrapper **before** ``FlatAuctionObsWrapper`` so that the
+    flattened vector seen by the RL policy never contains the oracle value:
+
+        AuctionEnv
+        → MaskExpectedRewardWrapper   # ← removes expected_reward
+        → FlatAuctionObsWrapper
+        → BidScaleWrapper
+        → Monitor
+        → VecNormalize
+
+    ``FiPlaPolicy`` reads ``obs["expected_reward"]`` from the **raw** env
+    (no wrappers) and is unaffected by this wrapper.
+
+    When evaluating a model trained with this wrapper via ``SB3PolicyWrapper``,
+    pass ``exclude_keys=["expected_reward"]`` so the evaluation flattening
+    matches the training flattening exactly.
+    """
+
+    _MASKED_KEY = "expected_reward"
+
+    def __init__(self, env: gym.Env) -> None:
+        super().__init__(env)
+        self.observation_space = spaces.Dict({
+            k: v
+            for k, v in env.observation_space.spaces.items()
+            if k != self._MASKED_KEY
+        })
+
+    def observation(self, obs: dict) -> dict:
+        return {k: v for k, v in obs.items() if k != self._MASKED_KEY}
+
 
 class BidScaleWrapper(gym.ActionWrapper):
     """
@@ -68,8 +109,6 @@ class BidScaleWrapper(gym.ActionWrapper):
     def action(self, action: np.ndarray) -> np.ndarray:
         return np.clip(action, 0.0, self._max_bid).astype(np.float32)
 
-# ── Policy wrapper ─────────────────────────────────────────────────────────────
-
 class SB3PolicyWrapper(BiddingPolicy):
     """
     Adapt a trained Stable-Baselines3 model to the ``BiddingPolicy`` interface.
@@ -82,15 +121,32 @@ class SB3PolicyWrapper(BiddingPolicy):
     model : SB3 model (PPO / SAC / TD3)
     raw_obs_space : gymnasium.spaces.Dict
         The *original* observation space of ``AuctionEnv`` (before any wrapper).
+    obs_rms : RunningMeanStd, optional
+        VecNormalize statistics saved at train time.
+    exclude_keys : sequence of str, optional
+        Keys to drop before flattening.  Must match the wrappers applied
+        during training.  Pass ``["expected_reward"]`` when the model was
+        trained with ``MaskExpectedRewardWrapper``.
+    clip_obs : float, optional
+        Clipping bound applied after VecNormalize standardisation.
+        Must match the ``clip_obs`` value used in ``VecNormalize`` during
+        training (SB3 default: 10.0).
     """
 
-    def __init__(self, model, raw_obs_space: spaces.Dict, obs_rms=None) -> None:
-        self._model   = model
-        self._keys    = list(raw_obs_space.spaces.keys())
-        self._sp_dict = raw_obs_space.spaces
-        self._obs_rms = obs_rms  # RunningMeanStd from VecNormalize, or None
+    def __init__(
+        self,
+        model,
+        raw_obs_space: spaces.Dict,
+        obs_rms=None,
+        exclude_keys: List[str] = (),
+        clip_obs: float = 10.0,
+    ) -> None:
+        self._model    = model
+        self._keys     = [k for k in raw_obs_space.spaces.keys() if k not in exclude_keys]
+        self._sp_dict  = raw_obs_space.spaces
+        self._obs_rms  = obs_rms
+        self._clip_obs = clip_obs
 
-    # ------------------------------------------------------------------
     def _flatten(self, obs: Dict[str, Any]) -> np.ndarray:
         """Mirror FlatAuctionObsWrapper.observation() exactly."""
         parts = []
@@ -108,7 +164,7 @@ class SB3PolicyWrapper(BiddingPolicy):
         if self._obs_rms is not None:
             flat = np.clip(
                 (flat - self._obs_rms.mean) / np.sqrt(self._obs_rms.var + 1e-8),
-                -10.0, 10.0,
+                -self._clip_obs, self._clip_obs,
             ).astype(np.float32)
         action, _ = self._model.predict(flat, deterministic=True)
         return float(np.asarray(action).ravel()[0])

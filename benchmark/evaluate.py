@@ -90,9 +90,10 @@ class EvalConfig:
     scenario_id:       str       = SCENARIO_ID
     scenario_overrides: dict     = field(default_factory=dict)
     max_bid:           float     = 5.0
-    baselines:         List[str] = field(default_factory=lambda: list(AVAILABLE_BASELINES))
-    constant_bid:      float     = 0.5
-    random_max_bid:    float     = 1.0
+    baselines:            List[str] = field(default_factory=lambda: list(AVAILABLE_BASELINES))
+    constant_bid:         float     = 0.5
+    random_max_bid:       float     = 1.0
+    mask_expected_reward: bool      = True   # must match the flag used during training
 
 
 def _run_episode(
@@ -102,6 +103,10 @@ def _run_episode(
     policy_name: str,
 ) -> pd.DataFrame:
     obs, _info = env.reset(seed=seed)
+    # Planning policies (Greedy, Shading, MPC) need a reference to the live
+    # env so they can deepcopy it for rollouts.  Ignored by simple policies.
+    if hasattr(policy, "set_env"):
+        policy.set_env(env)
     cum_reward  = 0.0
     step        = 0
     done        = False
@@ -170,9 +175,14 @@ def get_planning_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
 def get_rl_policies(
     scenario,
     algos: List[str] = ("ppo", "sac", "td3"),
+    mask_expected_reward: bool = True,
 ) -> Dict[str, SB3PolicyWrapper]:
     """
     Load saved SB3 models and wrap them as ``BiddingPolicy`` objects.
+
+    ``mask_expected_reward`` must match the flag used during training: when
+    True, ``expected_reward`` is excluded from the flattened obs so the
+    evaluation input matches what the model saw during training.
 
     Missing model files are skipped with a warning so that a partially-trained
     experiment still runs.
@@ -180,6 +190,8 @@ def get_rl_policies(
     raw_env   = gym.make("DynamicAuction-v0", scenario=scenario)
     obs_space = raw_env.observation_space
     raw_env.close()
+
+    exclude = ["expected_reward"] if mask_expected_reward else []
 
     policies: Dict[str, SB3PolicyWrapper] = {}
     for algo in algos:
@@ -193,7 +205,9 @@ def get_rl_policies(
             with open(obs_rms_path, "rb") as f:
                 obs_rms = pickle.load(f)
         model = load_model(algo)
-        policies[algo.upper()] = SB3PolicyWrapper(model, obs_space, obs_rms=obs_rms)
+        policies[algo.upper()] = SB3PolicyWrapper(
+            model, obs_space, obs_rms=obs_rms, exclude_keys=exclude
+        )
         print(f"  Loaded {algo.upper()} ← {model_path}.zip")
 
     return policies
@@ -250,7 +264,7 @@ def run_full_benchmark(
     scenario = dac.make(cfg.scenario_id, **cfg.scenario_overrides)
 
     policies: Dict[str, BiddingPolicy] = {}
-    policies.update(get_rl_policies(scenario, list(algos)))
+    policies.update(get_rl_policies(scenario, list(algos), cfg.mask_expected_reward))
     policies.update(get_planning_policies(cfg))
     if extra_policies:
         policies.update(extra_policies)
@@ -331,8 +345,11 @@ def main():
                         help="Upper bound for the Random baseline (default: 1.0).")
     parser.add_argument("--n-seeds",         type=int,   default=30,
                         help="Number of evaluation seeds (default: 30).")
-    parser.add_argument("--no-save",         action="store_true",
+    parser.add_argument("--no-save",              action="store_true",
                         help="Do not write results to CSV.")
+    parser.add_argument("--no-mask-expected-reward", action="store_true",
+                        help="Do not exclude expected_reward from RL obs (use only for models "
+                             "trained WITHOUT MaskExpectedRewardWrapper).")
     args = parser.parse_args()
 
     cfg = EvalConfig(
@@ -340,6 +357,7 @@ def main():
         baselines=args.baselines,
         constant_bid=args.constant_bid,
         random_max_bid=args.random_max_bid,
+        mask_expected_reward=not args.no_mask_expected_reward,
     )
     run_full_benchmark(algos=args.algos, cfg=cfg, save=not args.no_save)
 

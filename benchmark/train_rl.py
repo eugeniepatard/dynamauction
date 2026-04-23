@@ -68,6 +68,7 @@ class TrainingConfig:
     learning_rate:   float = 3e-4
     gamma:           float = 0.99
     max_bid:         float = 5.0
+    mask_expected_reward: bool = True   # remove oracle signal from RL obs (fair vs FiPla)
 
     # PPO
     ppo_n_steps:      int   = 1024
@@ -139,8 +140,10 @@ def _build_model(algo: str, env, cfg: TrainingConfig, log_dir: Path):
     raise ValueError(f"Unknown algo {algo!r}. Choose from {list(_ALGO_CLS)}")
 
 
-def _env_factory(scenario, max_bid: float) -> gym.Env:
+def _env_factory(scenario, max_bid: float, mask_expected_reward: bool = True) -> gym.Env:
     env = gym.make("DynamicAuction-v0", scenario=scenario)
+    if mask_expected_reward:
+        env = dac.MaskExpectedRewardWrapper(env)
     env = dac.FlatAuctionObsWrapper(env)
     env = dac.BidScaleWrapper(env, max_bid)
     env = Monitor(env)
@@ -182,12 +185,12 @@ def train(
     model_dir.mkdir(parents=True, exist_ok=True)
 
     train_env = make_vec_env(
-        lambda: _env_factory(scenario, cfg.max_bid),
+        lambda: _env_factory(scenario, cfg.max_bid, cfg.mask_expected_reward),
         n_envs=cfg.n_envs,
         seed=cfg.seed,
     )
     eval_env = make_vec_env(
-        lambda: _env_factory(scenario, cfg.max_bid),
+        lambda: _env_factory(scenario, cfg.max_bid, cfg.mask_expected_reward),
         n_envs=1,
         seed=cfg.seed + 9_999,
     )
@@ -220,6 +223,7 @@ def train(
         print(f"  Scenario  : {SCENARIO_ID}")
         print(f"  Horizon   : {'fixed=' + str(cfg.fixed_horizon) if cfg.fixed_horizon else 'exponential'}")
         print(f"  VecNorm   : {cfg.use_vec_normalize}")
+        print(f"  MaskER    : {cfg.mask_expected_reward}  (expected_reward hidden from RL obs)")
         print(f"  Models  → {model_dir}")
         print(f"  Logs    → {log_dir}")
         print(f"{'='*60}\n")
@@ -279,6 +283,7 @@ def _cfg_to_training_config(cfg: DictConfig) -> TrainingConfig:
     kw  = dict(
         total_timesteps=t.total_timesteps,
         use_vec_normalize=t.use_vec_normalize,
+        mask_expected_reward=t.mask_expected_reward,
         n_envs=t.n_envs,
         seed=t.seed,
         max_bid=t.max_bid,

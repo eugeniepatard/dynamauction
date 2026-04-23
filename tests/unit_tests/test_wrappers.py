@@ -4,7 +4,8 @@ from gymnasium import spaces
 from gymnasium.utils.env_checker import check_env
 from unittest.mock import MagicMock
 
-from dynamicauc import AuctionEnv, FlatAuctionObsWrapper, BidScaleWrapper
+from dynamicauc import AuctionEnv, FlatAuctionObsWrapper, BidScaleWrapper, MaskExpectedRewardWrapper
+from dynamicauc.wrappers import SB3PolicyWrapper
 
 
 # TODO : Rechecker les tests + ajouter tests pour SB3 wrappers (VecNormalize, EvalCallback)
@@ -226,6 +227,126 @@ class TestBidScaleWrapperEndToEnd:
 
     def test_gymnasium_conformity(self, scaled_env):
         check_env(scaled_env)
+
+class TestMaskExpectedRewardWrapper:
+
+    _MASKED_KEY = "expected_reward"
+
+    @pytest.fixture
+    def masked_env(self, base_env):
+        return MaskExpectedRewardWrapper(base_env)
+
+    @pytest.fixture
+    def masked_flat_env(self, masked_env):
+        return FlatAuctionObsWrapper(masked_env)
+
+    # ── observation space ────────────────────────────────────────
+
+    def test_masked_key_absent_from_space(self, masked_env):
+        assert self._MASKED_KEY not in masked_env.observation_space.spaces
+
+    def test_other_keys_present_in_space(self, masked_env, base_env):
+        remaining = set(base_env.observation_space.spaces) - {self._MASKED_KEY}
+        assert remaining == set(masked_env.observation_space.spaces)
+
+    def test_space_dim_reduced_by_one(self, masked_env, base_env):
+        """expected_reward is Box(shape=(1,)) so flat dim shrinks by exactly 1."""
+        raw_dim = sum(
+            1 if isinstance(sp, spaces.Discrete) else int(np.prod(sp.shape))
+            for sp in base_env.observation_space.spaces.values()
+        )
+        masked_dim = sum(
+            1 if isinstance(sp, spaces.Discrete) else int(np.prod(sp.shape))
+            for sp in masked_env.observation_space.spaces.values()
+        )
+        assert masked_dim == raw_dim - 1
+
+    # ── obs dict returned by reset / step ───────────────────────
+
+    def test_reset_obs_excludes_masked_key(self, masked_env):
+        obs, _ = masked_env.reset(seed=0)
+        assert self._MASKED_KEY not in obs
+
+    def test_step_obs_excludes_masked_key(self, masked_env):
+        masked_env.reset(seed=0)
+        obs, _, _, _, _ = masked_env.step(np.array([0.5], dtype=np.float32))
+        assert self._MASKED_KEY not in obs
+
+    def test_reset_other_values_unchanged(self, masked_env, base_env):
+        """Values for the remaining keys must equal the raw env values."""
+        obs_masked, _ = masked_env.reset(seed=42)
+        obs_raw,    _ = base_env.reset(seed=42)
+        for key in obs_masked:
+            np.testing.assert_array_equal(obs_masked[key], obs_raw[key])
+
+    def test_step_other_values_unchanged(self, masked_env):
+        # masked_env.env IS base_env — they share the same underlying object.
+        # Step the raw env first (capturing the raw obs), then reset to the same
+        # state and step through the wrapper to get the masked obs.
+        masked_env.reset(seed=7)
+        obs_raw, _, _, _, _ = masked_env.env.step(np.array([1.0], dtype=np.float32))
+
+        masked_env.reset(seed=7)
+        obs_masked, _, _, _, _ = masked_env.step(np.array([1.0], dtype=np.float32))
+
+        for key in obs_masked:
+            np.testing.assert_array_equal(obs_masked[key], obs_raw[key])
+
+    # ── stacked with FlatAuctionObsWrapper ───────────────────────
+
+    def test_flat_dim_excludes_expected_reward(self, masked_flat_env, flat_env):
+        """Flat obs after masking must be 1 element shorter than without masking."""
+        assert masked_flat_env.observation_space.shape[0] == \
+               flat_env.observation_space.shape[0] - 1
+
+    def test_flat_reset_shape_matches_space(self, masked_flat_env):
+        obs, _ = masked_flat_env.reset(seed=0)
+        assert obs.shape == masked_flat_env.observation_space.shape
+
+    def test_flat_step_shape_matches_space(self, masked_flat_env):
+        masked_flat_env.reset(seed=0)
+        obs, _, _, _, _ = masked_flat_env.step(np.array([0.5], dtype=np.float32))
+        assert obs.shape == masked_flat_env.observation_space.shape
+
+    # ── SB3PolicyWrapper with exclude_keys ───────────────────────
+
+    def test_sb3_wrapper_exclude_matches_mask_dim(self, masked_flat_env, base_env):
+        """SB3PolicyWrapper(exclude_keys=[...]) must produce the same flat dim
+        as MaskExpectedRewardWrapper → FlatAuctionObsWrapper."""
+        from unittest.mock import MagicMock
+        mock_model = MagicMock()
+        mock_model.predict.return_value = (np.array([1.0]), None)
+
+        wrapper = SB3PolicyWrapper(
+            mock_model,
+            base_env.observation_space,
+            exclude_keys=[self._MASKED_KEY],
+        )
+        obs_raw, _ = base_env.reset(seed=0)
+        flat = wrapper._flatten(obs_raw)
+        assert flat.shape[0] == masked_flat_env.observation_space.shape[0]
+
+    def test_sb3_wrapper_exclude_values_match(self, masked_flat_env, base_env):
+        """The flat vector from SB3PolicyWrapper must equal the one from
+        MaskExpectedRewardWrapper → FlatAuctionObsWrapper."""
+        from unittest.mock import MagicMock
+        mock_model = MagicMock()
+
+        wrapper = SB3PolicyWrapper(
+            mock_model,
+            base_env.observation_space,
+            exclude_keys=[self._MASKED_KEY],
+        )
+        obs_raw,    _ = base_env.reset(seed=5)
+        obs_masked, _ = masked_flat_env.reset(seed=5)
+
+        np.testing.assert_array_almost_equal(wrapper._flatten(obs_raw), obs_masked)
+
+    # ── gymnasium conformity ─────────────────────────────────────
+
+    def test_gymnasium_conformity(self, masked_flat_env):
+        check_env(masked_flat_env)
+
 
 class TestStackedWrappers:
 
