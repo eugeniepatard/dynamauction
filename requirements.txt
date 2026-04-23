@@ -5,6 +5,7 @@ scipy
 pandas
 matplotlib
 gymnasium
+torch
 
 # Benchmark
 tabulate
