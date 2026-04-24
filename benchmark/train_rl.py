@@ -63,6 +63,8 @@ class TrainingConfig:
     total_timesteps: int   = 500_000
     use_vec_normalize: bool = True
     fixed_horizon: Optional[float] = None   # set via Python API; Hydra users control horizon via scenario_overrides
+    run_name:   str            = ""    # optional subdirectory suffix used by sweep jobs to avoid output collisions
+    scratch_dir: Optional[Path] = None  # if set, models/logs go here instead of benchmark/models|logs
     n_envs:          int   = 4
     seed:            int   = 42
     learning_rate:   float = 3e-4
@@ -181,8 +183,10 @@ def train(
     if cfg.fixed_horizon is not None:
         scenario.horizon_generator = FixedHorizon(cfg.fixed_horizon)
 
-    log_dir   = LOGS_DIR   / algo
-    model_dir = MODELS_DIR / algo
+    base      = Path(cfg.scratch_dir) if cfg.scratch_dir else BENCHMARK_DIR
+    subdir    = Path(cfg.run_name) if cfg.run_name else Path(".")
+    log_dir   = base / "logs"   / algo / subdir
+    model_dir = base / "models" / algo / subdir
     log_dir.mkdir(parents=True, exist_ok=True)
     model_dir.mkdir(parents=True, exist_ok=True)
 
