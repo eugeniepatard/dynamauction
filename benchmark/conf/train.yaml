@@ -6,7 +6,7 @@ scenario_id: survival-second-price-exponential
 scenario_overrides: {}           # e.g. {horizon_eta: 30.0}
 
 training:
-  total_timesteps: 20_000_000
+  total_timesteps: 30_000_000
   use_vec_normalize: true
   mask_expected_reward: true   # hide oracle value from RL agents
   n_envs: 4

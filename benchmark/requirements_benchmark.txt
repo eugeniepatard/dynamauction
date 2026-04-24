@@ -5,3 +5,4 @@ stable-baselines3[extra]>=2.3.0   # PPO, SAC, TD3 + TensorBoard callback
 shimmy>=0.2.0                      # Gymnasium/Gym compatibility
 
 tensorboard>=2.14.0
+submitit>=1.5.0                    # SLURM job submission for hyperparameter sweeps
