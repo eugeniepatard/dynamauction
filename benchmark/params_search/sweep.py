@@ -29,23 +29,25 @@ import submitit
 from benchmark.train_rl import TrainingConfig, train
 
 PPO_GRID: dict[str, list] = {
-    "learning_rate": [1e-4, 2e-4, 3e-4],
+    "learning_rate": [5e-5,1e-4, 2e-4, 3e-4],
     "ppo_ent_coef":  [0.0, 0.01, 0.02],
     "ppo_n_steps":   [256, 512],
     "gamma":         [0.95, 0.99],
+    "ppo_n_epochs":       [2, 5, 10],
 }
 
 SAC_GRID: dict[str, list] = {
-    "learning_rate":              [1e-4, 3e-4, 1e-3],
+    "learning_rate":              [5e-5, 1e-4, 3e-4, 1e-3],
     "off_policy_batch_size":      [256, 512],
-    "off_policy_learning_starts": [500, 1_000],
+    "off_policy_learning_starts": [500, 1_000, 1500],
     "gamma":                      [0.95, 0.99],
 }
 
 TD3_GRID: dict[str, list] = {
-    "learning_rate":          [1e-4, 3e-4],
+    "learning_rate":          [5e-5, 1e-4, 3e-4, 1e-3],
     "off_policy_batch_size":  [256, 512],
     "td3_action_noise_sigma": [0.1, 0.2],
+    "off_policy_learning_starts": [500, 1_000, 1_500],
     "gamma":                  [0.95, 0.99],
 }
 
