@@ -18,11 +18,14 @@ Usage (from the repo root, on the cluster):
 """
 from __future__ import annotations
 
+import sys
 import argparse
 import itertools
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 import submitit
 
