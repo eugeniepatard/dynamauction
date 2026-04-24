@@ -69,7 +69,6 @@ SLURM_PARAMS: dict[str, Any] = {
     "nodes":                1,
     "mem_gb":               8,
     "slurm_signal_delay_s": 120,                     # send SIGUSR1 120 s before timeout
-    "slurm_max_num_timeout":1,
     "slurm_array_parallelism": 3,                    # max 3 jobs running concurrently
     "slurm_job_name":       "dynac_sweep",
 }
