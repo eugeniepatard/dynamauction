@@ -1,7 +1,5 @@
 """
-Bidding policy interface and baseline implementations.
-
-All policies have oracle access to the full scenario (no learning).
+Bidding policy interface and simple baseline implementations.
 """
 from __future__ import annotations
 

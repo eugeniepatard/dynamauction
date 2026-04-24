@@ -309,3 +309,116 @@ Recommended training stack for fair RL / FiPla comparison:
 Recommended training stack (without mask, oracle access):
 
     AuctionEnv → FlatAuctionObsWrapper → BidScaleWrapper → Monitor → VecNormalize
+
+
+═══════════════════════════════════════════════════════════════════════════════
+8. PLANNING BASELINES
+═══════════════════════════════════════════════════════════════════════════════
+
+Three planning-based bidding policies ship alongside the simple baselines.
+All inherit from ``BiddingPolicy`` and are importable from ``dynamicauc.baseline``.
+
+    from dynamicauc.baseline import (
+        SimulationEstimator,
+        MLPValuationHead,
+        GreedyMyopicPolicy,
+        ShadingPolicy,
+        MPCPolicy,
+    )
+
+set_env() hook
+──────────────
+All three policies expose a ``set_env(env)`` hook that must be called once
+after each ``env.reset()`` to bind the live environment for planning rollouts:
+
+    obs, _ = env.reset(seed=seed)
+    policy.set_env(env)          # required — stores reference to live env
+    while not done:
+        bid = policy.bid(obs)
+        obs, reward, done, _, info = env.step(np.array([bid]))
+
+The env reference is stored (not copied), so ``env.step()`` calls advance the
+live episode normally while the policy deepcopies the env on demand inside
+each ``bid()`` call.  This hook is called automatically by ``evaluate.py``
+for any policy that exposes it.
+
+Performance note: each ``bid()`` call performs O(n_rollouts) deepcopies.
+For long episodes, keep ``n_rollouts`` small (≤ 10) or use ``FiPlaPolicy``
+as a fast zero-rollout alternative.
+
+SimulationEstimator
+───────────────────
+Monte Carlo estimator of the incremental display value:
+
+    Δ(s_t, x) = V¹(s_t, x) − V⁰(s_t)
+
+V¹ forces a win (bid = 1e12), adds back the payment to recover gross value,
+then rolls out under π₀.  V⁰ forces a loss (bid = 0) and rolls out under π₀.
+
+    estimator = SimulationEstimator(
+        pi0=FiPlaPolicy(),   # continuation policy (default: FiPla)
+        n_rollouts=20,       # MC trajectories per estimate
+    )
+
+MLPValuationHead
+────────────────
+MLP trained offline to approximate V₀(s, x) = E[reward | win display x in state s].
+Training targets are the FiPla labels obs["expected_reward"] (kernel integral).
+Used by MPCPolicy for fast value estimates inside CRN rollouts.
+
+    # Collect FiPla rollouts and train in one call
+    mlp = MLPValuationHead.from_scenario(scenario, n_episodes=200)
+    mlp.save("v0.pt")
+
+    # Load and inspect
+    mlp = MLPValuationHead.load("v0.pt")
+    value = mlp.predict(obs)   # float
+
+GreedyMyopicPolicy
+──────────────────
+Bids the incremental value directly.  Truthful under second-price rules.
+
+    b_t = Δ(s_t, x)
+
+    estimator = SimulationEstimator(n_rollouts=20)
+    policy    = GreedyMyopicPolicy(estimator)
+
+ShadingPolicy
+─────────────
+Applies a multiplicative shading factor α to the incremental value estimate.
+Required for first-price auctions; acts as a regulariser against MC noise.
+
+    b_t = α · Δ(s_t, x)
+
+    policy = ShadingPolicy(estimator, alpha=0.8)   # α ∈ (0, ∞)
+
+MPCPolicy
+─────────
+Optimises the first-step shading multiplier α* via H-step CRN rollouts:
+
+    α*_t = argmax_{α ∈ A₀} (1/M) Σ_m R^(m)(α)
+
+Common Random Numbers (CRN): the M noise streams are shared across all
+candidate α values, eliminating inter-candidate variance from common
+stochastic factors.
+
+    mlp    = MLPValuationHead.load("v0.pt")
+    policy = MPCPolicy(
+        v0               = mlp,
+        scenario         = scenario,
+        alpha_candidates = [0.6, 0.8, 1.0, 1.2, 1.5],
+        alpha_cont       = 1.0,      # multiplier for continuation steps
+        n_rollouts       = 10,       # CRN rollout pairs M
+        planning_horizon = 7.0,      # time units H to simulate ahead
+    )
+
+Plugging into the benchmark
+───────────────────────────
+Planning policies cannot be selected via the CLI (they require constructed
+objects).  Pass them via ``extra_policies``:
+
+    from benchmark.evaluate import run_full_benchmark
+    df = run_full_benchmark(extra_policies={
+        "Greedy": GreedyMyopicPolicy(SimulationEstimator()),
+        "MPC":    MPCPolicy(mlp, scenario),
+    })

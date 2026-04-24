@@ -9,6 +9,7 @@ import numpy as np
 import gymnasium as gym
 from dynamicauc.baseline.estimators import MLPValuationHead, SimulationEstimator
 from dynamicauc.baseline.policies import BiddingPolicy
+from dynamicauc.env import AuctionEnv
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Planning policies
@@ -114,7 +115,6 @@ class MPCPolicy(BiddingPolicy):
     def __init__(
         self,
         v0: MLPValuationHead,
-        scenario,
         alpha_candidates: Sequence[float] = (0.6, 0.8, 1.0, 1.2, 1.5),
         alpha_cont: float = 1.0,
         n_rollouts: int = 10,
@@ -126,16 +126,12 @@ class MPCPolicy(BiddingPolicy):
         self.alpha_cont = alpha_cont
         self.n_rollouts = n_rollouts
         self.planning_horizon = planning_horizon
-        self._env: Optional[gym.Env] = None
+        self._env: Optional[AuctionEnv] = None
         self._rng = np.random.default_rng(seed)
 
-    # ── env binding ───────────────────────────────────────────────
-
-    def set_env(self, env: gym.Env) -> None:
+    def set_env(self, env: AuctionEnv) -> None:
         """Bind the live env.  Must be called once after each ``env.reset()``."""
         self._env = env
-
-    # ── bid ───────────────────────────────────────────────────────
 
     def bid(self, observations: Dict[str, Any]) -> float:
         """
@@ -150,7 +146,6 @@ class MPCPolicy(BiddingPolicy):
         v0_now = self.v0.predict(observations)
         t_start = float(observations["t"].ravel()[0])
 
-        # Pre-generate CRN seeds — shared across all α candidates.
         crn_seeds = [int(s) for s in self._rng.integers(0, 2**31, size=self.n_rollouts)]
 
         q_hat: Dict[float, float] = {}
@@ -159,7 +154,7 @@ class MPCPolicy(BiddingPolicy):
             for seed in crn_seeds:
                 env_copy = copy.deepcopy(self._env)
                 # Enforce CRN: same noise stream for every α at this seed.
-                env_copy.np_random = np.random.default_rng(seed)
+                env_copy.rng = np.random.default_rng(seed)
                 cumulative += self._mpc_rollout(
                     env_copy, observations, alpha, v0_now, t_start
                 )
@@ -168,11 +163,9 @@ class MPCPolicy(BiddingPolicy):
         alpha_star = max(q_hat, key=q_hat.get)
         return float(max(0.0, alpha_star * v0_now))
 
-    # ── rollout ───────────────────────────────────────────────────
-
     def _mpc_rollout(
         self,
-        env: gym.Env,
+        env: AuctionEnv,
         obs: Dict[str, Any],
         alpha_first: float,
         v0_now: float,
@@ -187,12 +180,10 @@ class MPCPolicy(BiddingPolicy):
         Stops at the natural episode end or when the elapsed time exceeds
         ``planning_horizon``.
         """
-        # ── first step: apply candidate multiplier ────────────────
         bid_0 = alpha_first * v0_now
         obs, reward, done, _trunc, _ = env.step(np.array([bid_0], dtype=np.float32))
         total = float(reward)
 
-        # ── continuation: apply alpha_cont until horizon or end ───
         while not done:
             t_now = float(obs["t"].ravel()[0])
             if t_now - t_start > self.planning_horizon:

@@ -10,3 +10,4 @@ outputs/*
 benchmark/logs/*
 benchmark/models/*
 benchmark/outputs/*
+NOTES.txt
