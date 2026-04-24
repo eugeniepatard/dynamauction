@@ -55,6 +55,9 @@ PALETTE: Dict[str, str] = {
     "FiPla":        "#C44E52",
     "Constant(0.5)":"#8172B2",
     "Random":       "#937860",
+    "GreedyMyopic":  "#DA8BC3",
+    "Shading":       "#070707",  # matched by prefix for any Shading(α=...)
+    "MPC":          "#D8E707",
 }
 
 _MARKERS = ["o", "s", "^", "D", "v", "P", "X"]
@@ -75,7 +78,13 @@ def _style() -> None:
 
 
 def _color(name: str, idx: int = 0) -> str:
-    return PALETTE.get(name, sns.color_palette("husl", 10)[idx % 10])
+    if name in PALETTE:
+        return PALETTE[name]
+    # prefix match: "Shading(α=0.8)" → key "Shading"
+    for key, color in PALETTE.items():
+        if name.startswith(key):
+            return color
+    return sns.color_palette("husl", 10)[idx % 10]
 
 
 def _save(fig: plt.Figure, filename: str) -> None:

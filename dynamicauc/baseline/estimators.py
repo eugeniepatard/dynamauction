@@ -173,8 +173,9 @@ class MLPValuationHead:
         opt = torch.optim.Adam(self._net.parameters(), lr=lr)
         loss_fn = nn.MSELoss()
 
+        from tqdm import tqdm
         self._net.train()
-        for _ in range(n_epochs):
+        for _ in tqdm(range(n_epochs), desc="MLPValuationHead training", unit="epoch", leave=False):
             for xb, yb in loader:
                 loss = loss_fn(self._net(xb), yb)
                 opt.zero_grad()
@@ -207,11 +208,12 @@ class MLPValuationHead:
         fit_kwargs : dict, optional
             Extra keyword arguments forwarded to ``fit()``.
         """
+        from tqdm import tqdm
         env = AuctionEnv(scenario=scenario)
         X_list: list = []
         y_list: list = []
 
-        for ep in range(n_episodes):
+        for ep in tqdm(range(n_episodes), desc="Collecting rollouts", unit="ep"):
             obs, _ = env.reset(seed=seed + ep)
             done = False
             while not done:
