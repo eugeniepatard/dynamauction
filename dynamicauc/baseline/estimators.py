@@ -14,9 +14,6 @@ import copy
 import gymnasium as gym
 from typing import Dict, Any
 
-_BIG_BID: float = 1e12
-
-
 class SimulationEstimator:
     """
     Monte Carlo estimator of the incremental display value:
@@ -38,18 +35,23 @@ class SimulationEstimator:
     ----------
     pi0 : BiddingPolicy
         Continuation policy used after the forced first step.
-        Defaults to :class:`FiPlaPolicy` (truthful / oracle bidder).
+        Defaults to FiPlaPolicy (truthful / oracle bidder).
     n_rollouts : int
         Number of Monte Carlo trajectories for each V¹ and V⁰ estimate.
+    big_bid : float
+        Bid used to force a win when estimating V¹.  Must exceed the
+        highest possible competing bid in the scenario.  Default: 1e12.
     """
 
     def __init__(
         self,
         pi0: BiddingPolicy = None,
         n_rollouts: int = 20,
+        big_bid: float = 1e12,
     ) -> None:
         self.pi0 = pi0 if pi0 is not None else FiPlaPolicy()
         self.n_rollouts = n_rollouts
+        self.big_bid = big_bid
         self._env: Optional[gym.Env] = None
 
     def set_env(self, env: gym.Env) -> None:
@@ -75,7 +77,7 @@ class SimulationEstimator:
             # V¹: force a win, recover gross value by adding back the payment
             v1_sum += _rollout_to_end(
                 copy.deepcopy(self._env), obs, self.pi0,
-                first_bid=_BIG_BID, gross_first_step=True,
+                first_bid=self.big_bid, gross_first_step=True,
             )
             # V⁰: force a loss (bid = 0)
             v0_sum += _rollout_to_end(
@@ -193,10 +195,6 @@ class MLPValuationHead:
     ) -> "MLPValuationHead":
         """
         Collect FiPla rollouts on *scenario* and return a trained MLP.
-
-        FiPla bids the exact kernel-integrated expected reward, which is the
-        natural regression target.  Each ``(obs, obs["expected_reward"])``
-        pair from a FiPla trajectory becomes one training sample.
 
         Parameters
         ----------

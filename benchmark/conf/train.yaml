@@ -6,14 +6,14 @@ scenario_id: survival-second-price-exponential
 scenario_overrides: {}           # e.g. {horizon_eta: 30.0}
 
 training:
-  total_timesteps: 2_000_000
+  total_timesteps: 20_000_000
   use_vec_normalize: true
   mask_expected_reward: true   # hide oracle value from RL agents
   n_envs: 4
   seed: 42
   max_bid: 5.0
-  eval_freq: 10_000
-  n_eval_episodes: 20
+  eval_freq: 100_000
+  n_eval_episodes: 50
   verbose: true
 
 hydra:

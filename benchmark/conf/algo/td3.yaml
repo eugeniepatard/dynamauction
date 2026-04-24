@@ -3,5 +3,5 @@ learning_rate: 1e-4
 gamma: 0.99
 # TD3-specific
 batch_size: 256
-learning_starts: 5000
+learning_starts: 5000 # number of steps before training starts (to populate the replay buffer with enough data)
 action_noise_sigma: 0.1   # std of Gaussian noise in normalized [-1, 1] action space (~10% of bid range)

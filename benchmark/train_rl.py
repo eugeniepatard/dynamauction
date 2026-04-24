@@ -75,6 +75,7 @@ class TrainingConfig:
     ppo_batch_size:   int   = 128
     ppo_n_epochs:     int   = 10
     ppo_gae_lambda:   float = 0.90
+    ppo_ent_coef:     float = 0.0
 
     # SAC / TD3
     off_policy_batch_size:      int   = 256
@@ -122,6 +123,7 @@ def _build_model(algo: str, env, cfg: TrainingConfig, log_dir: Path):
             batch_size=cfg.ppo_batch_size,
             n_epochs=cfg.ppo_n_epochs,
             gae_lambda=cfg.ppo_gae_lambda,
+            ent_coef=cfg.ppo_ent_coef,
         )
     if algo == "sac":
         return SAC(
@@ -295,7 +297,8 @@ def _cfg_to_training_config(cfg: DictConfig) -> TrainingConfig:
     )
     if a.name == "ppo":
         kw.update(ppo_n_steps=a.n_steps, ppo_batch_size=a.batch_size,
-                  ppo_n_epochs=a.n_epochs, ppo_gae_lambda=a.gae_lambda)
+                  ppo_n_epochs=a.n_epochs, ppo_gae_lambda=a.gae_lambda,
+                  ppo_ent_coef=a.ent_coef)
     else:
         kw.update(off_policy_batch_size=a.batch_size,
                   off_policy_learning_starts=a.learning_starts)
