@@ -7,10 +7,8 @@ from dynamicauc.primitives import PoissonProbe
 
 @pytest.fixture
 def mock_scenario():
-    # Use a plain MagicMock or a loosely defined spec
     scenario = MagicMock()
 
-    # 1. Manually create the nested mocks that the Env expects
     scenario.user_feature_generator = MagicMock()
     scenario.display_sampler = MagicMock()
     scenario.horizon_generator = MagicMock()
@@ -22,7 +20,6 @@ def mock_scenario():
     scenario.probe = MagicMock()
     scenario.delay_sampler = MagicMock()
 
-    # 2. Setup simple return values
     scenario.user_feature_generator.generate.return_value = np.array([1.0, 0.5])
     scenario.user_feature_generator.get_observable_features.return_value = np.array([1.0])
     scenario.user_feature_generator.observable_dim = 1
@@ -36,7 +33,6 @@ def mock_scenario():
     scenario.exogenous.y = lambda t: 0.0
     scenario.exogenous.generate = MagicMock()
 
-    # Kernel properties
     scenario.kernel.kappa.return_value = 0.0
     scenario.kernel.lambda_.return_value = 1.0
     scenario.kernel.lambda_upper_bound.return_value = 1.0
@@ -46,12 +42,10 @@ def mock_scenario():
     scenario.gamma.initiate_context.return_value = 0.0
     scenario.gamma.update_context.side_effect = lambda ctx, x, u, t, t_past: ctx + 1.0
 
-    # Competition & Auction
     scenario.competition.sample.return_value = 0.5
     scenario.auction.win.side_effect = lambda bid, comp: bid > comp
     scenario.auction.payment.side_effect = lambda bid, comp: comp
 
-    # Delay sampler returns no delays by default
     scenario.delay_sampler.sample.return_value = []
 
     scenario.max_history = 5
@@ -62,7 +56,6 @@ def mock_scenario():
 def test_gym_api_conformity(mock_scenario):
     """Check if the environment follows Gymnasium standards."""
     env = AuctionEnv(mock_scenario)
-    # This utility checks for observation/action space consistency
     check_env(env)
 
 def test_reset_logic(mock_scenario):
@@ -108,7 +101,6 @@ def test_delayed_reward_out_of_window(mock_scenario):
     
     obs, reward, _, _, info = env.step(action=1.0)
     
-    # Since the conversion happens at 1.5, it matures during the step transition to t=2.0
     assert info["auction"]["won"] is True
     assert reward == - 0.5  # Immediate conversion - Payment
     assert obs["t"] == 2.0
@@ -118,7 +110,6 @@ def test_episode_termination(mock_scenario):
     env = AuctionEnv(mock_scenario)
     env.reset()
     
-    # There are 3 auction times. 3 steps should end it.
     _, _, done1, _, _ = env.step(1.0)
     _, _, done2, _, _ = env.step(1.0)
     obs, _, done3, _, _ = env.step(1.0)
@@ -127,8 +118,6 @@ def test_episode_termination(mock_scenario):
     assert done2 is False
     assert done3 is True
     assert obs["t"] == env.horizon
-
-# --- Statistical Test for PoissonProbe (Ogata thinning) ---
 
 def test_poisson_probe_statistical_properties():
     """
