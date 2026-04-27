@@ -2,52 +2,10 @@ import numpy as np
 import pytest
 from gymnasium import spaces
 from gymnasium.utils.env_checker import check_env
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from dynamicauc import AuctionEnv, FlatAuctionObsWrapper, BidScaleWrapper, MaskExpectedRewardWrapper
 from dynamicauc.wrappers import SB3PolicyWrapper
-
-
-# TODO : Rechecker les tests + ajouter tests pour SB3 wrappers (VecNormalize, EvalCallback)
-
-@pytest.fixture
-def mock_scenario():
-    scenario = MagicMock()
-
-    scenario.user_feature_generator.generate.return_value = np.array([1.0, 0.5, 0.2])
-    scenario.user_feature_generator.get_observable_features.return_value = np.array([1.0, 0.5, 0.2])
-    scenario.user_feature_generator.observable_dim = 3
-
-    scenario.display_sampler.sample.return_value = np.array([0.1, 0.2, 0.3])
-    scenario.display_sampler.dim = 3
-
-    scenario.horizon_generator.sample.return_value = 10.0
-    scenario.arrival.sample_times.return_value = np.array([1.0, 2.0, 5.0])
-    scenario.exogenous.y = lambda t: 0.0
-    scenario.exogenous.generate = MagicMock()
-
-    scenario.kernel.kappa.return_value = 0.0
-    scenario.kernel.lambda_.return_value = 0.5
-    scenario.kernel.lambda_upper_bound.return_value = 1.0
-    scenario.kernel.expected_reward.return_value = 0.5
-
-    scenario.gamma.initiate_context.return_value = 0.0
-    scenario.gamma.update_context.side_effect = lambda ctx, x, u, t, t_past: ctx + 1.0
-
-    scenario.competition.sample.return_value = 0.3
-    scenario.auction.win.side_effect = lambda bid, comp: bid > comp
-    scenario.auction.payment.side_effect = lambda bid, comp: comp
-
-    scenario.delay_sampler.sample.return_value = []
-    scenario.max_history = 1
-    scenario.conversion_value = 1.0
-
-    return scenario
-
-
-@pytest.fixture
-def base_env(mock_scenario):
-    return AuctionEnv(mock_scenario)
 
 
 @pytest.fixture
@@ -376,3 +334,205 @@ class TestStackedWrappers:
         for _ in range(50):
             action = scaled_env.action_space.sample()
             assert scaled_env.action_space.contains(action)
+
+
+# ── helpers ───────────────────────────────────────────────────────────────────
+
+def _make_vec_env(mock_scenario, n=1):
+    from stable_baselines3.common.vec_env import DummyVecEnv
+    from stable_baselines3.common.monitor import Monitor
+
+    def make():
+        env = AuctionEnv(mock_scenario)
+        env = FlatAuctionObsWrapper(env)
+        env = BidScaleWrapper(env)
+        env = Monitor(env)
+        return env
+
+    return DummyVecEnv([make] * n)
+
+
+# ── SB3PolicyWrapper ──────────────────────────────────────────────────────────
+
+class TestSB3PolicyWrapper:
+
+    @pytest.fixture
+    def mock_model(self):
+        m = MagicMock()
+        m.predict.return_value = (np.array([1.5]), None)
+        return m
+
+    @pytest.fixture
+    def wrapper(self, mock_model, base_env):
+        return SB3PolicyWrapper(mock_model, base_env.observation_space)
+
+    # ── _flatten ─────────────────────────────────────────────────────────────
+
+    def test_flatten_shape_matches_flat_wrapper(self, wrapper, base_env, flat_env):
+        obs, _ = base_env.reset(seed=0)
+        expected, _ = flat_env.reset(seed=0)
+        assert wrapper._flatten(obs).shape == expected.shape
+
+    def test_flatten_values_match_flat_wrapper(self, wrapper, base_env, flat_env):
+        obs, _ = base_env.reset(seed=0)
+        expected, _ = flat_env.reset(seed=0)
+        np.testing.assert_array_almost_equal(wrapper._flatten(obs), expected)
+
+    def test_flatten_exclude_key_reduces_dim_by_one(self, mock_model, base_env, flat_env):
+        w = SB3PolicyWrapper(mock_model, base_env.observation_space,
+                             exclude_keys=["expected_reward"])
+        obs, _ = base_env.reset(seed=0)
+        assert w._flatten(obs).shape[0] == flat_env.observation_space.shape[0] - 1
+
+    def test_flatten_output_is_float32(self, wrapper, base_env):
+        obs, _ = base_env.reset(seed=0)
+        assert wrapper._flatten(obs).dtype == np.float32
+
+    # ── bid without obs_rms ──────────────────────────────────────────────────
+
+    def test_bid_returns_float(self, wrapper, base_env):
+        obs, _ = base_env.reset(seed=0)
+        assert isinstance(wrapper.bid(obs), float)
+
+    def test_bid_matches_model_output(self, wrapper, mock_model, base_env):
+        mock_model.predict.return_value = (np.array([2.7]), None)
+        obs, _ = base_env.reset(seed=0)
+        assert wrapper.bid(obs) == pytest.approx(2.7)
+
+    def test_bid_calls_predict_with_deterministic_true(self, wrapper, mock_model, base_env):
+        obs, _ = base_env.reset(seed=0)
+        wrapper.bid(obs)
+        mock_model.predict.assert_called_once()
+        assert mock_model.predict.call_args[1]["deterministic"] is True
+
+    def test_bid_predict_input_is_1d_float32(self, wrapper, mock_model, base_env):
+        obs, _ = base_env.reset(seed=0)
+        wrapper.bid(obs)
+        inp = mock_model.predict.call_args[0][0]
+        assert inp.ndim == 1
+        assert inp.dtype == np.float32
+
+    def test_bid_without_obs_rms_passes_raw_flat_obs(self, wrapper, mock_model, base_env, flat_env):
+        obs_raw,  _ = base_env.reset(seed=0)
+        obs_flat, _ = flat_env.reset(seed=0)
+        wrapper.bid(obs_raw)
+        np.testing.assert_array_almost_equal(mock_model.predict.call_args[0][0], obs_flat)
+
+    # ── bid with obs_rms (VecNormalize statistics) ───────────────────────────
+
+    @pytest.fixture
+    def obs_rms(self, flat_env):
+        from stable_baselines3.common.running_mean_std import RunningMeanStd
+        flat_dim = flat_env.observation_space.shape[0]
+        rms = RunningMeanStd(shape=(flat_dim,))
+        rms.mean = np.full(flat_dim, 0.5, dtype=np.float64)
+        rms.var  = np.full(flat_dim, 4.0, dtype=np.float64)   # std = 2
+        return rms
+
+    def test_bid_with_obs_rms_normalizes_obs(self, mock_model, base_env, obs_rms):
+        wrapper = SB3PolicyWrapper(mock_model, base_env.observation_space,
+                                   obs_rms=obs_rms, clip_obs=10.0)
+        obs_raw, _ = base_env.reset(seed=0)
+        wrapper.bid(obs_raw)
+
+        raw_flat = SB3PolicyWrapper(mock_model, base_env.observation_space)._flatten(obs_raw)
+        expected = np.clip(
+            (raw_flat - obs_rms.mean) / np.sqrt(obs_rms.var + 1e-8),
+            -10.0, 10.0,
+        ).astype(np.float32)
+        np.testing.assert_array_almost_equal(mock_model.predict.call_args[0][0], expected)
+
+    def test_bid_obs_rms_clips_extreme_values(self, mock_model, base_env, flat_env):
+        from stable_baselines3.common.running_mean_std import RunningMeanStd
+        flat_dim = flat_env.observation_space.shape[0]
+        rms = RunningMeanStd(shape=(flat_dim,))
+        rms.mean = np.zeros(flat_dim, dtype=np.float64)
+        rms.var  = np.full(flat_dim, 1e-10, dtype=np.float64)  # tiny var → huge normalised values
+
+        wrapper = SB3PolicyWrapper(mock_model, base_env.observation_space,
+                                   obs_rms=rms, clip_obs=3.0)
+        obs_raw, _ = base_env.reset(seed=0)
+        wrapper.bid(obs_raw)
+
+        inp = mock_model.predict.call_args[0][0]
+        assert np.all(np.abs(inp) <= 3.0 + 1e-6)
+
+    def test_bid_custom_clip_obs_respected(self, mock_model, base_env, flat_env):
+        from stable_baselines3.common.running_mean_std import RunningMeanStd
+        flat_dim = flat_env.observation_space.shape[0]
+        rms = RunningMeanStd(shape=(flat_dim,))
+        rms.mean = np.zeros(flat_dim)
+        rms.var  = np.full(flat_dim, 1e-10)
+
+        for clip in (1.0, 5.0, 20.0):
+            mock_model.reset_mock()
+            w = SB3PolicyWrapper(mock_model, base_env.observation_space,
+                                 obs_rms=rms, clip_obs=clip)
+            obs_raw, _ = base_env.reset(seed=0)
+            w.bid(obs_raw)
+            inp = mock_model.predict.call_args[0][0]
+            assert np.all(np.abs(inp) <= clip + 1e-6)
+
+
+# ── VecNormalize ──────────────────────────────────────────────────────────────
+
+class TestVecNormalize:
+
+    @pytest.fixture
+    def vec_env(self, mock_scenario):
+        env = _make_vec_env(mock_scenario)
+        yield env
+        env.close()
+
+    @pytest.fixture
+    def vn_train(self, vec_env):
+        from stable_baselines3.common.vec_env import VecNormalize
+        vn = VecNormalize(vec_env, norm_obs=True, norm_reward=True, training=True)
+        yield vn
+        vn.close()
+
+    # ── obs normalisation statistics ─────────────────────────────────────────
+
+    def test_obs_rms_updates_during_training(self, vn_train):
+        initial_var = vn_train.obs_rms.var.copy()
+        vn_train.reset()
+        for _ in range(20):
+            vn_train.step(vn_train.action_space.sample())
+        # Variance must be non-trivial after seeing observations
+        assert vn_train.obs_rms.var.sum() > 0.0
+        assert not np.allclose(vn_train.obs_rms.var, initial_var)
+
+    def test_obs_rms_frozen_when_training_false(self, vec_env):
+        from stable_baselines3.common.vec_env import VecNormalize
+        vn = VecNormalize(vec_env, norm_obs=True, training=False)
+        vn.obs_rms.mean[:] = 99.0
+        vn.obs_rms.var[:]  = 99.0
+        vn.reset()
+        for _ in range(20):
+            vn.step(vn.action_space.sample())
+        assert np.all(vn.obs_rms.mean == 99.0)
+        assert np.all(vn.obs_rms.var  == 99.0)
+
+    def test_normalised_obs_dtype_is_float32(self, vn_train):
+        obs = vn_train.reset()
+        assert obs.dtype == np.float32
+
+    def test_normalised_obs_shape_matches_flat_env(self, vn_train, flat_env):
+        obs = vn_train.reset()
+        # VecEnv returns (n_envs, obs_dim); one env here
+        assert obs.shape == (1, flat_env.observation_space.shape[0])
+
+    # ── reward normalisation ─────────────────────────────────────────────────
+
+    def test_norm_reward_true_attribute(self, vn_train):
+        assert vn_train.norm_reward is True
+
+    def test_norm_reward_false_attribute(self, vec_env):
+        from stable_baselines3.common.vec_env import VecNormalize
+        vn = VecNormalize(vec_env, norm_reward=False)
+        assert vn.norm_reward is False
+
+    def test_norm_reward_false_flag_is_propagated(self, vec_env):
+        from stable_baselines3.common.vec_env import VecNormalize
+        vn = VecNormalize(vec_env, norm_reward=False)
+        assert vn.norm_reward is False

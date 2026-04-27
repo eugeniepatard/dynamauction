@@ -10,8 +10,6 @@ from dynamicauc import (
     SurvivalKernel
 )
 
-# --- Mock Helpers ---
-
 @pytest.fixture
 def user_vec():
     return np.array([1.0, 0.5])
@@ -22,20 +20,15 @@ def x_vec():
 
 @pytest.fixture
 def constant_y():
-    # Constant exogenous process (e.g., no competitor click or fixed click time)
     return lambda t: 0.0 
-
-# --- Tests for SaturationKernel ---
 
 class TestSaturationKernel:
     @staticmethod
     def test_lambda_decay(user_vec, x_vec, constant_y):
         kernel = SaturationKernel(base_rate=1.0, delay_rate=0.5, saturation_scale=10.0)
-        # At s=0, lambda should be base_rate * exp(-ctx/scale) * delay_rate
         val = kernel.lambda_(user_vec, x_vec, ctx=0.0, y=0.0, t=0.0, s=0.0)
         assert pytest.approx(val) == 0.5
         
-        # Test that higher context (saturation) reduces intensity
         val_saturated = kernel.lambda_(user_vec, x_vec, ctx=10.0, y=0.0, t=0.0, s=0.0)
         assert val_saturated < val
         assert pytest.approx(val_saturated, abs=0.001) == 0.183
@@ -56,21 +49,17 @@ class TestSaturationKernel:
         
         assert pytest.approx(actual, rel=1e-3) == expected
 
-# --- Tests for RecencyDisplayKernel ---
-
 class TestRecencyDisplayKernel:
 
     @staticmethod
     def test_initial_recency():
         kernel = RecencyDisplayKernel(alpha=1.0)
-        # Should be 1.0 when ctx is -inf
         assert kernel._recency_factor(float("-inf"), 10.0) == 1.0
 
 
     @staticmethod
     def test_recency_decay():
         kernel = RecencyDisplayKernel(alpha=1.0)
-        # If we just showed an ad (t - ctx is small), intensity should be low
         low_recency = kernel._recency_factor(ctx=9.9, t=10.0)
         high_recency = kernel._recency_factor(ctx=1.0, t=10.0)
         assert low_recency < high_recency
@@ -81,23 +70,15 @@ class TestRecencyDisplayKernel:
         kernel = RecencyDisplayKernel(alpha=alpha, delay_rate=1.0)
         t, ctx = 10.0, 8.0
         
-        # Integral of exponential delay (1.0) over infinite horizon is 1.0
         expected = 1.0 - np.exp(-alpha * (t - ctx))
         actual = kernel.expected_reward(user_vec, x_vec, ctx, constant_y, t, horizon=100)
         
         assert pytest.approx(actual, rel=1e-3) == expected
 
-# --- Tests for CompetitorExtinctionKernel ---
-
 class TestCompetitorExtinctionKernel:
     @staticmethod
     def test_extinction_logic(user_vec, x_vec):
         kernel = CompetitorExtinctionKernel(base_rate=1.0)
-        # Case 1: Competitor clicked at y=5, display is at t=2.
-        # At s=4 (absolute time 6), y < t+s is false? 
-        # Actually the logic is: if y > t, return 0. 
-        # This implies if a competitor click is scheduled in the future, 
-        # the current display is "extinguished".
         val_extinguished = kernel.lambda_(user_vec, x_vec, 0.0, y=5.0, t=2.0, s=1.0)
         assert val_extinguished == 0.0
         
@@ -108,12 +89,9 @@ class TestCompetitorExtinctionKernel:
     def test_expected_reward_extinction(user_vec, x_vec):
         kernel = CompetitorExtinctionKernel(base_rate=1.0, delay_rate=0.5)
         
-        # If competitor click is in the future (y > t), reward is 0
         y_func = lambda time: 10.0
         res = kernel.expected_reward(user_vec, x_vec, 0.0, y_func, t=5.0, horizon=20.0)
         assert res == 0.0
-
-# --- Tests for MixedKernel ---
 
 class TestMixedKernel:
     @staticmethod
@@ -122,34 +100,27 @@ class TestMixedKernel:
         kappa_val = 0.5
         mixed = MixedKernel(base, kappa_base_rate=kappa_val)
         
-        # Kappa should be constant
         assert mixed.kappa(user_vec, x_vec, 0.0, 0.0) == kappa_val
         
-        # Expected reward should be kappa + base_expected_reward
         base_expected = base.expected_reward(user_vec, x_vec, 0.0, constant_y, 0, 100)
         mixed_expected = mixed.expected_reward(user_vec, x_vec, 0.0, constant_y, 0, 100)
         
         assert pytest.approx(mixed_expected) == kappa_val + base_expected
 
-# --- Tests for SurvivalKernel ---
-
 class TestSurvivalKernel:
     @staticmethod
     def test_conversion_probability(user_vec, x_vec):
         kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]), alpha=1.0)
-        # user_vec = [1.0, 0.5] (sum=1.5), x_vec = [0.0, 1.0] (sum=1.0)
-        # ctx = 0.5 -> prob = 0.5 * 1.5 * 1.0 = 0.75
         prob = kernel.conversion_probability(user_vec, x_vec, ctx=0.5)
         assert pytest.approx(prob) == 0.75
         
-        # test clipping
         prob_clip = kernel.conversion_probability(user_vec, x_vec, ctx=2.0)
         assert prob_clip == 1.0
         
     @staticmethod
     def test_expected_reward(user_vec, x_vec, constant_y):
         kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]), alpha=1.0)
-        # Using horizon that allows exponential to decay fully
+        
         expected = 0.75 * (1.0 - np.exp(-100.0))
         actual = kernel.expected_reward(user_vec, x_vec, ctx=0.5, y_func=constant_y, t=0.0, horizon=100.0)
         assert pytest.approx(actual, rel=1e-3) == expected
