@@ -178,24 +178,24 @@ def load_mlp(scenario_id: str = SCENARIO_ID, path: Optional[str] = None) -> MLPV
         p = Path(path)
         if not p.exists():
             raise FileNotFoundError(f"No MLPValuationHead at {p}.")
-        print(f"  Loaded MLPValuationHead ← {p}")
-        return MLPValuationHead.load(p)
+    else:
+        candidates = sorted(MLP_DIR.glob(f"{scenario_id}_*.pt"))
+        if not candidates:
+            raise FileNotFoundError(
+                f"No MLPValuationHead found for scenario '{scenario_id}' in {MLP_DIR}.\n"
+                "Train one first:  python -m benchmark.train_mlp"
+            )
+        if len(candidates) > 1:
+            listing = "\n  ".join(str(c) for c in candidates)
+            raise FileNotFoundError(
+                f"Multiple MLPValuationHead models found for '{scenario_id}':\n  {listing}\n"
+                "Pass --mpc-model <path> to select one."
+            )
+        p = candidates[0]
 
-    candidates = sorted(MLP_DIR.glob(f"{scenario_id}_*.pt"))
-    if not candidates:
-        raise FileNotFoundError(
-            f"No MLPValuationHead found for scenario '{scenario_id}' in {MLP_DIR}.\n"
-            "Train one first:  python -m benchmark.train_mlp"
-        )
-    if len(candidates) > 1:
-        listing = "\n  ".join(str(c) for c in candidates)
-        raise FileNotFoundError(
-            f"Multiple MLPValuationHead models found for '{scenario_id}':\n  {listing}\n"
-            "Pass --mpc-model <path> to select one."
-        )
-    p = candidates[0]
-    print(f"  Loaded MLPValuationHead ← {p}")
-    return MLPValuationHead.load(p)
+    mlp = MLPValuationHead.load(p)
+    print(f"  Loaded MLPValuationHead ← {p}  (hidden_dims={mlp.hidden_dims}, input_dim={mlp.input_dim})")
+    return mlp
 
 
 def main() -> None:

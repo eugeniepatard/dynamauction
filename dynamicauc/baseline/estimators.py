@@ -144,7 +144,8 @@ class MLPValuationHead:
         hidden_dims: Sequence[int] = (64, 64),
     ) -> None:
         self.input_dim = input_dim
-        self._net = _MLPNet(input_dim, list(hidden_dims))
+        self.hidden_dims = list(hidden_dims)
+        self._net = _MLPNet(input_dim, self.hidden_dims)
 
     def fit(
         self,
@@ -270,15 +271,41 @@ class MLPValuationHead:
     def save(self, path: str | Path) -> None:
         """Save weights + metadata to *path* (uses torch.save, no extension forced)."""
         torch.save(
-            {"input_dim": self.input_dim, "state_dict": self._net.state_dict()},
+            {
+                "input_dim":   self.input_dim,
+                "hidden_dims": self.hidden_dims,
+                "state_dict":  self._net.state_dict(),
+            },
             path,
         )
 
     @classmethod
     def load(cls, path: str | Path) -> "MLPValuationHead":
-        """Load from a file created by :meth:`save`."""
-        data = torch.load(path, map_location="cpu", weights_only=True)
-        obj = cls(input_dim=data["input_dim"])
+        """Load from a file created by `save`.
+
+        Architecture resolution order:
+        1. ``hidden_dims`` key inside the ``.pt`` file (new saves)
+        2. Companion ``<stem>.json`` produced by ``train_mlp.py``
+        3. Infer from weight tensor shapes (legacy fallback)
+        """
+        import json as _json
+
+        p = Path(path)
+        data = torch.load(p, map_location="cpu", weights_only=True)
+
+        if "hidden_dims" in data:
+            hidden_dims = data["hidden_dims"]
+        else:
+            json_path = p.with_suffix(".json")
+            if json_path.exists():
+                meta = _json.loads(json_path.read_text())
+                hidden_dims = meta["hidden_dims"]
+            else:
+                # infer from weight tensor shapes
+                weights = [v for k, v in data["state_dict"].items() if k.endswith(".weight")]
+                hidden_dims = [w.shape[0] for w in weights[:-1]]
+
+        obj = cls(input_dim=data["input_dim"], hidden_dims=hidden_dims)
         obj._net.load_state_dict(data["state_dict"])
         obj._net.eval()
         return obj

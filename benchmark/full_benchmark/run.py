@@ -18,9 +18,7 @@ NOTE — model transfer
 ---------------------
 benchmark/models/ is gitignored. Before running on the cluster, copy the MLP model:
 
-    scp -J ssh.inria.fr \\
-        benchmark/models/mlp_valuation_head/survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt \\
-        epatard@margaret02:<repo_path>/benchmark/models/mlp_valuation_head/
+    scp -J ssh.inria.fr benchmark/models/mlp_valuation_head/survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt epatard@margaret02:/home/fairplay/epatard/projects/dynamicauc/benchmark/models/mlp_valuation_head/
 """
 from __future__ import annotations
 
