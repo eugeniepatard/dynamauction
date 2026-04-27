@@ -11,3 +11,4 @@ benchmark/logs/*
 benchmark/models/*
 benchmark/outputs/*
 NOTES.txt
+benchmark/params_search/*

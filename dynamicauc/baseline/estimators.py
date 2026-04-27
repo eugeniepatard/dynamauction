@@ -151,21 +151,14 @@ class MLPValuationHead:
         X: np.ndarray,
         y: np.ndarray,
         *,
+        X_val: Optional[np.ndarray] = None,
+        y_val: Optional[np.ndarray] = None,
         n_epochs: int = 300,
         lr: float = 1e-3,
         batch_size: int = 256,
         device: str = "cpu",
+        log_dir: Optional[str] = None,
     ) -> "MLPValuationHead":
-        """
-        Train on pre-collected (feature, label) arrays.
-
-        Parameters
-        ----------
-        X : ndarray of shape (N, input_dim)
-            Feature vectors from ``_obs_to_features``.
-        y : ndarray of shape (N,)
-            Regression targets — ``obs["expected_reward"]``.
-        """
         self._net = self._net.to(device)
         X_t = torch.tensor(X, dtype=torch.float32, device=device)
         y_t = torch.tensor(y, dtype=torch.float32, device=device)
@@ -173,15 +166,51 @@ class MLPValuationHead:
         opt = torch.optim.Adam(self._net.parameters(), lr=lr)
         loss_fn = nn.MSELoss()
 
+        has_val = X_val is not None
+        if has_val:
+            X_val_t = torch.tensor(X_val, dtype=torch.float32, device=device)
+            y_val_t = torch.tensor(y_val, dtype=torch.float32, device=device)
+
+        writer = None
+        if log_dir is not None:
+            from torch.utils.tensorboard import SummaryWriter
+            writer = SummaryWriter(log_dir=log_dir)
+
+        train_losses: list = []
+        val_losses: list = []
+
         from tqdm import tqdm
         self._net.train()
-        for _ in tqdm(range(n_epochs), desc="MLPValuationHead training", unit="epoch", leave=False):
+        for epoch in tqdm(range(n_epochs), desc="MLPValuationHead training", unit="epoch", leave=False):
+            epoch_loss = 0.0
+            n_batches = 0
             for xb, yb in loader:
                 loss = loss_fn(self._net(xb), yb)
                 opt.zero_grad()
                 loss.backward()
                 opt.step()
+                epoch_loss += loss.item()
+                n_batches += 1
+            train_loss = epoch_loss / n_batches
+            train_losses.append(train_loss)
+
+            if has_val:
+                self._net.eval()
+                with torch.no_grad():
+                    val_loss = loss_fn(self._net(X_val_t), y_val_t).item()
+                val_losses.append(val_loss)
+                self._net.train()
+
+            if writer is not None:
+                writer.add_scalar("Loss/train", train_loss, epoch)
+                if has_val:
+                    writer.add_scalar("Loss/val", val_loss, epoch)
+
+        if writer is not None:
+            writer.close()
+
         self._net.eval()
+        self.history_ = {"train": train_losses, "val": val_losses}
         return self
 
     @classmethod

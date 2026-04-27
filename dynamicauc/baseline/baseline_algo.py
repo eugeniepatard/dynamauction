@@ -128,6 +128,7 @@ class MPCPolicy(BiddingPolicy):
         self.planning_horizon = planning_horizon
         self._env: Optional[AuctionEnv] = None
         self._rng = np.random.default_rng(seed)
+        self.alpha_log: List[float] = []
 
     def set_env(self, env: AuctionEnv) -> None:
         """Bind the live env.  Must be called once after each ``env.reset()``."""
@@ -161,6 +162,7 @@ class MPCPolicy(BiddingPolicy):
             q_hat[alpha] = cumulative / self.n_rollouts
 
         alpha_star = max(q_hat, key=q_hat.get)
+        self.alpha_log.append(alpha_star)
         return float(max(0.0, alpha_star * v0_now))
 
     def _mpc_rollout(
