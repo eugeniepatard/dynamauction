@@ -21,9 +21,13 @@ $$R(T) = \sum_{i:\, t_i \le T} \left[ \kappa(u, x_i, x_{-i}, y(t_i)) + \int_0^{T
 - **$\lambda$ (delayed intensity):** for saturation, instantiated as $\lambda = f(x_{-i})\,h(s)$, where $h(s)$ is the baseline delay density and $f(x_{-i})$ scales down expected value as historical exposure $x_{-i}$ grows.
 - **$y(t)$ (external information):** a process tracking exogenous events (e.g. a competitor's click) that can instantly extinguish pending conversion probability.
 
-The figure below shows how $\lambda(s)$ behaves for the three built-in kernel families:
+The figure below shows how $\lambda(s)$ behaves for the two main kernel families:
 
 ![Delayed conversion intensity across kernels](images/kernel_intensity.png)
+
+The figure below shows a sample campaign: grey dots are lost auctions, green dots are won displays, and red stars mark the times at which delayed conversions are reported back to the agent.
+
+![Campaign timeline with conversion times](images/campaign_timeline.png)
 
 ## Installation
 
