@@ -8,9 +8,6 @@ This module shows recommended patterns for:
   4. Working with the Gym environment
 """
 
-# ────────────────────────────────────────────────────────────────────────────
-# Example 1: Quick start with presets
-# ────────────────────────────────────────────────────────────────────────────
 
 def example_preset_quick_start():
     """
@@ -38,9 +35,6 @@ def example_preset_quick_start():
     return scenario
 
 
-# ────────────────────────────────────────────────────────────────────────────
-# Example 2: Programmatic construction with builder pattern
-# ────────────────────────────────────────────────────────────────────────────
 
 def example_builder_pattern():
     """
@@ -77,10 +71,6 @@ def example_builder_pattern():
     return scenario
 
 
-# ────────────────────────────────────────────────────────────────────────────
-# Example 3: Custom scenario with overrides
-# ────────────────────────────────────────────────────────────────────────────
-
 def example_preset_with_overrides():
     """
     Start from a preset but customize specific parameters.
@@ -98,10 +88,6 @@ def example_preset_with_overrides():
     print("Scenario user generator:", scenario.user_feature_generator)
     return scenario
 
-
-# ────────────────────────────────────────────────────────────────────────────
-# Example 4: Gym environment usage
-# ────────────────────────────────────────────────────────────────────────────
 
 def example_gym_environment():
     """
@@ -143,10 +129,6 @@ def example_gym_environment():
     env.close()
 
 
-# ────────────────────────────────────────────────────────────────────────────
-# Example 5: Batch benchmarking of multiple policies
-# ────────────────────────────────────────────────────────────────────────────
-
 def example_policy_comparison():
     """
     Compare multiple policies on the same scenario.
@@ -186,10 +168,6 @@ def example_policy_comparison():
     return results
 
 
-# ────────────────────────────────────────────────────────────────────────────
-# Example 6: Scenario information and discovery
-# ────────────────────────────────────────────────────────────────────────────
-
 def example_scenario_discovery():
     """
     Discover and inspect available scenarios.
@@ -206,10 +184,6 @@ def example_scenario_discovery():
     print(f"  Kernel: {info['kernel']['name']}")
     print(f"  Auction: {info['auction']['name']}")
 
-
-# ────────────────────────────────────────────────────────────────────────────
-# Main: Run all examples
-# ────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     print("=" * 70)

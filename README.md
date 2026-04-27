@@ -2,13 +2,11 @@
 
 ## Overview
 
-**DynamicAuc** is a high-performance Python library designed for simulating repeated auctions where the value of a display is dynamic and depends on the history of previous wins. This library serves as the official implementation for the benchmark paper: *"Benchmarking Bidding Strategies in Repeated Auctions with Dynamic Conversion Values"*.
+**DynamicAuc** is a Python library for simulating repeated auctions where the value of a display is dynamic and depends on the history of previous wins. It is the official implementation accompanying the paper: *"Benchmarking Bidding Strategies in Repeated Auctions with Dynamic Conversion Values"*.
 
-The library allows researchers to model realistic user behavior where conversion probabilities evolve based on frequency (saturation), recency, or competitor actions. It provides a standardized framework for evaluating bidding policies in non-stationary environments.
+The library models realistic advertiser behavior where conversion probabilities evolve based on frequency (saturation), recency, or competitor actions. It provides a standardized Gymnasium environment and simulator for evaluating bidding policies in non-stationary auction settings.
 
 ## Installation
-
-You can install the library directly from the source:
 
 ```bash
 git clone https://github.com/your-repo/repeated-auction-dynamic-value.git
@@ -16,36 +14,53 @@ cd repeated-auction-dynamic-value
 pip install -e .
 ```
 
-Requirements:
-- Python 3.8+
-- numpy
-- pandas
-- gymnasium
-- scipy
+Requirements: Python 3.9+, numpy, pandas, gymnasium, scipy.
 
-## Project Structure
+## Package Structure
 
-The repository is organized as follows:
+```
+dynamicauc/
+├── primitives/         Auction rules, kernels, competition, arrival, display,
+│                       exogenous process, gamma, user features, probe & delay samplers
+├── baseline/           Bidding policies (FiPla, Constant, Random, GreedyMyopic,
+│                       Shading, MPC) and the MLPValuationHead estimator
+├── scenarios/          Preset scenario registry and ScenarioBuilder
+├── checker/            Gymnasium-style sanity checker (check_env) for AuctionEnv
+├── env.py              Gymnasium-compatible AuctionEnv
+├── simulator.py        Simulator — runs multi-policy repeated auction campaigns
+├── wrappers.py         Observation and action wrappers (Flat, BidScale, SB3, Mask)
+└── dataclasses.py      Scenario and AuctionState dataclasses
+```
 
-- `dynamicauc/`: Core library source code.
-  - `primitives/`: Basic data structures and utilities.
-    - `kernel.py`: Implementations of dynamic value functions (Saturation, Recency, etc.).
-    - `auctions.py`: Auction mechanisms (First-price, Second-price).
-    - `competition.py`: Models for external bidding competition.
-    - `arrival_process.py`: Stochastic processes for auction arrival times.
-    - `display_sampler.py`: Samplers for display and user features.
-    - `exogenous_process.py`: Models for exogenous factors affecting conversion probabilities.
-  - `policies.py`: Bidding strategies and baseline policies.
-  - `scenarios/`: Definitions for preset scenarios.
-  - `simulator.py`: Main engine for running repeated auction campaigns.
-  - `env.py`: Gymnasium-compatible environment for Reinforcement Learning.
-  - `registry.py`: Factory system for scenario components.
-  - `dataclasses.py`: Core data structures for auction state and results.
-- `docs/`: Tutorials and detailed documentation.
+## Quick Start
 
+```python
+import dynamicauc as dac
 
-## Documentation and Usage
+# Create a preset scenario
+scenario = dac.make("survival-second-price-exponential")
 
-For a detailed breakdown of the API, please refer to [API_REFERENCE.md](./API_REFERENCE.md), or explore the `examples/` directory for practical demonstrations.
+# Use as a Gymnasium environment
+env = dac.AuctionEnv(scenario)
+obs, info = env.reset(seed=42)
 
-You can also run the provided Jupyter notebooks to see how to set up and execute simulations, as well as how to train and evaluate bidding strategies using the Gymnasium environments with `docs/dynamicauc_tutorial.ipynb` or `docs/simulation_tutorial.ipynb`.
+# Sanity-check your environment or a custom scenario
+dac.check_env(env)
+
+# Run a multi-policy simulation campaign
+from dynamicauc.simulator import Simulator
+
+sim = Simulator(scenario, {"FiPla": dac.FiPlaPolicy()}, campaign_cfg={"n_runs": 20, "seed": 42})
+auctions_df, displays_df, conversions_df, summary_df = sim.run()
+```
+
+## Benchmark
+
+The `benchmark/` directory contains a full experimental pipeline for reproducing the paper results: RL agent training (PPO, SAC, TD3 via Stable Baselines3), MLP valuation head training for the MPC policy, multi-policy evaluation across seeds, and result plotting. See [benchmark/BENCHMARK.md](benchmark/BENCHMARK.md) for the complete experimental protocol, hyperparameters, and reproduction steps.
+
+## Documentation
+
+- [docs/API_REFERENCE.md](docs/API_REFERENCE.md) — full API reference: scenario creation (preset, builder, hybrid), simulation, Gymnasium integration, wrappers, and planning baselines.
+- [benchmark/BENCHMARK.md](benchmark/BENCHMARK.md) — experimental setup, training protocol, hyperparameters, and evaluation procedure.
+- `docs/dynamicauc_tutorial.ipynb` — step-by-step tutorial for the Gymnasium environment.
+- `docs/simulator_tutorial.ipynb` — tutorial for the simulation API.
