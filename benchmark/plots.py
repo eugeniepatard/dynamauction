@@ -37,7 +37,7 @@ Quick start
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -48,43 +48,103 @@ import seaborn as sns
 PLOTS_DIR = Path(__file__).parent / "plots"
 PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
+# Fixed colors for known policies.  Keys are used as prefixes for matching,
+# so "Constant" catches any "Constant(0.3)", "Shading" catches "Shading(α=…)", etc.
 PALETTE: Dict[str, str] = {
     "PPO":          "#4C72B0",
     "SAC":          "#DD8452",
     "TD3":          "#55A868",
     "FiPla":        "#C44E52",
-    "Constant(0.5)":"#8172B2",
+    "Constant":     "#8172B2",
     "Random":       "#937860",
-    "GreedyMyopic":  "#DA8BC3",
-    "Shading":       "#070707",  # matched by prefix for any Shading(α=...)
-    "MPC":          "#D8E707",
+    "GreedyMyopic": "#DA8BC3",
+    # Shading and MPC are base colors used when only one variant is present.
+    # Multiple variants get a sequential gradient — see _make_palette.
+    "Shading":      "#2171B5",
+    "MPC":          "#A67C00",
 }
 
-_MARKERS = ["o", "s", "^", "D", "v", "P", "X"]
+_LINESTYLES = ["-", "--", "-.", ":"]
+_MARKERS    = ["o", "s", "^", "D", "v", "P", "X"]
+
 
 def _style() -> None:
     plt.rcParams.update({
-        "figure.dpi":       150,
-        "axes.spines.top":  False,
-        "axes.spines.right":False,
-        "axes.grid":        True,
-        "grid.alpha":       0.3,
-        "font.size":        11,
-        "axes.labelsize":   12,
-        "legend.fontsize":  10,
-        "xtick.labelsize":  10,
-        "ytick.labelsize":  10,
+        "figure.dpi":        150,
+        "axes.spines.top":   False,
+        "axes.spines.right": False,
+        "axes.grid":         True,
+        "grid.alpha":        0.3,
+        "font.size":         11,
+        "axes.labelsize":    12,
+        "legend.fontsize":   10,
+        "xtick.labelsize":   10,
+        "ytick.labelsize":   10,
     })
 
 
-def _color(name: str, idx: int = 0) -> str:
-    if name in PALETTE:
-        return PALETTE[name]
-    # prefix match: "Shading(α=0.8)" → key "Shading"
-    for key, color in PALETTE.items():
-        if name.startswith(key):
-            return color
-    return sns.color_palette("husl", 10)[idx % 10]
+def _is_shading(name: str) -> bool:
+    return name == "Shading" or name.startswith("Shading(")
+
+
+def _is_mpc(name: str) -> bool:
+    return name == "MPC" or name.startswith("MPC(")
+
+
+def _make_palette(names: Sequence[str]) -> Dict[str, Any]:
+    """
+    Build a ``{policy_name: color}`` dict.
+
+    * Known single-family policies (PPO, SAC, …) get their fixed PALETTE color.
+    * Multiple Shading variants → sequential blue gradient.
+    * Multiple MPC variants    → sequential amber gradient.
+    * Unknown policies         → husl fallback.
+    """
+    shading_names = [n for n in names if _is_shading(n)]
+    mpc_names     = [n for n in names if _is_mpc(n)]
+    ns, nm = len(shading_names), len(mpc_names)
+
+    # Sample colormaps, skipping very light / very dark extremes
+    shading_colors: list = (
+        [PALETTE["Shading"]] if ns <= 1
+        else [plt.cm.Blues(0.35 + 0.55 * i / max(ns - 1, 1)) for i in range(ns)]
+    )
+    mpc_colors: list = (
+        [PALETTE["MPC"]] if nm <= 1
+        else [plt.cm.YlOrBr(0.35 + 0.55 * i / max(nm - 1, 1)) for i in range(nm)]
+    )
+
+    out: Dict[str, Any] = {}
+    si = mi = fallback_i = 0
+    for name in names:
+        if _is_shading(name):
+            out[name] = shading_colors[si]; si += 1
+        elif _is_mpc(name):
+            out[name] = mpc_colors[mi]; mi += 1
+        else:
+            # prefix match against PALETTE keys
+            matched = next((c for k, c in PALETTE.items() if name.startswith(k)), None)
+            out[name] = matched if matched is not None else sns.color_palette("husl", 10)[fallback_i % 10]
+            if matched is None:
+                fallback_i += 1
+    return out
+
+
+def _make_linestyles(names: Sequence[str]) -> Dict[str, str]:
+    """
+    Cycle through distinct linestyles within each multi-variant family
+    (Shading and MPC).  All other policies get solid lines.
+    """
+    out: Dict[str, str] = {}
+    si = mi = 0
+    for name in names:
+        if _is_shading(name):
+            out[name] = _LINESTYLES[si % len(_LINESTYLES)]; si += 1
+        elif _is_mpc(name):
+            out[name] = _LINESTYLES[mi % len(_LINESTYLES)]; mi += 1
+        else:
+            out[name] = "-"
+    return out
 
 
 def _save(fig: plt.Figure, filename: str) -> None:
@@ -128,18 +188,21 @@ def plot_aggregate_metrics(
     """
     _style()
     scores = {k: v.copy().astype(float) for k, v in score_dict.items()}
-    if normalize_by and normalize_by in scores:
-        ref = scores[normalize_by].mean()
-        if ref != 0.0:
-            scores = {k: v / ref for k, v in scores.items()}
-
-    names  = list(scores.keys())
-    colors = [_color(n, i) for i, n in enumerate(names)]
-    xlabel = ("Normalised episode reward" if normalize_by
-              else "Episode reward") + f"  [{metric.upper()}]"
 
     stat = {"iqm": lambda x: np.percentile(x, [25, 75]).mean(),
             "median": np.median, "mean": np.mean}.get(metric, np.mean)
+
+    if normalize_by and normalize_by in scores:
+        ref = stat(scores[normalize_by])
+        if ref != 0.0:
+            scores = {k: v / ref for k, v in scores.items()}
+
+    names   = list(scores.keys())
+    palette = _make_palette(names)
+    colors  = [palette[n] for n in names]
+    xlabel  = ("Normalised episode reward" if normalize_by
+               else "Episode reward") + f"  [{metric.upper()}]"
+
     results = [_bootstrap_ci(scores[n], stat) for n in names]
     points  = [r[0] for r in results]
     lows    = [r[1] for r in results]
@@ -180,9 +243,13 @@ def plot_performance_profiles(
     _style()
     scores = {k: v.copy().astype(float) for k, v in score_dict.items()}
     if normalize_by and normalize_by in scores:
-        ref = scores[normalize_by].mean()
+        ref = np.mean(scores[normalize_by])
         if ref != 0.0:
             scores = {k: v / ref for k, v in scores.items()}
+
+    names      = list(scores.keys())
+    palette    = _make_palette(names)
+    linestyles = _make_linestyles(names)
 
     all_vals = np.concatenate(list(scores.values()))
     tau_max  = tau_max if tau_max is not None else float(np.percentile(all_vals, 98))
@@ -191,15 +258,15 @@ def plot_performance_profiles(
                 + (" (normalised)" if normalize_by else ""))
 
     fig, ax = plt.subplots(figsize=(7, 5))
-    for i, (name, arr) in enumerate(scores.items()):
+    for i, name in enumerate(names):
+        arr     = scores[name]
         profile = (arr[:, None] >= taus[None, :]).mean(axis=0)
         ax.plot(taus, profile, label=name,
-                color=_color(name, i), lw=2, marker=_MARKERS[i % len(_MARKERS)],
-                markevery=n_tau // 10)
+                color=palette[name], lw=2, linestyle=linestyles[name],
+                marker=_MARKERS[i % len(_MARKERS)], markevery=n_tau // 10)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(r"Fraction of runs $\geq\tau$")
     ax.legend(title="Policy")
-
     ax.set_title(title, fontweight="bold", pad=10)
     fig.tight_layout()
     if save:
@@ -222,11 +289,15 @@ def plot_cumulative_reward(
     _style()
     plot_df = df[df["policy"].isin(policies)].copy() if policies else df.copy()
 
-    mean_max_t = plot_df.groupby("seed")["t"].max().mean()
-    t_grid = np.linspace(plot_df["t"].min(), mean_max_t, num_points)
-    fig, ax = plt.subplots(figsize=(8, 5))
+    names      = list(plot_df["policy"].unique())
+    palette    = _make_palette(names)
+    linestyles = _make_linestyles(names)
 
-    for i, (policy, grp) in enumerate(plot_df.groupby("policy")):
+    mean_max_t = plot_df.groupby("seed")["t"].max().mean()
+    t_grid     = np.linspace(plot_df["t"].min(), mean_max_t, num_points)
+    fig, ax    = plt.subplots(figsize=(8, 5))
+
+    for policy, grp in plot_df.groupby("policy"):
         curves = [
             np.interp(t_grid, sg.sort_values("t")["t"], sg.sort_values("t")["cum_reward"])
             for _, sg in grp.groupby("seed")
@@ -234,8 +305,8 @@ def plot_cumulative_reward(
         mat  = np.array(curves)
         mean = mat.mean(0)
         std  = mat.std(0)
-        c    = _color(policy, i)
-        ax.plot(t_grid, mean, label=policy, color=c, lw=2)
+        c    = palette[policy]
+        ax.plot(t_grid, mean, label=policy, color=c, lw=2, linestyle=linestyles[policy])
         ax.fill_between(t_grid, mean - std, mean + std, alpha=0.15, color=c)
 
     ax.set_xlabel(r"Campaign time $t$")
@@ -267,7 +338,7 @@ def plot_reward_distribution(
 
     order   = (summary.groupby("policy")["episode_reward"]
                .median().sort_values(ascending=False).index.tolist())
-    palette = {p: _color(p, i) for i, p in enumerate(order)}
+    palette = _make_palette(order)
 
     fig, ax = plt.subplots(figsize=(max(6, len(order) * 1.3), 5))
     sns.violinplot(data=summary, x="policy", y="episode_reward",
@@ -283,6 +354,7 @@ def plot_reward_distribution(
     if save:
         _save(fig, filename)
     return fig
+
 
 def plot_training_curves(
     algos:    List[str]      = ("ppo", "sac", "td3"),
@@ -313,6 +385,9 @@ def plot_training_curves(
     fig, ax = plt.subplots(figsize=(8, 5))
     plotted = False
 
+    algo_names = [a.upper() for a in algos]
+    palette    = _make_palette(algo_names)
+
     for i, algo in enumerate(algos):
         algo_dir = logs_dir / algo
         if not algo_dir.exists():
@@ -341,7 +416,7 @@ def plot_training_curves(
             steps   = steps[smooth - 1:]
 
         ax.plot(steps, rewards, label=algo.upper(),
-                color=_color(algo.upper(), i), lw=2)
+                color=palette[algo.upper()], lw=2)
         plotted = True
 
     if not plotted:
@@ -377,15 +452,20 @@ def plot_context_dynamics(
     Both with mean ± std bands across seeds.
     """
     _style()
-    plot_df = df[df["policy"].isin(policies)].copy() if policies else df.copy()
+    plot_df    = df[df["policy"].isin(policies)].copy() if policies else df.copy()
+    names      = list(plot_df["policy"].unique())
+    palette    = _make_palette(names)
+    linestyles = _make_linestyles(names)
+
     mean_max_t = plot_df.groupby("seed")["t"].max().mean()
-    t_grid = np.linspace(plot_df["t"].min(), mean_max_t, num_points)
+    t_grid     = np.linspace(plot_df["t"].min(), mean_max_t, num_points)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 7), sharex=True)
     fig.suptitle(title, fontweight="bold", fontsize=13)
 
-    for i, (policy, grp) in enumerate(plot_df.groupby("policy")):
-        c = _color(policy, i)
+    for policy, grp in plot_df.groupby("policy"):
+        c  = palette[policy]
+        ls = linestyles[policy]
         for ax, col in ((ax1, "ctx"), (ax2, "expected_reward")):
             curves = [
                 np.interp(t_grid, sg.sort_values("t")["t"], sg.sort_values("t")[col])
@@ -394,12 +474,11 @@ def plot_context_dynamics(
             mat  = np.array(curves)
             mean = mat.mean(0)
             std  = mat.std(0)
-            ax.plot(t_grid, mean, label=policy, color=c, lw=2)
+            ax.plot(t_grid, mean, label=policy, color=c, lw=2, linestyle=ls)
             ax.fill_between(t_grid, mean - std, mean + std, alpha=0.12, color=c)
 
     ax1.set_ylabel("Context (kernel state)")
     ax1.legend(title="Policy", bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=9)
-
     ax2.set_xlabel(r"Campaign time $t$")
     ax2.set_ylabel(r"Expected reward $\hat{R}$")
 
@@ -407,6 +486,7 @@ def plot_context_dynamics(
     if save:
         _save(fig, filename)
     return fig
+
 
 def plot_bid_distributions(
     df:       pd.DataFrame,
@@ -425,37 +505,36 @@ def plot_bid_distributions(
     """
     _style()
 
-    plot_df = df[df["policy"].isin(policies)].copy() if policies else df.copy()
+    plot_df      = df[df["policy"].isin(policies)].copy() if policies else df.copy()
     policy_names = list(plot_df["policy"].unique())
+    palette      = _make_palette(policy_names)
 
     competing = plot_df["competing_bid"].dropna().values
 
-    n      = len(policy_names)
-    ncols  = min(3, n)
-    nrows  = (n + ncols - 1) // ncols
+    n     = len(policy_names)
+    ncols = min(3, n)
+    nrows = (n + ncols - 1) // ncols
     fig, axes = plt.subplots(nrows, ncols,
                              figsize=(5 * ncols, 4 * nrows),
                              sharey=False)
-    axes = np.array(axes).ravel()  # always iterable
+    axes = np.array(axes).ravel()
 
     x_max = float(np.percentile(
         np.concatenate([competing, plot_df["bid"].values]), 99
     ))
 
     for idx, policy in enumerate(policy_names):
-        ax      = axes[idx]
-        bids    = plot_df.loc[plot_df["policy"] == policy, "bid"].values
-        color   = _color(policy, idx)
+        ax    = axes[idx]
+        bids  = plot_df.loc[plot_df["policy"] == policy, "bid"].values
+        color = palette[policy]
 
         sns.kdeplot(competing, ax=ax, color="grey", lw=1.5,
                     linestyle="--", label="Competing bid", fill=True,
                     alpha=0.15, clip=(0, x_max))
-
         sns.kdeplot(bids, ax=ax, color=color, lw=2,
                     label=f"{policy} bids", fill=True,
                     alpha=0.30, clip=(0, x_max))
-
-        ax.axvline(bids.mean(),     color=color,  lw=1.5, ls="-",
+        ax.axvline(bids.mean(),      color=color,  lw=1.5, ls="-",
                    label=f"Mean bid = {bids.mean():.2f}")
         ax.axvline(competing.mean(), color="grey", lw=1.5, ls="--",
                    label=f"Mean competing = {competing.mean():.2f}")
@@ -471,10 +550,10 @@ def plot_bid_distributions(
 
     fig.suptitle(title, fontweight="bold", fontsize=13, y=1.02)
     fig.tight_layout()
-
     if save:
         _save(fig, filename)
     return fig
+
 
 def plot_win_rate(
     df:       pd.DataFrame,
@@ -491,7 +570,7 @@ def plot_win_rate(
     summary = episode_summary(plot_df)
 
     order   = summary.groupby("policy")["win_rate"].mean().sort_values(ascending=False).index.tolist()
-    palette = {p: _color(p, i) for i, p in enumerate(order)}
+    palette = _make_palette(order)
 
     fig, ax = plt.subplots(figsize=(max(5, len(order) * 1.2), 4))
     sns.barplot(data=summary, x="policy", y="win_rate",
@@ -505,6 +584,7 @@ def plot_win_rate(
     if save:
         _save(fig, filename)
     return fig
+
 
 def plot_full_benchmark(
     df:         pd.DataFrame,
@@ -527,6 +607,10 @@ def plot_full_benchmark(
     scores  = {k: v for k, v in score_dict.items()
                if (policies is None or k in policies)}
 
+    all_names  = list(scores.keys())
+    palette    = _make_palette(all_names)
+    linestyles = _make_linestyles(all_names)
+
     fig = plt.figure(figsize=(16, 10))
     gs  = fig.add_gridspec(2, 2, hspace=0.38, wspace=0.38)
     ax_train = fig.add_subplot(gs[0, 0])
@@ -534,6 +618,7 @@ def plot_full_benchmark(
     ax_cum   = fig.add_subplot(gs[1, 0])
     ax_dist  = fig.add_subplot(gs[1, 1])
 
+    # ── Panel A: training curves ──────────────────────────────────────────────
     try:
         from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
         logs_dir = Path(__file__).parent / "logs"
@@ -556,7 +641,7 @@ def plot_full_benchmark(
                 rewards = np.convolve(rewards, k, mode="valid")
                 steps   = steps[4:]
             ax_train.plot(steps, rewards, label=algo.upper(),
-                          color=_color(algo.upper(), i), lw=2)
+                          color=palette.get(algo.upper(), PALETTE.get(algo.upper(), "grey")), lw=2)
         ax_train.xaxis.set_major_formatter(
             mticker.FuncFormatter(lambda x, _: f"{x/1_000:.0f}K")
         )
@@ -565,26 +650,30 @@ def plot_full_benchmark(
         ax_train.text(0.5, 0.5, "Run plot_training_curves()\nto populate",
                       ha="center", va="center", transform=ax_train.transAxes,
                       color="grey", fontsize=11)
-
     ax_train.set_xlabel("Steps")
     ax_train.set_ylabel("Eval mean reward")
     ax_train.set_title("(A) Training Curves", fontweight="bold")
 
+    # ── Panel B: performance profiles ────────────────────────────────────────
     all_vals = np.concatenate(list(scores.values()))
     tau_max  = float(np.percentile(all_vals, 98))
     taus     = np.linspace(0.0, tau_max, 200)
-    for i, (name, arr) in enumerate(scores.items()):
+    for i, name in enumerate(all_names):
+        arr     = scores[name]
         profile = (arr[:, None] >= taus[None, :]).mean(axis=0)
         ax_prof.plot(taus, profile, label=name,
-                     color=_color(name, i), lw=2,
+                     color=palette[name], lw=2, linestyle=linestyles[name],
                      marker=_MARKERS[i % len(_MARKERS)], markevery=20)
     ax_prof.set_xlabel(r"Episode reward $\tau$")
     ax_prof.set_ylabel(r"Fraction $\geq \tau$")
     ax_prof.set_title("(B) Performance Profiles", fontweight="bold")
     ax_prof.legend(fontsize=9)
 
+    # ── Panel C: cumulative reward ────────────────────────────────────────────
     t_grid = np.linspace(plot_df["t"].min(), plot_df["t"].max(), 200)
-    for i, (policy, grp) in enumerate(plot_df.groupby("policy")):
+    for policy, grp in plot_df.groupby("policy"):
+        if policy not in palette:
+            continue
         curves = [
             np.interp(t_grid, sg.sort_values("t")["t"], sg.sort_values("t")["cum_reward"])
             for _, sg in grp.groupby("seed")
@@ -592,26 +681,90 @@ def plot_full_benchmark(
         mat  = np.array(curves)
         mean = mat.mean(0)
         std  = mat.std(0)
-        c    = _color(policy, i)
-        ax_cum.plot(t_grid, mean, label=policy, color=c, lw=2)
+        c    = palette[policy]
+        ax_cum.plot(t_grid, mean, label=policy, color=c, lw=2, linestyle=linestyles[policy])
         ax_cum.fill_between(t_grid, mean - std, mean + std, alpha=0.12, color=c)
     ax_cum.set_xlabel(r"Campaign time $t$")
     ax_cum.set_ylabel("Cumulative net reward")
     ax_cum.set_title("(C) Cumulative Reward", fontweight="bold")
     ax_cum.legend(fontsize=9)
 
+    # ── Panel D: reward distributions ────────────────────────────────────────
     summary = episode_summary(plot_df)
     order   = (summary.groupby("policy")["episode_reward"]
                .median().sort_values(ascending=False).index.tolist())
-    palette = {p: _color(p, i) for i, p in enumerate(order)}
+    dist_palette = _make_palette(order)
     sns.violinplot(data=summary, x="policy", y="episode_reward",
-                   order=order, palette=palette, inner="box",
+                   order=order, palette=dist_palette, inner="box",
                    cut=0, linewidth=1.2, ax=ax_dist)
     ax_dist.tick_params(axis="x", rotation=15)
     ax_dist.set_xlabel("Policy")
     ax_dist.set_ylabel("Total episode reward")
     ax_dist.set_title("(D) Reward Distributions", fontweight="bold")
 
+    if save:
+        _save(fig, filename)
+    return fig
+
+
+def plot_mpc_alpha_distribution(
+    mpc_policies: Dict[str, Any],
+    title:        str  = "MPC: chosen α* distribution",
+    save:         bool = True,
+    filename:     str  = "mpc_alpha_distribution.pdf",
+) -> Optional[plt.Figure]:
+    """
+    Violin + strip plot of the α* values chosen by each MPCPolicy over all steps.
+
+    Parameters
+    ----------
+    mpc_policies : {label: MPCPolicy}
+        The live policy objects after evaluation — their ``alpha_log`` attribute
+        holds the sequence of chosen α* values (one per ``bid()`` call).
+
+    Example
+    -------
+        from benchmark.evaluate import EvalConfig, get_simulation_policies, benchmark
+        from benchmark import plots
+
+        cfg = EvalConfig(include_mpc=True, mpc_planning_horizons=[0.0, 7.0])
+        sim_policies = get_simulation_policies(cfg)
+        benchmark(sim_policies, cfg)   # runs evaluation, fills alpha_log
+
+        mpc = {k: v for k, v in sim_policies.items() if hasattr(v, "alpha_log")}
+        plots.plot_mpc_alpha_distribution(mpc)
+    """
+    mpc_policies = {k: v for k, v in mpc_policies.items() if getattr(v, "alpha_log", None)}
+    if not mpc_policies:
+        print("[INFO] No MPCPolicy alpha logs found — run evaluation first.")
+        return None
+
+    _style()
+    palette = _make_palette(list(mpc_policies.keys()))
+
+    records = []
+    for label, policy in mpc_policies.items():
+        for alpha in policy.alpha_log:
+            records.append({"policy": label, "alpha*": alpha})
+    df = pd.DataFrame(records)
+
+    candidates = sorted({a for p in mpc_policies.values() for a in p.alpha_candidates})
+    n = len(mpc_policies)
+    fig, ax = plt.subplots(figsize=(max(5, n * 1.4), 4))
+
+    sns.violinplot(data=df, x="policy", y="alpha*", palette=palette,
+                   inner="box", cut=0, linewidth=1.2, ax=ax)
+    sns.stripplot(data=df, x="policy", y="alpha*",
+                  color="black", alpha=0.15, size=2, jitter=True, ax=ax)
+
+    for alpha in candidates:
+        ax.axhline(alpha, color="grey", lw=0.7, ls="--", alpha=0.5)
+
+    ax.set_xlabel("MPC variant")
+    ax.set_ylabel(r"Chosen $\alpha^*$")
+    ax.set_yticks(candidates)
+    ax.set_title(title, fontweight="bold", pad=10)
+    fig.tight_layout()
     if save:
         _save(fig, filename)
     return fig

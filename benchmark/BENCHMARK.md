@@ -102,12 +102,60 @@ All algorithms use Stable Baselines3 with an `MlpPolicy` (two hidden layers of 6
 
 ---
 
+## Planning Policies
+
+Three simulation-based planning policies are included alongside the RL agents.
+
+| Name | Description |
+|---|---|
+| **GreedyMyopic** | Bids the incremental value Δ(s, x) = V¹(s, x) − V⁰(s) estimated via Monte Carlo rollouts |
+| **Shading(α)** | Bid-shaded variant: bids α · Δ(s, x); α < 1 reduces overpayment |
+| **MPC** | Model-Predictive Control: selects the shading multiplier α* that maximises simulated cumulative reward over a planning horizon, using a pre-trained MLP valuation head V₀(s, x) |
+
+### MLP Valuation Head (for MPC)
+
+MPC requires a pre-trained `MLPValuationHead` that approximates V₀(s, x) = E[reward | win display x in state s]. It is trained offline on FiPla rollouts and **must be trained before evaluating MPC**.
+
+```bash
+# Train with defaults (500 episodes, 500 epochs, hidden dims 64-64)
+python -m benchmark.train_mlp
+
+# Larger model / more data
+python -m benchmark.train_mlp --n-episodes 1000 --n-epochs 800 --hidden-dims 128 128
+
+# Monitor training in TensorBoard (logs written automatically)
+tensorboard --logdir benchmark/logs/mlp_valuation_head
+```
+
+| Parameter | Default | Description |
+|---|---|---|
+| `--n-episodes` | 500 | FiPla rollout episodes for data collection |
+| `--val-frac` | 0.15 | Fraction of samples held out for validation |
+| `--hidden-dims` | 64 64 | MLP hidden layer widths |
+| `--n-epochs` | 500 | Training epochs |
+| `--lr` | 1e-3 | Adam learning rate |
+| `--batch-size` | 256 | Mini-batch size |
+| `--seed` | 0 | Base random seed |
+| `--save-dir` | `benchmark/models/mlp_valuation_head/` | Override model output directory |
+| `--log-dir` | `benchmark/logs/mlp_valuation_head/<scenario_id>/` | Override TensorBoard log directory |
+
+Outputs written to `benchmark/models/mlp_valuation_head/`:
+
+| File | Content |
+|---|---|
+| `<scenario_id>.pt` | Model weights |
+| `<scenario_id>.json` | Training config + final train/val loss |
+| `<scenario_id>_loss.pdf` | Train / val MSE loss curves |
+| `<scenario_id>_pred.pdf` | Predicted vs actual scatter plot (val set) |
+
+---
+
 ## Evaluation Protocol
 
 Evaluation is run after training via `benchmark/evaluate.py`:
 
 ```bash
-# Full benchmark (default: all RL algos + all baselines, 30 seeds)
+# Full benchmark (all RL algos + all baselines, 30 seeds)
 python -m benchmark.evaluate
 
 # Select specific RL algorithms and baselines
@@ -118,6 +166,12 @@ python -m benchmark.evaluate --baselines constant random --constant-bid 0.3 --ra
 
 # RL policies only (no baselines)
 python -m benchmark.evaluate --baselines none
+
+# Include simulation-based planning policies (train_mlp.py must be run first for MPC)
+python -m benchmark.evaluate --sim-policies greedy shading mpc
+
+# All policies
+python -m benchmark.evaluate --sim-policies all
 
 # Custom number of seeds
 python -m benchmark.evaluate --n-seeds 50
@@ -132,7 +186,7 @@ python -m benchmark.evaluate --n-seeds 50
 
 Per-step metrics collected for each (policy, seed) pair: `reward`, `cumulative reward`, `won`, `bid`, `payment`, `ctx`, `expected_reward`, `competing_bid`.
 
-To add a fully custom policy, use the Python API (the CLI cannot accept arbitrary Python objects). Write a small script, e.g. `my_eval.py`:
+To add a fully custom policy, use the Python API (the CLI cannot accept arbitrary Python objects):
 
 ```python
 from benchmark.evaluate import run_full_benchmark, EvalConfig
@@ -143,22 +197,11 @@ class MyPolicy(BiddingPolicy):
         return obs["expected_reward"].item() * 0.8
 
 df = run_full_benchmark(
-    algos=["ppo", "sac", "td3"],       # RL algorithms to load (must be trained)
-    cfg=EvalConfig(
-        seeds=list(range(30)),          # evaluation seeds
-        scenario_id="survival-second-price-exponential",
-        scenario_overrides={},          # e.g. {"horizon_eta": 30.0}
-        max_bid=5.0,
-        baselines=["fipla", "constant", "random"],  # or [] to skip
-        constant_bid=0.5,
-        random_max_bid=1.0,
-    ),
-    save=True,                          # write results/benchmark_results.csv
+    algos=["ppo", "sac", "td3"],
+    cfg=EvalConfig(seeds=list(range(30))),
     extra_policies={"MyPolicy": MyPolicy()},
 )
 ```
-
-Then run: `python my_eval.py`
 
 ---
 
@@ -191,7 +234,15 @@ python -m benchmark.train_rl 'algo=ppo,sac,td3' --multirun
 
 Expected wall-clock time: ~30–60 min per algorithm on a single CPU.
 
-### 3. Run evaluation
+### 3. Train MLP valuation head (required for MPC)
+
+```bash
+python -m benchmark.train_mlp
+```
+
+Expected wall-clock time: a few minutes on CPU.
+
+### 4. Run evaluation
 
 ```bash
 python -m benchmark.evaluate --algos ppo sac td3 --n-seeds 30
@@ -199,7 +250,7 @@ python -m benchmark.evaluate --algos ppo sac td3 --n-seeds 30
 
 Results are written to `benchmark/results/benchmark_results.csv`.
 
-### 4. Generate plots
+### 5. Generate plots
 
 Open and execute `benchmark/benchmark_results.ipynb`.
 
@@ -223,14 +274,17 @@ benchmark/models/
 ├── sac/
 │   ├── best_model.zip
 │   └── obs_rms.pkl
-└── td3/
-    ├── best_model.zip
-    └── obs_rms.pkl
+├── td3/
+│   ├── best_model.zip
+│   └── obs_rms.pkl
+└── mlp_valuation_head/
+    ├── <scenario_id>.pt    # MLPValuationHead weights (loaded by evaluate.py for MPC)
+    └── <scenario_id>.json  # Training metadata
 ```
 
 `best_model.zip` is the checkpoint saved by SB3's `EvalCallback` at the timestep with the highest mean evaluation reward. `obs_rms.pkl` contains the running-mean/variance statistics of `VecNormalize` and must be loaded alongside the model to reproduce the correct observation normalization at inference time.
 
-Once in place, skip directly to step 3 (evaluation).
+Once in place, skip directly to step 4 (evaluation).
 
 ---
 

@@ -23,8 +23,6 @@ from pathlib import Path
 from typing import List, Optional
 
 import numpy as np
-import matplotlib
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import torch
 
@@ -34,9 +32,10 @@ from dynamicauc.baseline.utils import _obs_to_features
 from dynamicauc.env import AuctionEnv
 from tqdm import tqdm
 
-from benchmark.train_rl import SCENARIO_ID, MODELS_DIR
+from benchmark.train_rl import SCENARIO_ID, MODELS_DIR, LOGS_DIR
 
 MLP_DIR = MODELS_DIR / "mlp_valuation_head"
+MLP_LOGS_DIR = LOGS_DIR / "mlp_valuation_head"
 
 
 def collect_rollouts(scenario, n_episodes: int, seed: int = 0):
@@ -103,12 +102,16 @@ def train_mlp(
     batch_size: int = 256,
     seed: int = 0,
     save_dir: Optional[Path] = None,
+    log_dir: Optional[Path] = None,
 ) -> MLPValuationHead:
     """Train, save, and return a MLPValuationHead for the given scenario."""
     if hidden_dims is None:
         hidden_dims = [64, 64]
     out_dir = Path(save_dir) if save_dir else MLP_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    tb_dir = Path(log_dir) if log_dir else MLP_LOGS_DIR / scenario_id
+    tb_dir.mkdir(parents=True, exist_ok=True)
 
     scenario = dac.make(scenario_id, **(scenario_overrides or {}))
 
@@ -123,14 +126,17 @@ def train_mlp(
     print(f"  {len(X_train)} train samples, {len(X_val)} val samples")
 
     print("Training …")
+    print(f"  TensorBoard: tensorboard --logdir {tb_dir}")
     mlp = MLPValuationHead(input_dim=X.shape[1], hidden_dims=hidden_dims)
     mlp.fit(
         X_train, y_train,
         X_val=X_val, y_val=y_val,
         n_epochs=n_epochs, lr=lr, batch_size=batch_size,
+        log_dir=str(tb_dir),
     )
 
-    stem = scenario_id
+    dims_str = "-".join(str(d) for d in hidden_dims)
+    stem = f"{scenario_id}_h{dims_str}_ep{n_episodes}_e{n_epochs}_lr{lr:g}_s{seed}"
     mlp.save(out_dir / f"{stem}.pt")
     print(f"  Saved weights        → {out_dir / f'{stem}.pt'}")
 
@@ -160,13 +166,34 @@ def train_mlp(
 
 
 def load_mlp(scenario_id: str = SCENARIO_ID, path: Optional[str] = None) -> MLPValuationHead:
-    """Load a saved MLPValuationHead; raises FileNotFoundError if not found."""
-    p = Path(path) if path else MLP_DIR / f"{scenario_id}.pt"
-    if not p.exists():
+    """Load a saved MLPValuationHead.
+
+    If *path* is given, loads from that file directly.  Otherwise scans
+    ``MLP_DIR`` for ``.pt`` files matching ``<scenario_id>_*.pt``:
+    - exactly one match → loaded automatically
+    - multiple matches  → raises, listing candidates (use --mpc-model to pick one)
+    - no match          → raises, suggesting python -m benchmark.train_mlp
+    """
+    if path is not None:
+        p = Path(path)
+        if not p.exists():
+            raise FileNotFoundError(f"No MLPValuationHead at {p}.")
+        print(f"  Loaded MLPValuationHead ← {p}")
+        return MLPValuationHead.load(p)
+
+    candidates = sorted(MLP_DIR.glob(f"{scenario_id}_*.pt"))
+    if not candidates:
         raise FileNotFoundError(
-            f"No MLPValuationHead at {p}.\n"
+            f"No MLPValuationHead found for scenario '{scenario_id}' in {MLP_DIR}.\n"
             "Train one first:  python -m benchmark.train_mlp"
         )
+    if len(candidates) > 1:
+        listing = "\n  ".join(str(c) for c in candidates)
+        raise FileNotFoundError(
+            f"Multiple MLPValuationHead models found for '{scenario_id}':\n  {listing}\n"
+            "Pass --mpc-model <path> to select one."
+        )
+    p = candidates[0]
     print(f"  Loaded MLPValuationHead ← {p}")
     return MLPValuationHead.load(p)
 
@@ -174,13 +201,14 @@ def load_mlp(scenario_id: str = SCENARIO_ID, path: Optional[str] = None) -> MLPV
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train MLPValuationHead for MPCPolicy.")
     parser.add_argument("--n-episodes",  type=int,   default=500,         help="Rollout episodes for data collection (default: 500).")
-    parser.add_argument("--val-frac",    type=float, default=0.15,        help="Fraction of samples held out for validation (default: 0.15).")
+    parser.add_argument("--val-frac",    type=float, default=0.2,        help="Fraction of samples held out for validation (default: 0.15).")
     parser.add_argument("--hidden-dims", type=int,   nargs="+", default=[64, 64], help="Hidden layer widths (default: 64 64).")
     parser.add_argument("--n-epochs",    type=int,   default=500,         help="Training epochs (default: 500).")
     parser.add_argument("--lr",          type=float, default=1e-3,        help="Adam learning rate (default: 1e-3).")
     parser.add_argument("--batch-size",  type=int,   default=256,         help="Mini-batch size (default: 256).")
-    parser.add_argument("--seed",        type=int,   default=0,           help="Base random seed (default: 0).")
+    parser.add_argument("--seed",        type=int,   default=42,           help="Base random seed (default: 0).")
     parser.add_argument("--save-dir",    type=str,   default=None,        help="Override output directory.")
+    parser.add_argument("--log-dir",     type=str,   default=None,        help="Override TensorBoard log directory.")
     args = parser.parse_args()
 
     train_mlp(
@@ -192,6 +220,7 @@ def main() -> None:
         batch_size=args.batch_size,
         seed=args.seed,
         save_dir=args.save_dir,
+        log_dir=args.log_dir,
     )
 
 

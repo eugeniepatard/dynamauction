@@ -22,6 +22,7 @@ MPC requires a pre-trained MLPValuationHead — run train_mlp.py first:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 import pickle
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -49,7 +50,7 @@ from benchmark.train_rl import (
 from benchmark.train_mlp import load_mlp
 from dynamicauc.wrappers import SB3PolicyWrapper
 
-RESULTS_DIR  = Path(__file__).parent / "results"
+RESULTS_DIR  = Path(__file__).parent / "benchmark_results"
 
 AVAILABLE_BASELINES: List[str] = ["fipla", "constant", "random"]
 
@@ -83,10 +84,10 @@ class EvalConfig:
     include_shading:       bool           = False
     include_mpc:           bool           = False
     simulation_n_rollouts: int            = 10
-    shading_alpha:         float          = 0.8
-    mpc_model_path:        Optional[str]  = None
+    shading_alphas:        List[float]    = field(default_factory=lambda: [0.8])
+    mpc_model_paths:       List[Optional[str]] = field(default_factory=lambda: [None])
     mpc_alpha_candidates:  List[float]    = field(default_factory=lambda: [0.6, 0.8, 1.0, 1.2, 1.5])
-    mpc_planning_horizon:  float          = 7.0
+    mpc_planning_horizons: List[float]    = field(default_factory=lambda: [7.0])
 
 
 def _run_episode(
@@ -149,6 +150,20 @@ def get_planning_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
     return policies
 
 
+def _mpc_label(path: Optional[str], horizon: float, n_models: int, n_horizons: int) -> str:
+    parts = []
+    if n_horizons > 1:
+        parts.append(f"H={horizon:g}")
+    if n_models > 1:
+        if path is None:
+            parts.append("auto")
+        else:
+            stem = Path(path).stem  # e.g. scenario_h64-64_ep500_e500_lr0.001_s42
+            # drop the scenario_id prefix (everything up to and including first "_h")
+            parts.append(stem.split("_", 1)[-1] if "_" in stem else stem)
+    return "MPC" + (f"({','.join(parts)})" if parts else "")
+
+
 def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
     policies: Dict[str, BiddingPolicy] = {}
 
@@ -161,23 +176,30 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
         )
 
     if cfg.include_shading:
-        policies[f"Shading(α={cfg.shading_alpha})"] = ShadingPolicy(
-            SimulationEstimator(
-                pi0=ConstantPolicy(0.0),
-                n_rollouts=cfg.simulation_n_rollouts,
-            ),
-            alpha=cfg.shading_alpha,
-        )
+        for alpha in cfg.shading_alphas:
+            label = f"Shading(α={alpha:g})" if len(cfg.shading_alphas) > 1 else "Shading"
+            policies[label] = ShadingPolicy(
+                SimulationEstimator(
+                    pi0=ConstantPolicy(0.0),
+                    n_rollouts=cfg.simulation_n_rollouts,
+                ),
+                alpha=alpha,
+            )
 
     if cfg.include_mpc:
-        mlp = load_mlp(cfg.scenario_id, cfg.mpc_model_path)
-        policies["MPC"] = MPCPolicy(
-            v0=mlp,
-            alpha_candidates=cfg.mpc_alpha_candidates,
-            alpha_cont=1.0,
-            n_rollouts=cfg.simulation_n_rollouts,
-            planning_horizon=cfg.mpc_planning_horizon,
-        )
+        n_models   = len(cfg.mpc_model_paths)
+        n_horizons = len(cfg.mpc_planning_horizons)
+        for path in cfg.mpc_model_paths:
+            mlp = load_mlp(cfg.scenario_id, path)
+            for horizon in cfg.mpc_planning_horizons:
+                label = _mpc_label(path, horizon, n_models, n_horizons)
+                policies[label] = MPCPolicy(
+                    v0=mlp,
+                    alpha_candidates=cfg.mpc_alpha_candidates,
+                    alpha_cont=1.0,
+                    n_rollouts=cfg.simulation_n_rollouts,
+                    planning_horizon=horizon,
+                )
 
     return policies
 
@@ -245,14 +267,12 @@ def run_full_benchmark(
 
     if save:
         RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-        out = RESULTS_DIR / "benchmark_results.csv"
+        out = RESULTS_DIR / f"{cfg.scenario_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
         df.to_csv(out, index=False)
         print(f"\nResults saved → {out}")
 
     return df
 
-
-# ── Aggregation helpers ────────────────────────────────────────────────────────
 
 def episode_summary(df: pd.DataFrame) -> pd.DataFrame:
     return (
@@ -304,10 +324,14 @@ def main():
         choices=["greedy", "shading", "mpc", "all"],
         metavar="POLICY",
     )
-    parser.add_argument("--n-rollouts",  type=int,   default=10)
-    parser.add_argument("--alpha",       type=float, default=0.8)
-    parser.add_argument("--mpc-model",   type=str,   default=None,
-                        help="Path to a MLPValuationHead .pt file (default: auto-resolved from models dir).")
+    parser.add_argument("--n-rollouts",   type=int,   default=10)
+    parser.add_argument("--alphas",        type=float, nargs="+", default=[0.8],
+                        help="Shading factors α to evaluate (one Shading policy per value).")
+    parser.add_argument("--mpc-models",   type=str,   nargs="+", default=[None],
+                        help="Paths to MLPValuationHead .pt files (default: auto-resolved). "
+                             "One MPC variant is created per model × horizon combination.")
+    parser.add_argument("--mpc-horizons", type=float, nargs="+", default=[7.0],
+                        help="Planning horizons H to evaluate for MPC (one variant per value).")
     args = parser.parse_args()
 
     cfg = EvalConfig(
@@ -320,8 +344,9 @@ def main():
         include_shading="shading" in args.sim_policies or "all" in args.sim_policies,
         include_mpc="mpc" in args.sim_policies or "all" in args.sim_policies,
         simulation_n_rollouts=args.n_rollouts,
-        shading_alpha=args.alpha,
-        mpc_model_path=args.mpc_model,
+        shading_alphas=args.alphas,
+        mpc_model_paths=args.mpc_models,
+        mpc_planning_horizons=args.mpc_horizons,
     )
 
     run_full_benchmark(algos=args.algos, cfg=cfg, save=not args.no_save)
