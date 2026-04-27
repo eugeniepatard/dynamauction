@@ -10,7 +10,7 @@ The library models realistic advertiser behavior where conversion probabilities 
 
 This environment is built upon the framework proposed in *"A kernel causal model for repeated auctions with dynamic values."* The paper introduces a mathematical model for display advertising that treats user conversion probabilities as dynamic, evolving states rather than static numbers. It is specifically designed to simulate complex, real-world advertising phenomena, including **delay** (conversions happening long after a view), **saturation** (diminishing returns from repeated exposures), **recency**, and **external competitor interference**.
 
-At the core of the environment is the **reward kernel**, which dictates the distribution of conversion times for a given user. This kernel decomposes into two parts: an immediate conversion weight $\kappa$ (for instant clicks/purchases) and a delayed conversion intensity $\lambda$ (functioning similarly to a hazard/density model in survival analysis).
+At the core of the environment is the **reward kernel**, which dictates the distribution of conversion times for a given user after an ad is displayed. This kernel decomposes into two parts: an immediate conversion weight $\kappa$ (a purchase or click occurring right at display time) and a delayed conversion intensity $\lambda$ (a conversion happening sometime after the display, functioning similarly to a hazard/density model in survival analysis).
 
 The main mathematical formulation for the expected total reward over a campaign horizon $T$ is:
 
