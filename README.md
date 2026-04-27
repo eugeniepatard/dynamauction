@@ -16,6 +16,11 @@ pip install -e .
 
 Requirements: Python 3.9+, numpy, pandas, gymnasium, scipy.
 
+> **Note — editable install requires recent tooling.** `pip install -e .` uses PEP 660, which requires **pip ≥ 21.3** and **setuptools ≥ 64**. If the command fails with *"missing the `build_editable` hook"*, upgrade first:
+> ```bash
+> pip install --upgrade pip setuptools
+> ```
+
 ## Package Structure
 
 ```
