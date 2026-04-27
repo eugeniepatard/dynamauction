@@ -1,7 +1,0 @@
-_target_: dynamicauc.primitives.MixedKernel
-kappa_base_rate: 0.1
-base_kernel:
-  _target_: dynamicauc.primitives.SaturationKernel
-  base_rate: 1.0
-  saturation_scale: 10.0
-  delay_rate: 0.5
