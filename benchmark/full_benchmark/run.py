@@ -106,8 +106,8 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--horizon-eta", type=int, required=True, choices=[50, 100],
-        help="Exponential horizon parameter η (50 or 100).",
+        "--horizon-eta", type=int, required=True,
+        help="Exponential horizon parameter η.",
     )
     parser.add_argument("--n-seeds",   type=int,  default=30)
     parser.add_argument("--out-dir",   type=Path, default=None,

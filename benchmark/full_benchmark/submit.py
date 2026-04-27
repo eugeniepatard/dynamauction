@@ -1,22 +1,19 @@
 """
 Submit full benchmark jobs to the Inria Margaret (SLURM) cluster via submitit.
 
-One job is created per horizon_eta value (50 and 100).
-Results land in /scratch/epatard/full_benchmark/results/.
+Two modes:
+  planning  — FiPla, GreedyMyopic, Shading, MPC, MPCDelta  (run.py)
+  rl        — same + PPO/SAC/TD3 best models                (run_rl.py, fill paths first)
+
+One job is created per horizon_eta value.
+Results land in /scratch/epatard/full_benchmark/results{,_rl}/.
 
 Usage (from repo root, on the cluster)
 ---------------------------------------
-    # dry run — print jobs without submitting
     python benchmark/full_benchmark/submit.py --dry-run
-
-    # submit both horizon_eta jobs
     python benchmark/full_benchmark/submit.py
-
-    # submit only one value
-    python benchmark/full_benchmark/submit.py --horizon-etas 50
-
-Before submitting, copy the MLP model to the cluster:
-    scp -J ssh.inria.fr benchmark/models/mlp_valuation_head/survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt epatard@margaret02:/home/fairplay/epatard/projects/dynamicauc/benchmark/models/mlp_valuation_head/
+    python benchmark/full_benchmark/submit.py --mode rl
+    python benchmark/full_benchmark/submit.py --horizon-etas 50 100 --mode planning
 """
 from __future__ import annotations
 
@@ -29,15 +26,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 import submitit
 
-from benchmark.full_benchmark.run import run_job, _SCRATCH_RESULTS
-
-HORIZON_ETAS = [50, 100]
+HORIZON_ETAS = [50, 100, 500]
 
 _SCRATCH_DIR         = Path("/scratch/epatard")
 _SUBMITIT_LOG_FOLDER = str(_SCRATCH_DIR / "submitit_logs" / "full_benchmark" / "%j")
 
 SLURM_PARAMS: dict[str, Any] = {
-    "timeout_min":           2880,                       # 48 h
+    "timeout_min":           2880,
     "slurm_partition":       "normal-best,gpu-best",
     "gpus_per_node":         0,
     "cpus_per_task":         8,
@@ -45,7 +40,6 @@ SLURM_PARAMS: dict[str, Any] = {
     "nodes":                 1,
     "mem_gb":                16,
     "slurm_signal_delay_s":  120,
-    "slurm_job_name":        "dynac_full_bench",
 }
 
 
@@ -55,32 +49,45 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
+        "--mode", choices=["planning", "rl"], default="planning",
+        help="planning: baselines only (default). rl: baselines + PPO/SAC/TD3.",
+    )
+    parser.add_argument(
         "--horizon-etas", type=int, nargs="+", default=HORIZON_ETAS,
-        choices=HORIZON_ETAS,
-        help="Which horizon_eta values to submit (default: 50 100).",
+        help=f"horizon_eta values to submit (default: {HORIZON_ETAS}).",
     )
     parser.add_argument("--n-seeds",    type=int,  default=30)
-    parser.add_argument("--dry-run",    action="store_true",
-                        help="Print jobs without submitting anything.")
-    parser.add_argument("--log-folder", default=_SUBMITIT_LOG_FOLDER,
-                        help="submitit log folder template (%%j = SLURM job id).")
+    parser.add_argument("--dry-run",    action="store_true")
+    parser.add_argument("--log-folder", default=_SUBMITIT_LOG_FOLDER)
     args = parser.parse_args()
 
+    if args.mode == "rl":
+        from benchmark.full_benchmark.run_rl import run_rl_job, _SCRATCH_RESULTS
+        fn         = run_rl_job
+        job_name   = "dynac_rl_bench"
+        results_dir = _SCRATCH_RESULTS
+    else:
+        from benchmark.full_benchmark.run import run_job, _SCRATCH_RESULTS
+        fn         = run_job
+        job_name   = "dynac_bench"
+        results_dir = _SCRATCH_RESULTS
+
+    print(f"Mode           : {args.mode}")
     print(f"Jobs to submit : horizon_eta ∈ {args.horizon_etas}, {args.n_seeds} seeds each")
-    print(f"Results dir    : {_SCRATCH_RESULTS}")
-    print(f"submitit logs  : {args.log_folder}")
+    print(f"Results dir    : {results_dir}")
 
     if args.dry_run:
         for eta in args.horizon_etas:
-            print(f"  [DRY RUN] run_job(horizon_eta={eta}, n_seeds={args.n_seeds})")
+            print(f"  [DRY RUN] {fn.__name__}(horizon_eta={eta}, n_seeds={args.n_seeds})")
         print(f"\nTotal: {len(args.horizon_etas)} jobs (dry run, nothing submitted)")
         return
 
+    params = {**SLURM_PARAMS, "slurm_job_name": job_name}
     executor = submitit.AutoExecutor(folder=args.log_folder)
-    executor.update_parameters(**SLURM_PARAMS)
+    executor.update_parameters(**params)
 
     jobs = executor.map_array(
-        run_job,
+        fn,
         args.horizon_etas,
         [args.n_seeds] * len(args.horizon_etas),
     )
