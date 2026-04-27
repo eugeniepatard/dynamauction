@@ -5,6 +5,7 @@ from dynamicauc.baseline.baseline_algo import (
     GreedyMyopicPolicy,
     ShadingPolicy,
     MPCPolicy,
+    MPCDeltaPolicy,
 )
 __all__ = [
     "BiddingPolicy",
@@ -16,4 +17,5 @@ __all__ = [
     "GreedyMyopicPolicy",
     "ShadingPolicy",
     "MPCPolicy",
+    "MPCDeltaPolicy",
 ]

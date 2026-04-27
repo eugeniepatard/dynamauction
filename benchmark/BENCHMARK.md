@@ -222,8 +222,7 @@ Three non-learning baselines are included in every benchmark run:
 ### 1. Install dependencies
 
 ```bash
-pip install -e .
-pip install -r benchmark/requirements_benchmark.txt
+pip install -e ".[benchmark]"
 ```
 
 ### 2. Train RL agents

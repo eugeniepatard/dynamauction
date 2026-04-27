@@ -4,7 +4,7 @@ Bidding policy interface and simple baseline implementations.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Callable, Dict, Any
+from typing import TYPE_CHECKING, Dict, Any
 
 import numpy as np
 
@@ -47,7 +47,7 @@ class FiPlaPolicy(BiddingPolicy):
         self,
         observations: Dict[str, Any],
     ) -> float:
-        return observations["expected_reward"].item()
+        return max(0.0, observations["expected_reward"].item())
 
 class ConstantPolicy(BiddingPolicy):
     """Always Bid the same value, ignoring saturation/recency."""

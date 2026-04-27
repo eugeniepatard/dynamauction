@@ -25,12 +25,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import pickle
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
+from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
 import gymnasium as gym
-from gymnasium import spaces
 
 import dynamicauc as dac
 from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
@@ -39,13 +39,13 @@ from dynamicauc.baseline import (
     GreedyMyopicPolicy,
     ShadingPolicy,
     MPCPolicy,
+    MPCDeltaPolicy,
 )
 
 from benchmark.train_rl import (
     SCENARIO_ID,
     MODELS_DIR,
     load_model,
-    _ALGO_CLS,
 )
 from benchmark.train_mlp import load_mlp
 from dynamicauc.wrappers import SB3PolicyWrapper
@@ -80,14 +80,16 @@ class EvalConfig:
     random_max_bid:       float     = 1.0
     mask_expected_reward: bool      = True
     # Simulation-based planning policies
-    include_greedy:        bool           = False
-    include_shading:       bool           = False
-    include_mpc:           bool           = False
-    simulation_n_rollouts: int            = 10
-    shading_alphas:        List[float]    = field(default_factory=lambda: [0.8])
-    mpc_model_paths:       List[Optional[str]] = field(default_factory=lambda: [None])
-    mpc_alpha_candidates:  List[float]    = field(default_factory=lambda: [0.6, 0.8, 1.0, 1.2, 1.5])
-    mpc_planning_horizons: List[float]    = field(default_factory=lambda: [7.0])
+    include_greedy:              bool           = False
+    include_shading:             bool           = False
+    include_mpc:                 bool           = False
+    include_mpc_delta:           bool           = False
+    simulation_n_rollouts:       int            = 10
+    shading_alphas:              List[float]    = field(default_factory=lambda: [0.8])
+    mpc_model_paths:             List[Optional[str]] = field(default_factory=lambda: [None])
+    mpc_alpha_candidates:        List[float]    = field(default_factory=lambda: [0.6, 0.8, 1.0, 1.2, 1.5])
+    mpc_planning_horizons:       List[float]    = field(default_factory=lambda: [7.0])
+    mpc_delta_estimator_rollouts: int           = 5
 
 
 def _run_episode(
@@ -135,7 +137,10 @@ def evaluate_policy(
     policy_name: str,
 ) -> pd.DataFrame:
     env    = gym.make("DynamicAuction-v0", scenario=scenario)
-    frames = [_run_episode(policy, env, s, policy_name) for s in cfg.seeds]
+    frames = []
+    for s in tqdm(cfg.seeds, desc=f"Evaluating {policy_name}", unit="seed"):
+        df = _run_episode(policy, env, s, policy_name)
+        frames.append(df)
     env.close()
     return pd.concat(frames, ignore_index=True)
 
@@ -201,6 +206,21 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
                     planning_horizon=horizon,
                 )
 
+    if cfg.include_mpc_delta:
+        n_horizons = len(cfg.mpc_planning_horizons)
+        for horizon in cfg.mpc_planning_horizons:
+            label = "MPCDelta" + (f"(H={horizon:g})" if n_horizons > 1 else "")
+            policies[label] = MPCDeltaPolicy(
+                estimator=SimulationEstimator(
+                    pi0=ConstantPolicy(0.0),
+                    n_rollouts=cfg.mpc_delta_estimator_rollouts,
+                ),
+                alpha_candidates=cfg.mpc_alpha_candidates,
+                alpha_cont=1.0,
+                n_rollouts=cfg.simulation_n_rollouts,
+                planning_horizon=horizon,
+            )
+
     return policies
 
 
@@ -239,6 +259,8 @@ def benchmark(
     policies: Dict[str, BiddingPolicy],
     cfg:      EvalConfig = EvalConfig(),
 ) -> pd.DataFrame:
+    if not policies:
+        raise ValueError("No policies to benchmark. Check your --algos, --baselines, and --sim-policies flags.")
     scenario = dac.make(cfg.scenario_id, **cfg.scenario_overrides)
     frames: List[pd.DataFrame] = []
     for name, policy in policies.items():
@@ -276,13 +298,14 @@ def run_full_benchmark(
 
 def episode_summary(df: pd.DataFrame) -> pd.DataFrame:
     return (
-        df.groupby(["policy", "seed"], sort=False)
+        df.sort_values(["policy", "seed", "step"])
+        .groupby(["policy", "seed"], sort=False)
         .agg(
-            episode_reward=("reward",  "sum"),
-            n_steps       =("step",    "max"),
-            win_rate      =("won",     "mean"),
-            mean_bid      =("bid",     "mean"),
-            mean_payment  =("payment", "mean"),
+            episode_reward=("cum_reward", "last"),
+            n_steps       =("step",       "max"),
+            win_rate      =("won",        "mean"),
+            mean_bid      =("bid",        "mean"),
+            mean_payment  =("payment",    "mean"),
         )
         .reset_index()
     )
@@ -312,7 +335,8 @@ def main():
             "  python -m benchmark.evaluate --sim-policies mpc  # needs train_mlp.py first\n"
         ),
     )
-    parser.add_argument("--algos",           nargs="+", default=["ppo", "sac", "td3"])
+    parser.add_argument("--algos",           nargs="+", default=["ppo", "sac", "td3"], metavar="ALGO",
+                        help="RL algorithms to evaluate. Use 'none' to skip all.")
     parser.add_argument("--baselines",       nargs="+", default=AVAILABLE_BASELINES, metavar="BASELINE")
     parser.add_argument("--constant-bid",    type=float, default=0.5)
     parser.add_argument("--random-max-bid",  type=float, default=1.0)
@@ -321,7 +345,7 @@ def main():
     parser.add_argument("--no-mask-expected-reward", action="store_true")
     parser.add_argument(
         "--sim-policies", nargs="*", default=["all"],
-        choices=["greedy", "shading", "mpc", "all"],
+        choices=["greedy", "shading", "mpc", "mpc-delta", "all", "none"],
         metavar="POLICY",
     )
     parser.add_argument("--n-rollouts",   type=int,   default=10)
@@ -332,6 +356,8 @@ def main():
                              "One MPC variant is created per model × horizon combination.")
     parser.add_argument("--mpc-horizons", type=float, nargs="+", default=[7.0],
                         help="Planning horizons H to evaluate for MPC (one variant per value).")
+    parser.add_argument("--mpc-delta-estimator-rollouts", type=int, default=5,
+                        help="Inner SimulationEstimator rollouts for MPCDelta (default: 5).")
     args = parser.parse_args()
 
     cfg = EvalConfig(
@@ -343,13 +369,16 @@ def main():
         include_greedy="greedy" in args.sim_policies or "all" in args.sim_policies,
         include_shading="shading" in args.sim_policies or "all" in args.sim_policies,
         include_mpc="mpc" in args.sim_policies or "all" in args.sim_policies,
+        include_mpc_delta="mpc-delta" in args.sim_policies or "all" in args.sim_policies,
         simulation_n_rollouts=args.n_rollouts,
         shading_alphas=args.alphas,
         mpc_model_paths=args.mpc_models,
         mpc_planning_horizons=args.mpc_horizons,
+        mpc_delta_estimator_rollouts=args.mpc_delta_estimator_rollouts,
     )
 
-    run_full_benchmark(algos=args.algos, cfg=cfg, save=not args.no_save)
+    algos = [] if args.algos == ["none"] else args.algos
+    run_full_benchmark(algos=algos, cfg=cfg, save=not args.no_save)
 
 
 if __name__ == "__main__":

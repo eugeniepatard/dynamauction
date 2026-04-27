@@ -11,6 +11,7 @@ from dynamicauc.wrappers import FlatAuctionObsWrapper, BidScaleWrapper, SB3Polic
 from dynamicauc.dataclasses import Scenario
 from dynamicauc.simulator import Simulator
 from dynamicauc.env import AuctionEnv, OBSERVATION_KEYS
+from dynamicauc.checker import check_env
 from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
 from dynamicauc.baseline.baseline_algo import (
     SimulationEstimator,
@@ -55,6 +56,8 @@ from dynamicauc.primitives import (
 __version__ = version("dynamicauc")
 
 __all__ = [
+    # Checker
+    "check_env",
     # Main factory API
     "make",
     "ScenarioBuilder",

@@ -110,7 +110,9 @@ def train_mlp(
     out_dir = Path(save_dir) if save_dir else MLP_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    tb_dir = Path(log_dir) if log_dir else MLP_LOGS_DIR / scenario_id
+    dims_str = "-".join(str(d) for d in hidden_dims)
+    stem = f"{scenario_id}_h{dims_str}_ep{n_episodes}_e{n_epochs}_lr{lr:g}_s{seed}"
+    tb_dir = Path(log_dir) if log_dir else MLP_LOGS_DIR / scenario_id / stem
     tb_dir.mkdir(parents=True, exist_ok=True)
 
     scenario = dac.make(scenario_id, **(scenario_overrides or {}))
@@ -135,8 +137,6 @@ def train_mlp(
         log_dir=str(tb_dir),
     )
 
-    dims_str = "-".join(str(d) for d in hidden_dims)
-    stem = f"{scenario_id}_h{dims_str}_ep{n_episodes}_e{n_epochs}_lr{lr:g}_s{seed}"
     mlp.save(out_dir / f"{stem}.pt")
     print(f"  Saved weights        → {out_dir / f'{stem}.pt'}")
 
