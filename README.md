@@ -11,11 +11,12 @@ The library models realistic advertiser behavior where conversion probabilities 
 ```bash
 git clone https://github.com/your-repo/repeated-auction-dynamic-value.git
 cd repeated-auction-dynamic-value
-pip install -e .
-pip install -r requirements.txt
+pip install -e .                    # core library
+pip install -e ".[benchmark]"       # + benchmark dependencies (SB3, TensorBoard, …)
+pip install -e ".[dev]"             # + development tools (pytest, black, flake8)
 ```
 
-Requirements: Python 3.9+, numpy, pandas, gymnasium, scipy.
+Requirements: Python 3.9+.
 
 > **Note — editable install requires recent tooling.** `pip install -e .` uses PEP 660, which requires **pip ≥ 21.3** and **setuptools ≥ 64**. If the command fails with *"missing the `build_editable` hook"*, upgrade first:
 > ```bash
