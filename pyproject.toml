@@ -22,15 +22,27 @@ dependencies = [
   "numpy",
   "scikit-learn",
   "matplotlib",
-  "hydra-core",
-  "pandas"
+  "scipy",
+  "pandas",
+  "gymnasium",
+  "torch",
+  "tqdm",
 ]
 
 [project.optional-dependencies]
+benchmark = [
+  "stable-baselines3[extra]>=2.3.0",
+  "shimmy>=0.2.0",
+  "tensorboard>=2.14.0",
+  "submitit>=1.5.0",
+  "tabulate",
+  "seaborn",
+  "ipykernel",
+]
 dev = [
   "pytest",
   "black",
-  "flake8"
+  "flake8",
 ]
 
 [tool.setuptools.packages.find]
