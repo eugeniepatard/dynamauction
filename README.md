@@ -6,6 +6,25 @@
 
 The library models realistic advertiser behavior where conversion probabilities evolve based on frequency (saturation), recency, or competitor actions. It provides a standardized Gymnasium environment and simulator for evaluating bidding policies in non-stationary auction settings.
 
+## About the Kernel Causal Model Framework
+
+This environment is built upon the framework proposed in *"A kernel causal model for repeated auctions with dynamic values."* The paper introduces a mathematical model for display advertising that treats user conversion probabilities as dynamic, evolving states rather than static numbers. It is specifically designed to simulate complex, real-world advertising phenomena, including **delay** (conversions happening long after a view), **saturation** (diminishing returns from repeated exposures), **recency**, and **external competitor interference**.
+
+At the core of the environment is the **reward kernel**, which dictates the distribution of conversion times for a given user. This kernel decomposes into two parts: an immediate conversion weight $\kappa$ (for instant clicks/purchases) and a delayed conversion intensity $\lambda$ (functioning similarly to a hazard/density model in survival analysis).
+
+The main mathematical formulation for the expected total reward over a campaign horizon $T$ is:
+
+$$R(T) = \sum_{i:\, t_i \le T} \left[ \kappa(u, x_i, x_{-i}, y(t_i)) + \int_0^{T-t_i} \lambda(u, x_i, x_{-i}, y(t_i+s), t_i, s)\, ds \right]$$
+
+**Key components:**
+- **$x_{-i}$ (carry-over context):** aggregates past ad exposures up to display $i$ via $x_{-i} = \bigoplus_{i'<i} \gamma(x_{i'}, t_{i'}, t_i)$. It is the primary mechanism for modelling ad fatigue and saturation.
+- **$\lambda$ (delayed intensity):** for saturation, instantiated as $\lambda = f(x_{-i})\,h(s)$, where $h(s)$ is the baseline delay density and $f(x_{-i})$ scales down expected value as historical exposure $x_{-i}$ grows.
+- **$y(t)$ (external information):** a process tracking exogenous events (e.g. a competitor's click) that can instantly extinguish pending conversion probability.
+
+The figure below shows how $\lambda(s)$ behaves for the three built-in kernel families:
+
+![Delayed conversion intensity across kernels](images/kernel_intensity.png)
+
 ## Installation
 
 ```bash
