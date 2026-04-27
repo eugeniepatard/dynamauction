@@ -2,7 +2,7 @@
 
 ## Overview
 
-**DynamicAuc** is a Python library for simulating repeated auctions where the value of a display is dynamic and depends on the history of previous wins. It is the official implementation accompanying the paper: *"Benchmarking Bidding Strategies in Repeated Auctions with Dynamic Conversion Values"*.
+**DynamicAuc** is a Python library for simulating repeated auctions where the value of a display is dynamic and depends on the history of previous wins. It is the official implementation accompanying the paper: *"Benchmarking Bidding Strategies in Repeated Auctions with Dynamic Conversion Values"*. # TODO: mettre à jour nom papier
 
 The library models realistic advertiser behavior where conversion probabilities evolve based on frequency (saturation), recency, or competitor actions. It provides a standardized Gymnasium environment and simulator for evaluating bidding policies in non-stationary auction settings.
 
@@ -12,6 +12,7 @@ The library models realistic advertiser behavior where conversion probabilities 
 git clone https://github.com/your-repo/repeated-auction-dynamic-value.git
 cd repeated-auction-dynamic-value
 pip install -e .
+pip install -r requirements.txt
 ```
 
 Requirements: Python 3.9+, numpy, pandas, gymnasium, scipy.
@@ -32,7 +33,7 @@ dynamicauc/
 ├── scenarios/          Preset scenario registry and ScenarioBuilder
 ├── checker/            Gymnasium-style sanity checker (check_env) for AuctionEnv
 ├── env.py              Gymnasium-compatible AuctionEnv
-├── simulator.py        Simulator — runs multi-policy repeated auction campaigns
+├── simulator.py        Simulator : runs multi-policy repeated auction campaigns
 ├── wrappers.py         Observation and action wrappers (Flat, BidScale, SB3, Mask)
 └── dataclasses.py      Scenario and AuctionState dataclasses
 ```
