@@ -58,9 +58,11 @@ PALETTE: Dict[str, str] = {
     "Constant":     "#8172B2",
     "Random":       "#937860",
     "GreedyMyopic": "#DA8BC3",
-    # Shading and MPC are base colors used when only one variant is present.
-    # Multiple variants get a sequential gradient — see _make_palette.
+    # Shading, MPC, and MPCOracle are base colors used when only one variant is
+    # present.  Multiple variants get a sequential gradient — see _make_palette.
+    # MPCOracle must come before MPC so prefix matching finds it first.
     "Shading":      "#2171B5",
+    "MPCOracle":    "#2CA02C",
     "MPC":          "#A67C00",
 }
 
@@ -87,8 +89,12 @@ def _is_shading(name: str) -> bool:
     return name == "Shading" or name.startswith("Shading(")
 
 
+def _is_mpc_oracle(name: str) -> bool:
+    return name == "MPCOracle" or name.startswith("MPCOracle(")
+
+
 def _is_mpc(name: str) -> bool:
-    return name == "MPC" or name.startswith("MPC(")
+    return (name == "MPC" or name.startswith("MPC(")) and not _is_mpc_oracle(name)
 
 
 def _make_palette(names: Sequence[str]) -> Dict[str, Any]:
@@ -100,9 +106,10 @@ def _make_palette(names: Sequence[str]) -> Dict[str, Any]:
     * Multiple MPC variants    → sequential amber gradient.
     * Unknown policies         → husl fallback.
     """
-    shading_names = [n for n in names if _is_shading(n)]
-    mpc_names     = [n for n in names if _is_mpc(n)]
-    ns, nm = len(shading_names), len(mpc_names)
+    shading_names     = [n for n in names if _is_shading(n)]
+    mpc_names         = [n for n in names if _is_mpc(n)]
+    mpc_oracle_names  = [n for n in names if _is_mpc_oracle(n)]
+    ns, nm, no = len(shading_names), len(mpc_names), len(mpc_oracle_names)
 
     # Sample colormaps, skipping very light / very dark extremes
     shading_colors: list = (
@@ -113,16 +120,23 @@ def _make_palette(names: Sequence[str]) -> Dict[str, Any]:
         [PALETTE["MPC"]] if nm <= 1
         else [plt.cm.YlOrBr(0.35 + 0.55 * i / max(nm - 1, 1)) for i in range(nm)]
     )
+    mpc_oracle_colors: list = (
+        [PALETTE["MPCOracle"]] if no <= 1
+        else [plt.cm.Greens(0.35 + 0.55 * i / max(no - 1, 1)) for i in range(no)]
+    )
 
     out: Dict[str, Any] = {}
-    si = mi = fallback_i = 0
+    si = mi = oi = fallback_i = 0
     for name in names:
         if _is_shading(name):
             out[name] = shading_colors[si]; si += 1
+        elif _is_mpc_oracle(name):
+            out[name] = mpc_oracle_colors[oi]; oi += 1
         elif _is_mpc(name):
             out[name] = mpc_colors[mi]; mi += 1
         else:
-            # prefix match against PALETTE keys
+            # prefix match against PALETTE keys (MPCOracle listed before MPC so it
+            # won't be caught by the shorter "MPC" prefix)
             matched = next((c for k, c in PALETTE.items() if name.startswith(k)), None)
             out[name] = matched if matched is not None else sns.color_palette("husl", 10)[fallback_i % 10]
             if matched is None:
@@ -136,10 +150,12 @@ def _make_linestyles(names: Sequence[str]) -> Dict[str, str]:
     (Shading and MPC).  All other policies get solid lines.
     """
     out: Dict[str, str] = {}
-    si = mi = 0
+    si = mi = oi = 0
     for name in names:
         if _is_shading(name):
             out[name] = _LINESTYLES[si % len(_LINESTYLES)]; si += 1
+        elif _is_mpc_oracle(name):
+            out[name] = _LINESTYLES[oi % len(_LINESTYLES)]; oi += 1
         elif _is_mpc(name):
             out[name] = _LINESTYLES[mi % len(_LINESTYLES)]; mi += 1
         else:

@@ -1,5 +1,5 @@
 """
-Evaluation and benchmarking for RL and planning policies.
+Evaluation and benchmarking for RL and planning policies (sequential).
 
 Quick start
 -----------
@@ -18,14 +18,14 @@ Available baselines: fipla, constant, random
 MPC requires a pre-trained MLPValuationHead — run train_mlp.py first:
     python -m benchmark.train_mlp
     python -m benchmark.evaluate --sim-policies mpc
+
+For parallel execution on a multi-core machine or cluster, use
+benchmark.full_benchmark.parallel_evaluate instead.
 """
 from __future__ import annotations
 
-import copy
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime
-import os
 import pickle
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -41,6 +41,7 @@ from dynamicauc.baseline import (
     SimulationEstimator,
     GreedyMyopicPolicy,
     ShadingPolicy,
+    MPCOraclePolicy,
     MPCPolicy,
     MPCDeltaPolicy,
 )
@@ -53,14 +54,9 @@ from benchmark.train_rl import (
 from benchmark.train_mlp import load_mlp
 from dynamicauc.wrappers import SB3PolicyWrapper
 
-RESULTS_DIR  = Path(__file__).parent / "benchmark_results"
+RESULTS_DIR = Path(__file__).parent / "benchmark_results"
 
 AVAILABLE_BASELINES: List[str] = ["fipla", "constant", "random"]
-
-
-def _default_n_workers() -> int:
-    slurm = os.environ.get("SLURM_CPUS_PER_TASK")
-    return int(slurm) if slurm else (os.cpu_count() or 1)
 
 
 def _make_baseline(name: str, constant_bid: float, random_max_bid: float) -> tuple[str, BiddingPolicy]:
@@ -91,6 +87,7 @@ class EvalConfig:
     include_greedy:              bool           = False
     include_shading:             bool           = False
     include_mpc:                 bool           = False
+    include_mpc_oracle:          bool           = False
     include_mpc_delta:           bool           = False
     simulation_n_rollouts:       int            = 10
     shading_alphas:              List[float]    = field(default_factory=lambda: [0.8])
@@ -98,7 +95,8 @@ class EvalConfig:
     mpc_alpha_candidates:        List[float]    = field(default_factory=lambda: [0.6, 0.8, 1.0, 1.2, 1.5])
     mpc_planning_horizons:       List[float]    = field(default_factory=lambda: [7.0])
     mpc_delta_estimator_rollouts: int           = 5
-    n_workers:                   Optional[int]  = None  # None = SLURM_CPUS_PER_TASK or os.cpu_count()
+    # Used by parallel_evaluate.benchmark(); ignored here.
+    n_workers:                   Optional[int]  = None
 
 
 def _run_episode(
@@ -133,7 +131,7 @@ def _run_episode(
             "payment":         float(info["auction"]["payment"]),
             "ctx":             float(obs["ctx"].ravel()[0]),
             "expected_reward": float(obs["expected_reward"].ravel()[0]),
-            "competing_bid" :  float(info["auction"]["competing_bid"]),
+            "competing_bid":   float(info["auction"]["competing_bid"]),
         })
 
     return pd.DataFrame(rows)
@@ -148,8 +146,7 @@ def evaluate_policy(
     env    = gym.make("DynamicAuction-v0", scenario=scenario)
     frames = []
     for s in tqdm(cfg.seeds, desc=f"Evaluating {policy_name}", unit="seed"):
-        df = _run_episode(policy, env, s, policy_name)
-        frames.append(df)
+        frames.append(_run_episode(policy, env, s, policy_name))
     env.close()
     return pd.concat(frames, ignore_index=True)
 
@@ -164,7 +161,7 @@ def get_planning_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
     return policies
 
 
-def _mpc_label(path: Optional[str], horizon: float, n_models: int, n_horizons: int) -> str:
+def _mpc_label(path: Optional[str], horizon: float, n_models: int, n_horizons: int, prefix: str = "MPC") -> str:
     parts = []
     if n_horizons > 1:
         parts.append(f"H={horizon:g}")
@@ -172,10 +169,9 @@ def _mpc_label(path: Optional[str], horizon: float, n_models: int, n_horizons: i
         if path is None:
             parts.append("auto")
         else:
-            stem = Path(path).stem  # e.g. scenario_h64-64_ep500_e500_lr0.001_s42
-            # drop the scenario_id prefix (everything up to and including first "_h")
+            stem = Path(path).stem
             parts.append(stem.split("_", 1)[-1] if "_" in stem else stem)
-    return "MPC" + (f"({','.join(parts)})" if parts else "")
+    return prefix + (f"({','.join(parts)})" if parts else "")
 
 
 def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
@@ -208,6 +204,21 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
             for horizon in cfg.mpc_planning_horizons:
                 label = _mpc_label(path, horizon, n_models, n_horizons)
                 policies[label] = MPCPolicy(
+                    v0=mlp,
+                    alpha_candidates=cfg.mpc_alpha_candidates,
+                    alpha_cont=1.0,
+                    n_rollouts=cfg.simulation_n_rollouts,
+                    planning_horizon=horizon,
+                )
+
+    if cfg.include_mpc_oracle:
+        n_models   = len(cfg.mpc_model_paths)
+        n_horizons = len(cfg.mpc_planning_horizons)
+        for path in cfg.mpc_model_paths:
+            mlp = load_mlp(cfg.scenario_id, path)
+            for horizon in cfg.mpc_planning_horizons:
+                label = _mpc_label(path, horizon, n_models, n_horizons, prefix="MPCOracle")
+                policies[label] = MPCOraclePolicy(
                     v0=mlp,
                     alpha_candidates=cfg.mpc_alpha_candidates,
                     alpha_cont=1.0,
@@ -264,31 +275,6 @@ def get_rl_policies(
     return policies
 
 
-# --------------------------------------------------------------------------- #
-# Parallel worker helpers
-# --------------------------------------------------------------------------- #
-
-_WORKER_POLICIES: Dict[str, "BiddingPolicy"] = {}
-_WORKER_SCENARIO = None
-
-
-def _init_worker(policies_pkl: bytes, scenario_id: str, scenario_overrides: dict) -> None:
-    global _WORKER_POLICIES, _WORKER_SCENARIO
-    _WORKER_POLICIES = pickle.loads(policies_pkl)
-    _WORKER_SCENARIO = dac.make(scenario_id, **scenario_overrides)
-
-
-def _run_task(policy_name: str, seed: int) -> pd.DataFrame:
-    policy = copy.deepcopy(_WORKER_POLICIES[policy_name])
-    env    = gym.make("DynamicAuction-v0", scenario=_WORKER_SCENARIO)
-    df     = _run_episode(policy, env, seed, policy_name)
-    env.close()
-    return df
-
-
-# --------------------------------------------------------------------------- #
-
-
 def benchmark(
     policies: Dict[str, BiddingPolicy],
     cfg:      EvalConfig = EvalConfig(),
@@ -296,35 +282,11 @@ def benchmark(
     if not policies:
         raise ValueError("No policies to benchmark. Check your --algos, --baselines, and --sim-policies flags.")
 
-    n_workers = cfg.n_workers if cfg.n_workers is not None else _default_n_workers()
-
-    if n_workers <= 1:
-        scenario = dac.make(cfg.scenario_id, **cfg.scenario_overrides)
-        frames: List[pd.DataFrame] = []
-        for name, policy in policies.items():
-            print(f"  Evaluating {name} ({len(cfg.seeds)} seeds) …")
-            frames.append(evaluate_policy(policy, scenario, cfg, name))
-        return pd.concat(frames, ignore_index=True)
-
-    n_tasks = len(policies) * len(cfg.seeds)
-    print(
-        f"\nBenchmarking {len(policies)} policies × {len(cfg.seeds)} seeds"
-        f" = {n_tasks} tasks, {n_workers} workers"
-    )
-
-    policies_pkl = pickle.dumps(policies)
-    tasks = [(name, seed) for name in policies for seed in cfg.seeds]
-
-    frames = []
-    with ProcessPoolExecutor(
-        max_workers=n_workers,
-        initializer=_init_worker,
-        initargs=(policies_pkl, cfg.scenario_id, cfg.scenario_overrides),
-    ) as executor:
-        futures = {executor.submit(_run_task, name, seed): (name, seed) for name, seed in tasks}
-        for fut in tqdm(as_completed(futures), total=n_tasks, desc="Tasks completed"):
-            frames.append(fut.result())
-
+    scenario = dac.make(cfg.scenario_id, **cfg.scenario_overrides)
+    frames: List[pd.DataFrame] = []
+    for name, policy in policies.items():
+        print(f"  Evaluating {name} ({len(cfg.seeds)} seeds) …")
+        frames.append(evaluate_policy(policy, scenario, cfg, name))
     return pd.concat(frames, ignore_index=True)
 
 
@@ -382,7 +344,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Run the full benchmark.",
+        description="Run the full benchmark (sequential).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             f"Available baselines: {', '.join(AVAILABLE_BASELINES)}\n"
@@ -404,19 +366,17 @@ def main():
     parser.add_argument("--no-mask-expected-reward", action="store_true")
     parser.add_argument(
         "--sim-policies", nargs="*", default=["all"],
-        choices=["greedy", "shading", "mpc", "mpc-delta", "all", "none"],
+        choices=["greedy", "shading", "mpc", "mpc-oracle", "mpc-delta", "all", "none"],
         metavar="POLICY",
     )
     parser.add_argument("--n-rollouts",   type=int,   default=10)
     parser.add_argument("--alphas",        type=float, nargs="+", default=[0.8],
                         help="Shading factors α to evaluate (one Shading policy per value).")
     parser.add_argument("--mpc-models",   type=str,   nargs="+", default=[None],
-                        help="Paths to MLPValuationHead .pt files (default: auto-resolved). "
-                             "One MPC variant is created per model × horizon combination.")
+                        help="Paths to MLPValuationHead .pt files (default: auto-resolved).")
     parser.add_argument("--mpc-horizons", type=float, nargs="+", default=[7.0],
-                        help="Planning horizons H to evaluate for MPC (one variant per value).")
-    parser.add_argument("--mpc-delta-estimator-rollouts", type=int, default=5,
-                        help="Inner SimulationEstimator rollouts for MPCDelta (default: 5).")
+                        help="Planning horizons H to evaluate for MPC.")
+    parser.add_argument("--mpc-delta-estimator-rollouts", type=int, default=5)
     args = parser.parse_args()
 
     cfg = EvalConfig(
@@ -428,6 +388,7 @@ def main():
         include_greedy="greedy" in args.sim_policies or "all" in args.sim_policies,
         include_shading="shading" in args.sim_policies or "all" in args.sim_policies,
         include_mpc="mpc" in args.sim_policies or "all" in args.sim_policies,
+        include_mpc_oracle="mpc-oracle" in args.sim_policies or "all" in args.sim_policies,
         include_mpc_delta="mpc-delta" in args.sim_policies or "all" in args.sim_policies,
         simulation_n_rollouts=args.n_rollouts,
         shading_alphas=args.alphas,

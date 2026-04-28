@@ -30,7 +30,8 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from benchmark.evaluate import EvalConfig, benchmark, get_planning_policies, get_simulation_policies
+from benchmark.evaluate import EvalConfig, get_planning_policies, get_simulation_policies
+from benchmark.full_benchmark.parallel_evaluate import benchmark
 
 SCENARIO_ID = "survival-second-price-exponential"
 
@@ -78,6 +79,7 @@ def run_job(
         include_shading=True,
         shading_alphas=SHADING_ALPHAS,
         include_mpc=True,
+        include_mpc_oracle=True,
         mpc_model_paths=[str(model_path)],
         mpc_planning_horizons=MPC_HORIZONS,
         mpc_alpha_candidates=MPC_ALPHA_CANDIDATES,

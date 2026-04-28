@@ -18,6 +18,7 @@ from dynamicauc.baseline.baseline_algo import (
     MLPValuationHead,
     GreedyMyopicPolicy,
     ShadingPolicy,
+    MPCOraclePolicy,
     MPCPolicy,
 )
 from dynamicauc.primitives import (
@@ -104,6 +105,7 @@ __all__ = [
     "MLPValuationHead",
     "GreedyMyopicPolicy",
     "ShadingPolicy",
+    "MPCOraclePolicy",
     "MPCPolicy",
 ]
 
