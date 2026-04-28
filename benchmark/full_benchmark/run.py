@@ -41,8 +41,8 @@ _DEFAULT_MLP_MODEL = (
     / "survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt"
 )
 
-MPC_HORIZONS         = [0.0, 7.0, 10.0, 15.0, 25.0]
-SHADING_ALPHAS       = [0.2, 0.4, 0.6, 0.8]
+MPC_HORIZONS         = [0.0, 4.0, 7.0, 10.0, 15.0, 25.0]
+SHADING_ALPHAS       = [0.2, 0.4, 0.6, 0.8, 1.2, 1.5]
 MPC_ALPHA_CANDIDATES = [0.2, 0.4, 0.6, 0.8, 1.0]
 
 _SCRATCH_RESULTS = Path("/scratch/epatard/full_benchmark/results")
@@ -81,7 +81,7 @@ def run_job(
         mpc_model_paths=[str(model_path)],
         mpc_planning_horizons=MPC_HORIZONS,
         mpc_alpha_candidates=MPC_ALPHA_CANDIDATES,
-        include_mpc_delta=True,
+        include_mpc_delta=False,
     )
 
     policies = {}

@@ -21,8 +21,11 @@ MPC requires a pre-trained MLPValuationHead — run train_mlp.py first:
 """
 from __future__ import annotations
 
+import copy
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime
+import os
 import pickle
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -53,6 +56,11 @@ from dynamicauc.wrappers import SB3PolicyWrapper
 RESULTS_DIR  = Path(__file__).parent / "benchmark_results"
 
 AVAILABLE_BASELINES: List[str] = ["fipla", "constant", "random"]
+
+
+def _default_n_workers() -> int:
+    slurm = os.environ.get("SLURM_CPUS_PER_TASK")
+    return int(slurm) if slurm else (os.cpu_count() or 1)
 
 
 def _make_baseline(name: str, constant_bid: float, random_max_bid: float) -> tuple[str, BiddingPolicy]:
@@ -90,6 +98,7 @@ class EvalConfig:
     mpc_alpha_candidates:        List[float]    = field(default_factory=lambda: [0.6, 0.8, 1.0, 1.2, 1.5])
     mpc_planning_horizons:       List[float]    = field(default_factory=lambda: [7.0])
     mpc_delta_estimator_rollouts: int           = 5
+    n_workers:                   Optional[int]  = None  # None = SLURM_CPUS_PER_TASK or os.cpu_count()
 
 
 def _run_episode(
@@ -255,17 +264,67 @@ def get_rl_policies(
     return policies
 
 
+# --------------------------------------------------------------------------- #
+# Parallel worker helpers
+# --------------------------------------------------------------------------- #
+
+_WORKER_POLICIES: Dict[str, "BiddingPolicy"] = {}
+_WORKER_SCENARIO = None
+
+
+def _init_worker(policies_pkl: bytes, scenario_id: str, scenario_overrides: dict) -> None:
+    global _WORKER_POLICIES, _WORKER_SCENARIO
+    _WORKER_POLICIES = pickle.loads(policies_pkl)
+    _WORKER_SCENARIO = dac.make(scenario_id, **scenario_overrides)
+
+
+def _run_task(policy_name: str, seed: int) -> pd.DataFrame:
+    policy = copy.deepcopy(_WORKER_POLICIES[policy_name])
+    env    = gym.make("DynamicAuction-v0", scenario=_WORKER_SCENARIO)
+    df     = _run_episode(policy, env, seed, policy_name)
+    env.close()
+    return df
+
+
+# --------------------------------------------------------------------------- #
+
+
 def benchmark(
     policies: Dict[str, BiddingPolicy],
     cfg:      EvalConfig = EvalConfig(),
 ) -> pd.DataFrame:
     if not policies:
         raise ValueError("No policies to benchmark. Check your --algos, --baselines, and --sim-policies flags.")
-    scenario = dac.make(cfg.scenario_id, **cfg.scenario_overrides)
-    frames: List[pd.DataFrame] = []
-    for name, policy in policies.items():
-        print(f"  Evaluating {name} ({len(cfg.seeds)} seeds) …")
-        frames.append(evaluate_policy(policy, scenario, cfg, name))
+
+    n_workers = cfg.n_workers if cfg.n_workers is not None else _default_n_workers()
+
+    if n_workers <= 1:
+        scenario = dac.make(cfg.scenario_id, **cfg.scenario_overrides)
+        frames: List[pd.DataFrame] = []
+        for name, policy in policies.items():
+            print(f"  Evaluating {name} ({len(cfg.seeds)} seeds) …")
+            frames.append(evaluate_policy(policy, scenario, cfg, name))
+        return pd.concat(frames, ignore_index=True)
+
+    n_tasks = len(policies) * len(cfg.seeds)
+    print(
+        f"\nBenchmarking {len(policies)} policies × {len(cfg.seeds)} seeds"
+        f" = {n_tasks} tasks, {n_workers} workers"
+    )
+
+    policies_pkl = pickle.dumps(policies)
+    tasks = [(name, seed) for name in policies for seed in cfg.seeds]
+
+    frames = []
+    with ProcessPoolExecutor(
+        max_workers=n_workers,
+        initializer=_init_worker,
+        initargs=(policies_pkl, cfg.scenario_id, cfg.scenario_overrides),
+    ) as executor:
+        futures = {executor.submit(_run_task, name, seed): (name, seed) for name, seed in tasks}
+        for fut in tqdm(as_completed(futures), total=n_tasks, desc="Tasks completed"):
+            frames.append(fut.result())
+
     return pd.concat(frames, ignore_index=True)
 
 
