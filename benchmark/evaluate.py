@@ -43,7 +43,6 @@ from dynamicauc.baseline import (
     ShadingPolicy,
     MPCOraclePolicy,
     MPCPolicy,
-    MPCDeltaPolicy,
     MPCTimeBinnedPolicy,
 )
 
@@ -92,13 +91,11 @@ class EvalConfig:
     include_mpc_oracle:          bool           = False
     include_mpc_timebin:         bool           = False
     mpc_n_bins:                  List[int]      = field(default_factory=lambda: [2])
-    include_mpc_delta:           bool           = False
     simulation_n_rollouts:       int            = 10
     shading_alphas:              List[float]    = field(default_factory=lambda: [0.8])
     mpc_model_paths:             List[Optional[str]] = field(default_factory=lambda: [None])
     mpc_alpha_candidates:        List[float]    = field(default_factory=lambda: [0.6, 0.8, 1.0, 1.2, 1.5])
     mpc_planning_horizons:       List[float]    = field(default_factory=lambda: [7.0])
-    mpc_delta_estimator_rollouts: int           = 5
     # Used by parallel_evaluate.benchmark(); ignored here.
     n_workers:                   Optional[int]  = None
 
@@ -253,22 +250,6 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
                         seed=cfg.policy_seed,
                     )
 
-    if cfg.include_mpc_delta:
-        n_horizons = len(cfg.mpc_planning_horizons)
-        for horizon in cfg.mpc_planning_horizons:
-            label = "MPCDelta" + (f"(H={horizon:g})" if n_horizons > 1 else "")
-            policies[label] = MPCDeltaPolicy(
-                estimator=SimulationEstimator(
-                    pi0=ConstantPolicy(0.0),
-                    n_rollouts=cfg.mpc_delta_estimator_rollouts,
-                ),
-                alpha_candidates=cfg.mpc_alpha_candidates,
-                alpha_cont=1.0,
-                n_rollouts=cfg.simulation_n_rollouts,
-                planning_horizon=horizon,
-                seed=cfg.policy_seed,
-            )
-
     return policies
 
 
@@ -395,7 +376,7 @@ def main():
     parser.add_argument("--no-mask-expected-reward", action="store_true")
     parser.add_argument(
         "--sim-policies", nargs="*", default=["all"],
-        choices=["greedy", "shading", "mpc", "mpc-oracle", "mpc-delta", "mpc-timebin", "all", "none"],
+        choices=["greedy", "shading", "mpc", "mpc-oracle", "mpc-timebin", "all", "none"],
         metavar="POLICY",
     )
     parser.add_argument("--n-rollouts",   type=int,   default=10)
@@ -405,7 +386,6 @@ def main():
                         help="Paths to MLPValuationHead .pt files (default: auto-resolved).")
     parser.add_argument("--mpc-horizons", type=float, nargs="+", default=[7.0],
                         help="Planning horizons H to evaluate for MPC.")
-    parser.add_argument("--mpc-delta-estimator-rollouts", type=int, default=5)
     args = parser.parse_args()
 
     cfg = EvalConfig(
@@ -419,13 +399,11 @@ def main():
         include_shading="shading" in args.sim_policies or "all" in args.sim_policies,
         include_mpc="mpc" in args.sim_policies or "all" in args.sim_policies,
         include_mpc_oracle="mpc-oracle" in args.sim_policies or "all" in args.sim_policies,
-        include_mpc_delta="mpc-delta" in args.sim_policies or "all" in args.sim_policies,
         simulation_n_rollouts=args.n_rollouts,
         include_mpc_timebin="mpc-timebin" in args.sim_policies or "all" in args.sim_policies,
         shading_alphas=args.alphas,
         mpc_model_paths=args.mpc_models,
         mpc_planning_horizons=args.mpc_horizons,
-        mpc_delta_estimator_rollouts=args.mpc_delta_estimator_rollouts,
     )
 
     algos = [] if args.algos == ["none"] else args.algos

@@ -6,7 +6,6 @@ from dynamicauc.baseline.baseline_algo import (
     ShadingPolicy,
     MPCOraclePolicy,
     MPCPolicy,
-    MPCDeltaPolicy,
     MPCTimeBinnedPolicy,
 )
 __all__ = [
@@ -20,6 +19,5 @@ __all__ = [
     "ShadingPolicy",
     "MPCOraclePolicy",
     "MPCPolicy",
-    "MPCDeltaPolicy",
     "MPCTimeBinnedPolicy",
 ]

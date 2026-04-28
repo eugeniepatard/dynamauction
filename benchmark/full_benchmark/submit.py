@@ -2,8 +2,8 @@
 Submit full benchmark jobs to the Inria Margaret (SLURM) cluster via submitit.
 
 Two modes:
-  planning  — FiPla, GreedyMyopic, Shading, MPC, MPCDelta  (run.py)
-  rl        — same + PPO/SAC/TD3 best models                (run_rl.py, fill paths first)
+  planning  — FiPla, GreedyMyopic, Shading, MPC, MPCOracle, MPCTimeBinned  (run.py)
+  rl        — same + PPO/SAC/TD3 best models                                (run_rl.py, fill paths first)
 
 One job is created per horizon_eta value.
 Results land in /scratch/epatard/full_benchmark/results{,_rl}/.

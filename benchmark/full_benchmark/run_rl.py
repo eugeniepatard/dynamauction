@@ -131,7 +131,6 @@ def run_rl_job(
         mpc_planning_horizons=MPC_HORIZONS,
         mpc_alpha_candidates=MPC_ALPHA_CANDIDATES,
         mpc_n_bins=MPC_N_BINS,
-        include_mpc_delta=True,
         n_workers=n_workers,
         policy_seed=0,
     )

@@ -41,6 +41,14 @@ class TestSimulationEstimator:
         result = est.estimate(obs)
         assert isinstance(result, float)
 
+    def test_estimate_is_deterministic_with_seed(self, base_env):
+        obs, _ = base_env.reset(seed=0)
+        est1 = SimulationEstimator(pi0=ConstantPolicy(0.0), n_rollouts=2, seed=123)
+        est2 = SimulationEstimator(pi0=ConstantPolicy(0.0), n_rollouts=2, seed=123)
+        est1.set_env(base_env)
+        est2.set_env(base_env)
+        assert est1.estimate(obs) == pytest.approx(est2.estimate(obs))
+
     def test_estimate_is_finite(self, base_env):
         obs, _ = base_env.reset(seed=0)
         est = SimulationEstimator(pi0=ConstantPolicy(0.0), n_rollouts=2)

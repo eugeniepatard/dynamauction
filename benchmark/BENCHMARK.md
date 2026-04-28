@@ -116,7 +116,6 @@ Seven simulation-based planning policies are included in the benchmark runs.
 | **MPC(H)** | Model-Predictive Control: selects α* = argmax_{α ∈ A₀} Q̂(α) over a planning horizon H using a pre-trained MLP valuation head V₀(s, x). Horizon T' is resampled per rollout (no oracle access to the true future). |
 | **MPCOracle(H)** | Same as MPC but uses the true pre-sampled future auction schedule (oracle access). Upper-bound ablation. |
 | **MPCTimeBinned(H, K)** | Time-binned MPC: splits [t, t+H) into K equal bins and jointly optimises K shading multipliers α = (α₀, …, α_{K−1}) via grid search over A₀^K. Bids α*₀ · V₀(s, x) at the current step. |
-| **MPCDelta(H)** | MPC variant that replaces the MLP valuation head with the simulation-based delta estimator Δ(s, x). No pre-training required. |
 
 ### Shared Simulation Parameters
 
@@ -142,16 +141,6 @@ All simulation-based policies use the following parameters:
 | Planning horizons H (run.py) | 0.0, 4.0, 7.0, 10.0, 15.0, 25.0 |
 | Planning horizons H (run_rl.py) | 0.0, 7.0, 10.0, 15.0, 25.0 |
 | Number of time bins K (MPCTimeBinned) | 2, 3, 5, 10 |
-
-### MPCDelta Parameters (run_rl.py only)
-
-| Parameter | Value |
-|---|---|
-| α candidates A₀ | {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5} |
-| Continuation multiplier α_cont | 1.0 |
-| Planning horizons H | 0.0, 7.0, 10.0, 15.0, 25.0 |
-| Delta estimator rollouts | 5 |
-| Outer rollouts per decision step | 10 |
 
 ### MLP Valuation Head (for MPC, MPCOracle, MPCTimeBinned)
 
@@ -206,7 +195,7 @@ python benchmark/full_benchmark/run.py --horizon-eta 100
 
 ### RL + planning benchmark (`run_rl.py`)
 
-Evaluates PPO, SAC, TD3 alongside FiPla, GreedyMyopic, Shading×4, MPC×5, MPCOracle×5, MPCTimeBinned×20, MPCDelta×5.
+Evaluates PPO, SAC, TD3 alongside FiPla, GreedyMyopic, Shading×4, MPC×5, MPCOracle×5, MPCTimeBinned×20.
 
 ```bash
 # Edit the PPO_MODEL_PATH, SAC_MODEL_PATH, TD3_MODEL_PATH variables at the top of run_rl.py first.

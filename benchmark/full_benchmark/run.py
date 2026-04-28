@@ -1,5 +1,5 @@
 """
-Full benchmark: FiPla, GreedyMyopic, Shading×4, MPC×4, MPCDelta×4
+Full benchmark: FiPla, GreedyMyopic, Shading×4, MPC×6, MPCOracle×6, MPCTimeBinned×24
 for a given horizon_eta scenario parameter.
 
 Usage (from repo root)
@@ -83,7 +83,6 @@ def run_job(
         mpc_planning_horizons=MPC_HORIZONS,
         mpc_alpha_candidates=MPC_ALPHA_CANDIDATES,
         mpc_n_bins=MPC_N_BINS,
-        include_mpc_delta=False,
         n_workers=n_workers,
         policy_seed=0,
     )
