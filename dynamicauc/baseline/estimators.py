@@ -74,16 +74,24 @@ class SimulationEstimator:
             )
         v1_sum = v0_sum = 0.0
         for _ in range(self.n_rollouts):
+            pair_seed = np.random.randint(0, 2**31 - 1)
+
             # V¹: force a win, recover gross value by adding back the payment
+            env_v1 = copy.deepcopy(self._env)
+            env_v1.unwrapped.rng = np.random.default_rng(pair_seed)
             v1_sum += _rollout_to_end(
-                copy.deepcopy(self._env), obs, self.pi0,
+                env_v1, obs, self.pi0,
                 first_bid=self.big_bid, gross_first_step=True,
             )
-            # V⁰: force a loss (bid = 0)
+
+            # V⁰: force a loss (bid = 0) — CRN: same seed as V¹
+            env_v0 = copy.deepcopy(self._env)
+            env_v0.unwrapped.rng = np.random.default_rng(pair_seed)
             v0_sum += _rollout_to_end(
-                copy.deepcopy(self._env), obs, self.pi0,
+                env_v0, obs, self.pi0,
                 first_bid=0.0,
             )
+
         return (v1_sum - v0_sum) / self.n_rollouts
 
 class _MLPNet(nn.Module):
