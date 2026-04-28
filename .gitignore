@@ -11,3 +11,4 @@ benchmark/logs/*
 benchmark/models/*
 benchmark/outputs/*
 NOTES.txt
+Pseudo-code.md

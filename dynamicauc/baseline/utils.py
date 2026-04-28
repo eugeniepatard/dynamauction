@@ -4,6 +4,36 @@ import numpy as np
 from dynamicauc.baseline.policies import BiddingPolicy
 
 
+def _resample_remaining_horizon(env: gym.Env, rng: np.random.Generator) -> None:
+    """
+    Replace the pre-baked horizon and future auction schedule with a fresh
+    independent draw from the scenario's horizon distribution.
+
+    This removes the rollout's implicit knowledge of T: the remaining episode
+    length becomes an independent sample from the same distribution as T,
+    which is the correct prior when T is memoryless (e.g. Exponential).
+
+    Must be called on a deepcopy of the live env before a planning rollout.
+    """
+    unwrapped = env.unwrapped
+    t_current = float(unwrapped.state.t)
+    step_idx = int(unwrapped.state.step_idx)
+
+    T_remaining = unwrapped.scenario.horizon_generator.sample(rng)
+    new_horizon = t_current + T_remaining
+
+    unwrapped.horizon = new_horizon
+
+    # Keep already-processed times + current auction; resample future ones.
+    future_times = unwrapped.scenario.arrival.sample_times(T_remaining, rng) + t_current
+    unwrapped.auction_times = np.concatenate([
+        unwrapped.auction_times[:step_idx + 1],
+        future_times,
+    ])
+
+    unwrapped.scenario.exogenous.generate(new_horizon, rng)
+
+
 def _obs_to_features(obs: Dict[str, Any]) -> np.ndarray:
     """
     Flatten the obs dict into a 1-D float32 vector for MLP input.

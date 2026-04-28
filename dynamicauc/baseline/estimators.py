@@ -8,7 +8,7 @@ import gymnasium as gym
 from torch.utils.data import DataLoader, TensorDataset
 from typing import Sequence
 from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy
-from dynamicauc.baseline.utils import _obs_to_features, _rollout_to_end
+from dynamicauc.baseline.utils import _obs_to_features, _rollout_to_end, _resample_remaining_horizon
 from dynamicauc.env import AuctionEnv
 import copy
 import gymnasium as gym
@@ -75,17 +75,21 @@ class SimulationEstimator:
         v1_sum = v0_sum = 0.0
         for _ in range(self.n_rollouts):
             pair_seed = np.random.randint(0, 2**31 - 1)
+            # Shared horizon seed: V¹ and V⁰ face the same unknown T' (CRN).
+            horizon_seed = np.random.randint(0, 2**31 - 1)
 
             # V¹: force a win, recover gross value by adding back the payment
             env_v1 = copy.deepcopy(self._env)
+            _resample_remaining_horizon(env_v1, np.random.default_rng(horizon_seed))
             env_v1.unwrapped.rng = np.random.default_rng(pair_seed)
             v1_sum += _rollout_to_end(
                 env_v1, obs, self.pi0,
                 first_bid=self.big_bid, gross_first_step=True,
             )
 
-            # V⁰: force a loss (bid = 0) — CRN: same seed as V¹
+            # V⁰: force a loss (bid = 0) — CRN: same T' and same noise as V¹
             env_v0 = copy.deepcopy(self._env)
+            _resample_remaining_horizon(env_v0, np.random.default_rng(horizon_seed))
             env_v0.unwrapped.rng = np.random.default_rng(pair_seed)
             v0_sum += _rollout_to_end(
                 env_v0, obs, self.pi0,
