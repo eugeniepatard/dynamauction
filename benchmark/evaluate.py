@@ -387,7 +387,7 @@ def main():
     parser.add_argument("--no-mask-expected-reward", action="store_true")
     parser.add_argument(
         "--sim-policies", nargs="*", default=["all"],
-        choices=["greedy", "shading", "mpc", "mpc-oracle", "mpc-delta", "all", "none"],
+        choices=["greedy", "shading", "mpc", "mpc-oracle", "mpc-delta", "mpc-timebin", "all", "none"],
         metavar="POLICY",
     )
     parser.add_argument("--n-rollouts",   type=int,   default=10)
@@ -412,6 +412,7 @@ def main():
         include_mpc_oracle="mpc-oracle" in args.sim_policies or "all" in args.sim_policies,
         include_mpc_delta="mpc-delta" in args.sim_policies or "all" in args.sim_policies,
         simulation_n_rollouts=args.n_rollouts,
+        include_mpc_timebin="mpc-timebin" in args.sim_policies or "all" in args.sim_policies,
         shading_alphas=args.alphas,
         mpc_model_paths=args.mpc_models,
         mpc_planning_horizons=args.mpc_horizons,

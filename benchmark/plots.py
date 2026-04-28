@@ -36,6 +36,7 @@ Quick start
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -106,6 +107,15 @@ def _is_mpc(name: str) -> bool:
     )
 
 
+def _numeric_sort_key(name: str) -> list:
+    """Sort key that orders policy names by the numeric values embedded in them.
+
+    Ensures MPC(H=7) always comes before MPC(H=15) regardless of the order
+    they appear in the DataFrame, so gradient colors are stable across plots.
+    """
+    return [float(x) for x in re.findall(r'\d+\.?\d*', name)]
+
+
 def _make_palette(names: Sequence[str]) -> Dict[str, Any]:
     """
     Build a ``{policy_name: color}`` dict.
@@ -114,42 +124,38 @@ def _make_palette(names: Sequence[str]) -> Dict[str, Any]:
     * Multiple Shading variants → sequential blue gradient.
     * Multiple MPC variants    → sequential amber gradient.
     * Unknown policies         → husl fallback.
-    """
-    shading_names      = [n for n in names if _is_shading(n)]
-    mpc_names          = [n for n in names if _is_mpc(n)]
-    mpc_oracle_names   = [n for n in names if _is_mpc_oracle(n)]
-    mpc_timebin_names  = [n for n in names if _is_mpc_timebin(n)]
-    ns, nm, no, nt = len(shading_names), len(mpc_names), len(mpc_oracle_names), len(mpc_timebin_names)
 
-    # Sample colormaps, skipping very light / very dark extremes
-    shading_colors: list = (
-        [PALETTE["Shading"]] if ns <= 1
-        else [plt.cm.Blues(0.35 + 0.55 * i / max(ns - 1, 1)) for i in range(ns)]
-    )
-    mpc_colors: list = (
-        [PALETTE["MPC"]] if nm <= 1
-        else [plt.cm.YlOrBr(0.35 + 0.55 * i / max(nm - 1, 1)) for i in range(nm)]
-    )
-    mpc_oracle_colors: list = (
-        [PALETTE["MPCOracle"]] if no <= 1
-        else [plt.cm.Greens(0.35 + 0.55 * i / max(no - 1, 1)) for i in range(no)]
-    )
-    mpc_timebin_colors: list = (
-        [PALETTE["MPCTimeBinned"]] if nt <= 1
-        else [plt.cm.Purples(0.35 + 0.55 * i / max(nt - 1, 1)) for i in range(nt)]
-    )
+    Within each multi-variant family the gradient is assigned in numeric order
+    (by H, K, α …) so the mapping is stable regardless of DataFrame row order.
+    """
+    # Sort each family numerically so gradient assignment is order-independent.
+    shading_sorted     = sorted([n for n in names if _is_shading(n)],     key=_numeric_sort_key)
+    mpc_sorted         = sorted([n for n in names if _is_mpc(n)],         key=_numeric_sort_key)
+    mpc_oracle_sorted  = sorted([n for n in names if _is_mpc_oracle(n)],  key=_numeric_sort_key)
+    mpc_timebin_sorted = sorted([n for n in names if _is_mpc_timebin(n)], key=_numeric_sort_key)
+    ns, nm, no, nt = len(shading_sorted), len(mpc_sorted), len(mpc_oracle_sorted), len(mpc_timebin_sorted)
+
+    def _grad(cmap, n, lo=0.35, hi=0.90):
+        if n <= 1:
+            return [cmap(lo + (hi - lo) / 2)]
+        return [cmap(lo + (hi - lo) * i / (n - 1)) for i in range(n)]
+
+    shading_map     = dict(zip(shading_sorted,     [PALETTE["Shading"]]     if ns <= 1 else _grad(plt.cm.Blues,  ns)))
+    mpc_map         = dict(zip(mpc_sorted,         [PALETTE["MPC"]]         if nm <= 1 else _grad(plt.cm.YlOrBr, nm)))
+    mpc_oracle_map  = dict(zip(mpc_oracle_sorted,  [PALETTE["MPCOracle"]]   if no <= 1 else _grad(plt.cm.BuGn,   no, lo=0.25, hi=0.95)))
+    mpc_timebin_map = dict(zip(mpc_timebin_sorted, [PALETTE["MPCTimeBinned"]] if nt <= 1 else _grad(plt.cm.Purples, nt)))
 
     out: Dict[str, Any] = {}
-    si = mi = oi = ti = fallback_i = 0
+    fallback_i = 0
     for name in names:
         if _is_shading(name):
-            out[name] = shading_colors[si]; si += 1
+            out[name] = shading_map[name]
         elif _is_mpc_oracle(name):
-            out[name] = mpc_oracle_colors[oi]; oi += 1
+            out[name] = mpc_oracle_map[name]
         elif _is_mpc_timebin(name):
-            out[name] = mpc_timebin_colors[ti]; ti += 1
+            out[name] = mpc_timebin_map[name]
         elif _is_mpc(name):
-            out[name] = mpc_colors[mi]; mi += 1
+            out[name] = mpc_map[name]
         else:
             # prefix match against PALETTE keys (MPCOracle listed before MPC so it
             # won't be caught by the shorter "MPC" prefix)
@@ -165,17 +171,26 @@ def _make_linestyles(names: Sequence[str]) -> Dict[str, str]:
     Cycle through distinct linestyles within each multi-variant family
     (Shading and MPC).  All other policies get solid lines.
     """
+    shading_sorted     = sorted([n for n in names if _is_shading(n)],     key=_numeric_sort_key)
+    mpc_sorted         = sorted([n for n in names if _is_mpc(n)],         key=_numeric_sort_key)
+    mpc_oracle_sorted  = sorted([n for n in names if _is_mpc_oracle(n)],  key=_numeric_sort_key)
+    mpc_timebin_sorted = sorted([n for n in names if _is_mpc_timebin(n)], key=_numeric_sort_key)
+
+    shading_ls     = {n: _LINESTYLES[i % len(_LINESTYLES)] for i, n in enumerate(shading_sorted)}
+    mpc_ls         = {n: _LINESTYLES[i % len(_LINESTYLES)] for i, n in enumerate(mpc_sorted)}
+    mpc_oracle_ls  = {n: _LINESTYLES[i % len(_LINESTYLES)] for i, n in enumerate(mpc_oracle_sorted)}
+    mpc_timebin_ls = {n: _LINESTYLES[i % len(_LINESTYLES)] for i, n in enumerate(mpc_timebin_sorted)}
+
     out: Dict[str, str] = {}
-    si = mi = oi = ti = 0
     for name in names:
         if _is_shading(name):
-            out[name] = _LINESTYLES[si % len(_LINESTYLES)]; si += 1
+            out[name] = shading_ls[name]
         elif _is_mpc_oracle(name):
-            out[name] = _LINESTYLES[oi % len(_LINESTYLES)]; oi += 1
+            out[name] = mpc_oracle_ls[name]
         elif _is_mpc_timebin(name):
-            out[name] = _LINESTYLES[ti % len(_LINESTYLES)]; ti += 1
+            out[name] = mpc_timebin_ls[name]
         elif _is_mpc(name):
-            out[name] = _LINESTYLES[mi % len(_LINESTYLES)]; mi += 1
+            out[name] = mpc_ls[name]
         else:
             out[name] = "-"
     return out
