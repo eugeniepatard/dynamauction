@@ -87,6 +87,7 @@ def run_rl_job(
     n_seeds: int = 30,
     out_dir: Optional[Path] = None,
     mlp_model: Optional[Path] = None,
+    n_workers: Optional[int] = None,
 ) -> None:
     out = Path(out_dir) if out_dir else _default_out_dir()
     out.mkdir(parents=True, exist_ok=True)
@@ -131,6 +132,7 @@ def run_rl_job(
         mpc_alpha_candidates=MPC_ALPHA_CANDIDATES,
         mpc_n_bins=MPC_N_BINS,
         include_mpc_delta=True,
+        n_workers=n_workers,
     )
 
     policies = {}
@@ -162,8 +164,10 @@ def main() -> None:
     parser.add_argument("--n-seeds",   type=int,  default=30)
     parser.add_argument("--out-dir",   type=Path, default=None)
     parser.add_argument("--mlp-model", type=Path, default=None)
+    parser.add_argument("--n-workers", type=int,  default=None,
+                        help="Worker processes (default: SLURM_CPUS_PER_TASK or cpu_count). Use 1 for sequential.")
     args = parser.parse_args()
-    run_rl_job(args.horizon_eta, args.n_seeds, args.out_dir, args.mlp_model)
+    run_rl_job(args.horizon_eta, args.n_seeds, args.out_dir, args.mlp_model, args.n_workers)
 
 
 if __name__ == "__main__":

@@ -56,6 +56,7 @@ def run_job(
     n_seeds: int = 30,
     out_dir: Optional[Path] = None,
     mlp_model: Optional[Path] = None,
+    n_workers: Optional[int] = None,
 ) -> None:
     out = Path(out_dir) if out_dir else _default_out_dir()
     out.mkdir(parents=True, exist_ok=True)
@@ -83,6 +84,7 @@ def run_job(
         mpc_alpha_candidates=MPC_ALPHA_CANDIDATES,
         mpc_n_bins=MPC_N_BINS,
         include_mpc_delta=False,
+        n_workers=n_workers,
     )
 
     policies = {}
@@ -115,8 +117,10 @@ def main() -> None:
                         help="Directory for CSV results (default: scratch on cluster, local otherwise).")
     parser.add_argument("--mlp-model", type=Path, default=None,
                         help="Path to the MLPValuationHead .pt file (default: auto-resolved).")
+    parser.add_argument("--n-workers", type=int,  default=None,
+                        help="Worker processes (default: SLURM_CPUS_PER_TASK or cpu_count). Use 1 for sequential.")
     args = parser.parse_args()
-    run_job(args.horizon_eta, args.n_seeds, args.out_dir, args.mlp_model)
+    run_job(args.horizon_eta, args.n_seeds, args.out_dir, args.mlp_model, args.n_workers)
 
 
 if __name__ == "__main__":

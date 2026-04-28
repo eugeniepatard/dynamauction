@@ -57,6 +57,8 @@ def main() -> None:
         help=f"horizon_eta values to submit (default: {HORIZON_ETAS}).",
     )
     parser.add_argument("--n-seeds",    type=int,  default=30)
+    parser.add_argument("--n-workers",  type=int,  default=None,
+                        help="Worker processes per job (default: SLURM_CPUS_PER_TASK). Use 1 for sequential.")
     parser.add_argument("--dry-run",    action="store_true")
     parser.add_argument("--log-folder", default=_SUBMITIT_LOG_FOLDER)
     args = parser.parse_args()
@@ -76,9 +78,11 @@ def main() -> None:
     print(f"Jobs to submit : horizon_eta ∈ {args.horizon_etas}, {args.n_seeds} seeds each")
     print(f"Results dir    : {results_dir}")
 
+    n_workers_list = [args.n_workers] * len(args.horizon_etas)
+
     if args.dry_run:
         for eta in args.horizon_etas:
-            print(f"  [DRY RUN] {fn.__name__}(horizon_eta={eta}, n_seeds={args.n_seeds})")
+            print(f"  [DRY RUN] {fn.__name__}(horizon_eta={eta}, n_seeds={args.n_seeds}, n_workers={args.n_workers})")
         print(f"\nTotal: {len(args.horizon_etas)} jobs (dry run, nothing submitted)")
         return
 
@@ -90,6 +94,9 @@ def main() -> None:
         fn,
         args.horizon_etas,
         [args.n_seeds] * len(args.horizon_etas),
+        [None] * len(args.horizon_etas),   # out_dir
+        [None] * len(args.horizon_etas),   # mlp_model
+        n_workers_list,
     )
     ids = [j.job_id for j in jobs]
     print(f"\nSubmitted {len(jobs)} jobs — IDs: {ids[0]} … {ids[-1]}")
