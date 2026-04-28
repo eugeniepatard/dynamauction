@@ -44,6 +44,7 @@ from dynamicauc.baseline import (
     MPCOraclePolicy,
     MPCPolicy,
     MPCDeltaPolicy,
+    MPCTimeBinnedPolicy,
 )
 
 from benchmark.train_rl import (
@@ -88,6 +89,8 @@ class EvalConfig:
     include_shading:             bool           = False
     include_mpc:                 bool           = False
     include_mpc_oracle:          bool           = False
+    include_mpc_timebin:         bool           = False
+    mpc_n_bins:                  List[int]      = field(default_factory=lambda: [2])
     include_mpc_delta:           bool           = False
     simulation_n_rollouts:       int            = 10
     shading_alphas:              List[float]    = field(default_factory=lambda: [0.8])
@@ -225,6 +228,30 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
                     n_rollouts=cfg.simulation_n_rollouts,
                     planning_horizon=horizon,
                 )
+
+    if cfg.include_mpc_timebin:
+        n_models   = len(cfg.mpc_model_paths)
+        n_horizons = len(cfg.mpc_planning_horizons)
+        for path in cfg.mpc_model_paths:
+            mlp = load_mlp(cfg.scenario_id, path)
+            for horizon in cfg.mpc_planning_horizons:
+                for k in cfg.mpc_n_bins:
+                    parts = []
+                    if n_horizons > 1:
+                        parts.append(f"H={horizon:g}")
+                    if len(cfg.mpc_n_bins) > 1:
+                        parts.append(f"K={k}")
+                    if n_models > 1:
+                        stem = Path(path).stem if path else "auto"
+                        parts.append(stem.split("_", 1)[-1] if "_" in stem else stem)
+                    label = "MPCTimeBinned" + (f"({','.join(parts)})" if parts else "")
+                    policies[label] = MPCTimeBinnedPolicy(
+                        v0=mlp,
+                        alpha_candidates=cfg.mpc_alpha_candidates,
+                        n_bins=k,
+                        n_rollouts=cfg.simulation_n_rollouts,
+                        planning_horizon=horizon,
+                    )
 
     if cfg.include_mpc_delta:
         n_horizons = len(cfg.mpc_planning_horizons)

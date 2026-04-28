@@ -43,7 +43,6 @@ from benchmark.evaluate import (
     get_planning_policies,
     get_simulation_policies,
     get_rl_policies,
-    run_full_benchmark,
     episode_summary,
     score_matrix,
 )
@@ -90,7 +89,7 @@ def _run_task(policy_name: str, seed: int) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------- #
-# Parallel benchmark
+# Parallel benchmark + run_full_benchmark override
 # --------------------------------------------------------------------------- #
 
 def benchmark(
@@ -132,3 +131,37 @@ def benchmark(
             frames.append(fut.result())
 
     return pd.concat(frames, ignore_index=True)
+
+
+def run_full_benchmark(
+    algos:  List[str]                        = ("ppo", "sac", "td3"),
+    cfg:    EvalConfig                       = EvalConfig(),
+    save:   bool                             = True,
+    extra_policies: Optional[Dict[str, BiddingPolicy]] = None,
+) -> pd.DataFrame:
+    """
+    Same as benchmark.evaluate.run_full_benchmark but uses the parallel
+    benchmark() so the SLURM / multi-core path is taken automatically.
+    """
+    from datetime import datetime
+    import dynamicauc as dac
+
+    scenario = dac.make(cfg.scenario_id, **cfg.scenario_overrides)
+
+    policies: Dict[str, BiddingPolicy] = {}
+    policies.update(get_rl_policies(scenario, list(algos), cfg.mask_expected_reward))
+    policies.update(get_planning_policies(cfg))
+    policies.update(get_simulation_policies(cfg))
+    if extra_policies:
+        policies.update(extra_policies)
+
+    print(f"\nBenchmarking {len(policies)} policies: {list(policies.keys())}")
+    df = benchmark(policies, cfg)
+
+    if save:
+        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+        out = RESULTS_DIR / f"{cfg.scenario_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+        df.to_csv(out, index=False)
+        print(f"\nResults saved → {out}")
+
+    return df

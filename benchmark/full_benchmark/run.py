@@ -14,11 +14,7 @@ Usage (from repo root)
     # use a different MLP model
     python benchmark/full_benchmark/run.py --horizon-eta 50 --mlp-model /path/to/model.pt
 
-NOTE — model transfer
----------------------
-benchmark/models/ is gitignored. Before running on the cluster, copy the MLP model:
-
-    scp -J ssh.inria.fr benchmark/models/mlp_valuation_head/survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt epatard@margaret02:/home/fairplay/epatard/projects/dynamicauc/benchmark/models/mlp_valuation_head/
+   
 """
 from __future__ import annotations
 
@@ -45,6 +41,7 @@ _DEFAULT_MLP_MODEL = (
 MPC_HORIZONS         = [0.0, 4.0, 7.0, 10.0, 15.0, 25.0]
 SHADING_ALPHAS       = [0.2, 0.4, 0.6, 0.8, 1.2, 1.5]
 MPC_ALPHA_CANDIDATES = [0.2, 0.4, 0.6, 0.8, 1.0]
+MPC_N_BINS           = [2, 3, 5, 10]
 
 _SCRATCH_RESULTS = Path("/scratch/epatard/full_benchmark/results")
 _LOCAL_RESULTS   = Path(__file__).resolve().parent / "results"
@@ -80,9 +77,11 @@ def run_job(
         shading_alphas=SHADING_ALPHAS,
         include_mpc=True,
         include_mpc_oracle=True,
+        include_mpc_timebin=True,
         mpc_model_paths=[str(model_path)],
         mpc_planning_horizons=MPC_HORIZONS,
         mpc_alpha_candidates=MPC_ALPHA_CANDIDATES,
+        mpc_n_bins=MPC_N_BINS,
         include_mpc_delta=False,
     )
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import itertools
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Sequence, Tuple
 
@@ -402,6 +403,123 @@ class MPCDeltaPolicy(BiddingPolicy):
                 break
             delta_k = cont_estimator.estimate(obs)
             bid_k = self.alpha_cont * float(max(0.0, delta_k))
+            obs, reward, done, _trunc, _ = env.step(
+                np.array([bid_k], dtype=np.float32)
+            )
+            total += float(reward)
+
+        return total
+
+
+class MPCTimeBinnedPolicy(BiddingPolicy):
+    """
+    Time-binned MPC (V3): jointly optimises K shading multipliers over the
+    planning window [t, t+H), one per equal-width time bin.
+
+    The window is split into K bins:
+        I_j = [t + j·H/K,  t + (j+1)·H/K)   for j = 0, …, K-1
+
+    Every auction k in a rollout is assigned to bin j(k) = floor((t_k − t) / (H/K))
+    and bids:
+        b_k = α_{j(k)} · V₀(s_k, x_k)
+
+    The policy grid-searches all α ∈ A₀^K (|A₀|^K candidates), picks
+        α* = argmax_{α} Q̂(α)
+    executes b_t = α*₀ · V₀(s_t, x_t), and re-plans at the next auction.
+
+    CRN holds: all candidate vectors share the same M noise streams and the
+    same resampled horizon T' per rollout.
+
+    Special case: K = 1 is equivalent to MPCPolicy where α_cont = α₀.
+
+    Parameters
+    ----------
+    v0 : MLPValuationHead
+    alpha_candidates : sequence of float
+        Grid A₀ searched independently per bin. Total grid size: |A₀|^K.
+        Keep K ≤ 3 with a coarse grid to control cost.
+    n_bins : int
+        Number of time bins K.
+    n_rollouts : int
+        Number of CRN rollouts M per candidate vector.
+    planning_horizon : float
+        H in scenario time units.
+    seed : int
+    """
+
+    def __init__(
+        self,
+        v0: MLPValuationHead,
+        alpha_candidates: Sequence[float] = (0.6, 0.8, 1.0, 1.2, 1.5),
+        n_bins: int = 2,
+        n_rollouts: int = 10,
+        planning_horizon: float = 7.0,
+        seed: int = 0,
+    ) -> None:
+        self.v0 = v0
+        self.alpha_candidates = list(alpha_candidates)
+        self.n_bins = n_bins
+        self.n_rollouts = n_rollouts
+        self.planning_horizon = planning_horizon
+        self._env: Optional[AuctionEnv] = None
+        self._rng = np.random.default_rng(seed)
+        self.alpha_log: List[Tuple[float, ...]] = []
+
+    def set_env(self, env: AuctionEnv) -> None:
+        """Bind the live env. Must be called once after each env.reset()."""
+        self._env = env
+
+    def bid(self, observations: Dict[str, Any]) -> float:
+        """
+        Grid-search A₀^K, return b_t = α*₀ · V₀(s_t, x_t).
+        """
+        if self._env is None:
+            raise RuntimeError("Call set_env(env) before bid().")
+
+        v0_now    = self.v0.predict(observations)
+        t_start   = float(observations["t"].ravel()[0])
+        bin_width = self.planning_horizon / self.n_bins
+
+        crn_seeds = [int(s) for s in self._rng.integers(0, 2**31, size=self.n_rollouts)]
+
+        q_hat: Dict[Tuple[float, ...], float] = {}
+        for alpha_vec in itertools.product(self.alpha_candidates, repeat=self.n_bins):
+            cumulative = 0.0
+            for seed in crn_seeds:
+                env_copy = copy.deepcopy(self._env)
+                _resample_remaining_horizon(env_copy, np.random.default_rng(seed))
+                env_copy.rng = np.random.default_rng(seed)
+                cumulative += self._rollout(
+                    env_copy, observations, alpha_vec, v0_now, t_start, bin_width
+                )
+            q_hat[alpha_vec] = cumulative / self.n_rollouts
+
+        alpha_star = max(q_hat, key=q_hat.get)
+        self.alpha_log.append(alpha_star)
+        return float(max(0.0, alpha_star[0] * v0_now))
+
+    def _rollout(
+        self,
+        env: AuctionEnv,
+        obs: Dict[str, Any],
+        alpha_vec: Tuple[float, ...],
+        v0_now: float,
+        t_start: float,
+        bin_width: float,
+    ) -> float:
+        # First step is always in bin 0.
+        obs, reward, done, _trunc, _ = env.step(
+            np.array([alpha_vec[0] * v0_now], dtype=np.float32)
+        )
+        total = float(reward)
+
+        while not done:
+            t_now   = float(obs["t"].ravel()[0])
+            elapsed = t_now - t_start
+            if elapsed >= self.planning_horizon:
+                break
+            j     = min(int(elapsed / bin_width), self.n_bins - 1)
+            bid_k = alpha_vec[j] * self.v0.predict(obs)
             obs, reward, done, _trunc, _ = env.step(
                 np.array([bid_k], dtype=np.float32)
             )

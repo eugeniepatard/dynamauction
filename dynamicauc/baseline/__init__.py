@@ -7,6 +7,7 @@ from dynamicauc.baseline.baseline_algo import (
     MPCOraclePolicy,
     MPCPolicy,
     MPCDeltaPolicy,
+    MPCTimeBinnedPolicy,
 )
 __all__ = [
     "BiddingPolicy",
@@ -20,4 +21,5 @@ __all__ = [
     "MPCOraclePolicy",
     "MPCPolicy",
     "MPCDeltaPolicy",
+    "MPCTimeBinnedPolicy",
 ]
