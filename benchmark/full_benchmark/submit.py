@@ -35,7 +35,7 @@ SLURM_PARAMS: dict[str, Any] = {
     "timeout_min":           2880,
     "slurm_partition":       "normal-best,gpu-best",
     "gpus_per_node":         0,
-    "cpus_per_task":         8,
+    "cpus_per_task":         32,
     "tasks_per_node":        1,
     "nodes":                 1,
     "mem_gb":                16,
