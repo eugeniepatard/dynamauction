@@ -10,13 +10,13 @@ All experiments use the built-in preset scenario **`survival-second-price-expone
 
 ```python
 import dynamicauc as dac
-scenario = dac.make("survival-second-price-exponential")
+scenario = dac.make("survival-second-price-exponential", horizon_eta=<η>)
 ```
 
 This scenario features:
 - **Auction mechanism**: Second-price (Vickrey) auction
 - **Value kernel**: Survival / exponential decay (value erodes over repeated exposures)
-- **Campaign horizon**: Exponentially distributed (geometric stopping time)
+- **Campaign horizon**: Exponentially distributed (geometric stopping time) with rate η
 - **Competition model**: Stochastic competing bids
 
 ---
@@ -104,40 +104,79 @@ All algorithms use Stable Baselines3 with an `MlpPolicy` (two hidden layers of 6
 
 ## Planning Policies
 
-Three simulation-based planning policies are included alongside the RL agents.
+Seven simulation-based planning policies are included in the benchmark runs.
+
+### Overview
 
 | Name | Description |
 |---|---|
+| **FiPla** | Bids the expected marginal reward of winning: b = E[reward \| win]. Truthful under second-price rules; serves as the main non-learning reference. |
 | **GreedyMyopic** | Bids the incremental value Δ(s, x) = V¹(s, x) − V⁰(s) estimated via Monte Carlo rollouts |
-| **Shading(α)** | Bid-shaded variant: bids α · Δ(s, x); α < 1 reduces overpayment |
-| **MPC** | Model-Predictive Control: selects the shading multiplier α* that maximises simulated cumulative reward over a planning horizon, using a pre-trained MLP valuation head V₀(s, x) |
+| **Shading(α)** | Bid-shaded variant of Greedy: bids α · Δ(s, x) |
+| **MPC(H)** | Model-Predictive Control: selects α* = argmax_{α ∈ A₀} Q̂(α) over a planning horizon H using a pre-trained MLP valuation head V₀(s, x). Horizon T' is resampled per rollout (no oracle access to the true future). |
+| **MPCOracle(H)** | Same as MPC but uses the true pre-sampled future auction schedule (oracle access). Upper-bound ablation. |
+| **MPCTimeBinned(H, K)** | Time-binned MPC: splits [t, t+H) into K equal bins and jointly optimises K shading multipliers α = (α₀, …, α_{K−1}) via grid search over A₀^K. Bids α*₀ · V₀(s, x) at the current step. |
+| **MPCDelta(H)** | MPC variant that replaces the MLP valuation head with the simulation-based delta estimator Δ(s, x). No pre-training required. |
 
-### MLP Valuation Head (for MPC)
+### Shared Simulation Parameters
 
-MPC requires a pre-trained `MLPValuationHead` that approximates V₀(s, x) = E[reward | win display x in state s]. It is trained offline on FiPla rollouts and **must be trained before evaluating MPC**.
+All simulation-based policies use the following parameters:
+
+| Parameter | Value |
+|---|---|
+| Monte Carlo rollouts per decision step (`n_rollouts`) | 10 |
+| Policy seed | 0 |
+
+### Shading Factors
+
+| Policy family | Values evaluated |
+|---|---|
+| Shading α | 0.2, 0.4, 0.6, 0.8 |
+
+### MPC, MPCOracle, MPCTimeBinned Parameters
+
+| Parameter | Value |
+|---|---|
+| α candidates A₀ | {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5} |
+| Continuation multiplier α_cont | 1.0 |
+| Planning horizons H (run.py) | 0.0, 4.0, 7.0, 10.0, 15.0, 25.0 |
+| Planning horizons H (run_rl.py) | 0.0, 7.0, 10.0, 15.0, 25.0 |
+| Number of time bins K (MPCTimeBinned) | 2, 3, 5, 10 |
+
+### MPCDelta Parameters (run_rl.py only)
+
+| Parameter | Value |
+|---|---|
+| α candidates A₀ | {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5} |
+| Continuation multiplier α_cont | 1.0 |
+| Planning horizons H | 0.0, 7.0, 10.0, 15.0, 25.0 |
+| Delta estimator rollouts | 5 |
+| Outer rollouts per decision step | 10 |
+
+### MLP Valuation Head (for MPC, MPCOracle, MPCTimeBinned)
+
+These three policy families require a pre-trained `MLPValuationHead` that approximates V₀(s, x) = E[reward | win display x in state s]. It is trained offline on FiPla rollouts and **must be trained before evaluating these policies**.
 
 ```bash
-# Train with defaults (500 episodes, 500 epochs, hidden dims 64-64)
-python -m benchmark.train_mlp
-
-# Larger model / more data
-python -m benchmark.train_mlp --n-episodes 1000 --n-epochs 800 --hidden-dims 128 128
+# Train with the configuration used in the paper
+python -m benchmark.train_mlp --n-episodes 500 --n-epochs 500 --hidden-dims 128 128 --seed 42
 
 # Monitor training in TensorBoard (logs written automatically)
 tensorboard --logdir benchmark/logs/mlp_valuation_head
 ```
 
-| Parameter | Default | Description |
-|---|---|---|
-| `--n-episodes` | 500 | FiPla rollout episodes for data collection |
-| `--val-frac` | 0.15 | Fraction of samples held out for validation |
-| `--hidden-dims` | 64 64 | MLP hidden layer widths |
-| `--n-epochs` | 500 | Training epochs |
-| `--lr` | 1e-3 | Adam learning rate |
-| `--batch-size` | 256 | Mini-batch size |
-| `--seed` | 0 | Base random seed |
-| `--save-dir` | `benchmark/models/mlp_valuation_head/` | Override model output directory |
-| `--log-dir` | `benchmark/logs/mlp_valuation_head/<scenario_id>/` | Override TensorBoard log directory |
+| Parameter | Value used in paper |
+|---|---|
+| `--n-episodes` | 500 |
+| `--val-frac` | 0.15 |
+| `--hidden-dims` | 128 128 |
+| `--n-epochs` | 500 |
+| `--lr` | 1e-3 |
+| `--batch-size` | 256 |
+| `--seed` | 42 |
+
+The model is saved to:
+`benchmark/models/mlp_valuation_head/survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt`
 
 Outputs written to `benchmark/models/mlp_valuation_head/`:
 
@@ -152,37 +191,36 @@ Outputs written to `benchmark/models/mlp_valuation_head/`:
 
 ## Evaluation Protocol
 
-Evaluation is run after training via `benchmark/evaluate.py`:
+Two benchmark scripts are provided, depending on whether RL policies are included.
+
+### Planning-only benchmark (`run.py`)
+
+Evaluates FiPla, GreedyMyopic, Shading×4, MPC×6, MPCOracle×6, MPCTimeBinned×24.
 
 ```bash
-# Full benchmark (all RL algos + all baselines, 30 seeds)
-python -m benchmark.evaluate
-
-# Select specific RL algorithms and baselines
-python -m benchmark.evaluate --algos ppo sac --baselines fipla constant
-
-# Tune parameterized baselines
-python -m benchmark.evaluate --baselines constant random --constant-bid 0.3 --random-max-bid 2.0
-
-# RL policies only (no baselines)
-python -m benchmark.evaluate --baselines none
-
-# Include simulation-based planning policies (train_mlp.py must be run first for MPC)
-python -m benchmark.evaluate --sim-policies greedy shading mpc
-
-# All policies
-python -m benchmark.evaluate --sim-policies all
-
-# Custom number of seeds
-python -m benchmark.evaluate --n-seeds 50
+python benchmark/full_benchmark/run.py --horizon-eta <η>
+# e.g.
+python benchmark/full_benchmark/run.py --horizon-eta 50
+python benchmark/full_benchmark/run.py --horizon-eta 100
 ```
+
+### RL + planning benchmark (`run_rl.py`)
+
+Evaluates PPO, SAC, TD3 alongside FiPla, GreedyMyopic, Shading×4, MPC×5, MPCOracle×5, MPCTimeBinned×20, MPCDelta×5.
+
+```bash
+# Edit the PPO_MODEL_PATH, SAC_MODEL_PATH, TD3_MODEL_PATH variables at the top of run_rl.py first.
+python benchmark/full_benchmark/run_rl.py --horizon-eta <η>
+```
+
+### Shared evaluation parameters
 
 | Parameter | Value |
 |---|---|
 | Evaluation seeds | 0 – 29 (30 independent episodes) |
 | Scenario | `survival-second-price-exponential` |
 | Max bid | 5.0 |
-| Default baselines | `fipla`, `constant` (bid=0.5), `random` (max=1.0) |
+| Baseline | FiPla only |
 
 Per-step metrics collected for each (policy, seed) pair: `reward`, `cumulative reward`, `won`, `bid`, `payment`, `ctx`, `expected_reward`, `competing_bid`.
 
@@ -205,18 +243,6 @@ df = run_full_benchmark(
 
 ---
 
-## Baseline Policies
-
-Three non-learning baselines are included in every benchmark run:
-
-| Name | Description |
-|---|---|
-| **FiPla** | First-price look-ahead policy — bids the expected immediate value |
-| **Constant(0.5)** | Always bids 0.5 (10 % of `max_bid`) |
-| **Random** | Bids uniformly at random in `[0, 1.0]` (20 % of `max_bid`) |
-
----
-
 ## Reproducing the Results
 
 ### 1. Install dependencies
@@ -233,10 +259,10 @@ python -m benchmark.train_rl 'algo=ppo,sac,td3' --multirun
 
 Expected wall-clock time: ~30–60 min per algorithm on a single CPU.
 
-### 3. Train MLP valuation head (required for MPC)
+### 3. Train MLP valuation head (required for MPC, MPCOracle, MPCTimeBinned)
 
 ```bash
-python -m benchmark.train_mlp
+python -m benchmark.train_mlp --n-episodes 500 --n-epochs 500 --hidden-dims 128 128 --seed 42
 ```
 
 Expected wall-clock time: a few minutes on CPU.
@@ -244,10 +270,14 @@ Expected wall-clock time: a few minutes on CPU.
 ### 4. Run evaluation
 
 ```bash
-python -m benchmark.evaluate --algos ppo sac td3 --n-seeds 30
+# Planning policies only
+python benchmark/full_benchmark/run.py --horizon-eta <η>
+
+# RL + planning policies (set model paths in run_rl.py first)
+python benchmark/full_benchmark/run_rl.py --horizon-eta <η>
 ```
 
-Results are written to `benchmark/results/benchmark_results.csv`.
+Results are written to `benchmark/full_benchmark/results/` (local) or `/scratch/epatard/full_benchmark/results/` (cluster).
 
 ### 5. Generate plots
 
@@ -263,12 +293,12 @@ Pretrained model weights (PPO, SAC, TD3) are available at:
 
 > **[TODO: add Zenodo / HuggingFace DOI link here]**
 
-Download and unpack them so the directory layout matches what `evaluate.py` expects:
+Download and unpack them so the directory layout matches what `run_rl.py` expects:
 
 ```
 benchmark/models/
 ├── ppo/
-│   ├── best_model.zip   # SB3 model weights (loaded by evaluate.py)
+│   ├── best_model.zip   # SB3 model weights (loaded by run_rl.py)
 │   └── obs_rms.pkl      # VecNormalize observation statistics
 ├── sac/
 │   ├── best_model.zip
@@ -277,13 +307,12 @@ benchmark/models/
 │   ├── best_model.zip
 │   └── obs_rms.pkl
 └── mlp_valuation_head/
-    ├── <scenario_id>.pt    # MLPValuationHead weights (loaded by evaluate.py for MPC)
-    └── <scenario_id>.json  # Training metadata
+    └── survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt
 ```
 
 `best_model.zip` is the checkpoint saved by SB3's `EvalCallback` at the timestep with the highest mean evaluation reward. `obs_rms.pkl` contains the running-mean/variance statistics of `VecNormalize` and must be loaded alongside the model to reproduce the correct observation normalization at inference time.
 
-Once in place, skip directly to step 4 (evaluation).
+Once in place, set the model paths in `run_rl.py` and skip directly to step 4 (evaluation).
 
 ---
 
@@ -292,7 +321,7 @@ Once in place, skip directly to step 4 (evaluation).
 | Library | Version used |
 |---|---|
 | Python | 3.10+ |
-| Stable Baselines3 | see `benchmark/requirements_benchmark.txt` |
-| Gymnasium | see `benchmark/requirements_benchmark.txt` |
-| Hydra-core | see `benchmark/requirements_benchmark.txt` |
-| rliable | see `benchmark/requirements_benchmark.txt` |
+| Stable Baselines3 | see `pyproject.toml` |
+| Gymnasium | see `pyproject.toml` |
+| Hydra-core | see `pyproject.toml` |
+| rliable | see `pyproject.toml` |
