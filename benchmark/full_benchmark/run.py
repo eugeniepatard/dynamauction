@@ -54,6 +54,7 @@ def _default_out_dir() -> Path:
 def run_job(
     horizon_eta: int,
     n_seeds: int = 30,
+    policy_seed: int = 0,
     out_dir: Optional[Path] = None,
     mlp_model: Optional[Path] = None,
     n_workers: Optional[int] = None,
@@ -85,6 +86,7 @@ def run_job(
         mpc_n_bins=MPC_N_BINS,
         include_mpc_delta=False,
         n_workers=n_workers,
+        policy_seed=policy_seed,
     )
 
     policies = {}
@@ -119,8 +121,9 @@ def main() -> None:
                         help="Path to the MLPValuationHead .pt file (default: auto-resolved).")
     parser.add_argument("--n-workers", type=int,  default=None,
                         help="Worker processes (default: SLURM_CPUS_PER_TASK or cpu_count). Use 1 for sequential.")
+    parser.add_argument("--policy-seed",    type=int, default=0, help="Seed for any policy components that require randomness (e.g. MPC rollouts).")
     args = parser.parse_args()
-    run_job(args.horizon_eta, args.n_seeds, args.out_dir, args.mlp_model, args.n_workers)
+    run_job(args.horizon_eta, args.n_seeds, args.policy_seed, args.out_dir, args.mlp_model, args.n_workers)
 
 
 if __name__ == "__main__":

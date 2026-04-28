@@ -85,6 +85,7 @@ class EvalConfig:
     random_max_bid:       float     = 1.0
     mask_expected_reward: bool      = True
     # Simulation-based planning policies
+    policy_seed:                int            = 0
     include_greedy:              bool           = False
     include_shading:             bool           = False
     include_mpc:                 bool           = False
@@ -183,6 +184,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
             SimulationEstimator(
                 pi0=ConstantPolicy(0.0),
                 n_rollouts=cfg.simulation_n_rollouts,
+                seed=cfg.policy_seed,
             )
         )
 
@@ -193,6 +195,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
                 SimulationEstimator(
                     pi0=ConstantPolicy(0.0),
                     n_rollouts=cfg.simulation_n_rollouts,
+                    seed=cfg.policy_seed,
                 ),
                 alpha=alpha,
             )
@@ -210,6 +213,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
                     alpha_cont=1.0,
                     n_rollouts=cfg.simulation_n_rollouts,
                     planning_horizon=horizon,
+                    seed=cfg.policy_seed,
                 )
 
     if cfg.include_mpc_oracle:
@@ -225,6 +229,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
                     alpha_cont=1.0,
                     n_rollouts=cfg.simulation_n_rollouts,
                     planning_horizon=horizon,
+                    seed=cfg.policy_seed,
                 )
 
     if cfg.include_mpc_timebin:
@@ -245,6 +250,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
                         n_bins=k,
                         n_rollouts=cfg.simulation_n_rollouts,
                         planning_horizon=horizon,
+                        seed=cfg.policy_seed,
                     )
 
     if cfg.include_mpc_delta:
@@ -260,6 +266,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
                 alpha_cont=1.0,
                 n_rollouts=cfg.simulation_n_rollouts,
                 planning_horizon=horizon,
+                seed=cfg.policy_seed,
             )
 
     return policies
@@ -380,6 +387,7 @@ def main():
     parser.add_argument("--algos",           nargs="+", default=["ppo", "sac", "td3"], metavar="ALGO",
                         help="RL algorithms to evaluate. Use 'none' to skip all.")
     parser.add_argument("--baselines",       nargs="+", default=AVAILABLE_BASELINES, metavar="BASELINE")
+    parser.add_argument("--policy-seed",    type=float, default=0.0, help="Seed for any policy components that require randomness (e.g. MPC rollouts).")
     parser.add_argument("--constant-bid",    type=float, default=0.5)
     parser.add_argument("--random-max-bid",  type=float, default=1.0)
     parser.add_argument("--n-seeds",         type=int,   default=30)
@@ -405,6 +413,7 @@ def main():
         baselines=args.baselines,
         constant_bid=args.constant_bid,
         random_max_bid=args.random_max_bid,
+        policy_seed=args.policy_seed,
         mask_expected_reward=not args.no_mask_expected_reward,
         include_greedy="greedy" in args.sim_policies or "all" in args.sim_policies,
         include_shading="shading" in args.sim_policies or "all" in args.sim_policies,

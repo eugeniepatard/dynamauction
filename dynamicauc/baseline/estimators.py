@@ -48,10 +48,12 @@ class SimulationEstimator:
         pi0: BiddingPolicy = None,
         n_rollouts: int = 20,
         big_bid: float = 1e12,
+        seed: int = 0,
     ) -> None:
         self.pi0 = pi0 if pi0 is not None else FiPlaPolicy()
         self.n_rollouts = n_rollouts
         self.big_bid = big_bid
+        self._rng = np.random.default_rng(seed)
         self._env: Optional[gym.Env] = None
 
     def set_env(self, env: gym.Env) -> None:
@@ -74,9 +76,9 @@ class SimulationEstimator:
             )
         v1_sum = v0_sum = 0.0
         for _ in range(self.n_rollouts):
-            pair_seed = np.random.randint(0, 2**31 - 1)
+            pair_seed = self._rng.integers(0, 2**31 - 1)
             # Shared horizon seed: V¹ and V⁰ face the same unknown T' (CRN).
-            horizon_seed = np.random.randint(0, 2**31 - 1)
+            horizon_seed = self._rng.integers(0, 2**31 - 1)
 
             # V¹: force a win, recover gross value by adding back the payment
             env_v1 = copy.deepcopy(self._env)
