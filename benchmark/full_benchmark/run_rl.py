@@ -85,7 +85,6 @@ def _load_rl_policy(algo: str, path: Optional[Path], obs_space) -> Optional[SB3P
 def run_rl_job(
     horizon_eta: int,
     n_seeds: int = 30,
-    policy_seed: int = 0,
     out_dir: Optional[Path] = None,
     mlp_model: Optional[Path] = None,
     n_workers: Optional[int] = None,
@@ -134,7 +133,7 @@ def run_rl_job(
         mpc_n_bins=MPC_N_BINS,
         include_mpc_delta=True,
         n_workers=n_workers,
-        policy_seed=policy_seed,
+        policy_seed=0,
     )
 
     policies = {}
@@ -170,7 +169,7 @@ def main() -> None:
     parser.add_argument("--n-workers", type=int,  default=None,
                         help="Worker processes (default: SLURM_CPUS_PER_TASK or cpu_count). Use 1 for sequential.")
     args = parser.parse_args()
-    run_rl_job(args.horizon_eta, args.n_seeds, args.policy_seed, args.out_dir, args.mlp_model, args.n_workers)
+    run_rl_job(args.horizon_eta, args.n_seeds, args.out_dir, args.mlp_model, args.n_workers)
 
 
 if __name__ == "__main__":
