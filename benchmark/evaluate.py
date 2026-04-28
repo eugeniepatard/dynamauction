@@ -165,9 +165,7 @@ def get_planning_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
 
 
 def _mpc_label(path: Optional[str], horizon: float, n_models: int, n_horizons: int, prefix: str = "MPC") -> str:
-    parts = []
-    if n_horizons > 1:
-        parts.append(f"H={horizon:g}")
+    parts = [f"H={horizon:g}"]
     if n_models > 1:
         if path is None:
             parts.append("auto")
@@ -190,7 +188,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
 
     if cfg.include_shading:
         for alpha in cfg.shading_alphas:
-            label = f"Shading(α={alpha:g})" if len(cfg.shading_alphas) > 1 else "Shading"
+            label = f"Shading(α={alpha:g})"
             policies[label] = ShadingPolicy(
                 SimulationEstimator(
                     pi0=ConstantPolicy(0.0),
@@ -236,11 +234,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
             mlp = load_mlp(cfg.scenario_id, path)
             for horizon in cfg.mpc_planning_horizons:
                 for k in cfg.mpc_n_bins:
-                    parts = []
-                    if n_horizons > 1:
-                        parts.append(f"H={horizon:g}")
-                    if len(cfg.mpc_n_bins) > 1:
-                        parts.append(f"K={k}")
+                    parts = [f"H={horizon:g}", f"K={k}"]
                     if n_models > 1:
                         stem = Path(path).stem if path else "auto"
                         parts.append(stem.split("_", 1)[-1] if "_" in stem else stem)
