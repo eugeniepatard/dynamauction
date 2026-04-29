@@ -62,6 +62,7 @@ python -m benchmark.train_rl algo=td3
 python -m benchmark.train_rl 'algo=ppo,sac,td3' --multirun
 ```
 
+Hydra configuration lives in `benchmark/conf/train.yaml` and `benchmark/conf/algo/`.
 Models are saved to `benchmark/models/<algo>/` (best and final checkpoints). TensorBoard logs are written to `benchmark/logs/<algo>/`.
 
 ---
@@ -138,9 +139,10 @@ All simulation-based policies use the following parameters:
 |---|---|
 | α candidates A₀ | {0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5} |
 | Continuation multiplier α_cont | 1.0 |
-| Planning horizons H (run.py) | 0.0, 4.0, 7.0, 10.0, 15.0, 25.0 |
-| Planning horizons H (run_rl.py) | 0.0, 7.0, 10.0, 15.0, 25.0 |
+| Planning horizons H | 0.0, 4.0, 7.0, 10.0, 15.0, 25.0 |
 | Number of time bins K (MPCTimeBinned) | 2, 3, 5, 10 |
+
+All evaluation hyperparameters are stored in **`benchmark/conf/eval.yaml`** and loaded automatically by `run.py`.
 
 ### MLP Valuation Head (for MPC, MPCOracle, MPCTimeBinned)
 
@@ -180,27 +182,32 @@ Outputs written to `benchmark/models/mlp_valuation_head/`:
 
 ## Evaluation Protocol
 
-Two benchmark scripts are provided, depending on whether RL policies are included.
+A single script `benchmark/full_benchmark/run.py` evaluates all policies (planning baselines and, optionally, RL agents) for a given `horizon_eta`.
 
-### Planning-only benchmark (`run.py`)
+Evaluation parameters (shading factors, MPC horizons, α candidates, etc.) are declared in **`benchmark/conf/eval.yaml`** and loaded automatically. RL model paths are also configured there.
 
-Evaluates FiPla, GreedyMyopic, Shading×4, MPC×6, MPCOracle×6, MPCTimeBinned×24.
+### Running the benchmark
 
 ```bash
-python benchmark/full_benchmark/run.py --horizon-eta <η>
-# e.g.
+# Planning baselines only (FiPla, GreedyMyopic, Shading×4, MPC×6, MPCOracle×6, MPCTimeBinned×24)
 python benchmark/full_benchmark/run.py --horizon-eta 50
 python benchmark/full_benchmark/run.py --horizon-eta 100
+
+# RL + planning: set rl_models paths in benchmark/conf/eval.yaml, then run the same command
+python benchmark/full_benchmark/run.py --horizon-eta 50
+
+# Or pass model paths directly on the command line (overrides eval.yaml)
+python benchmark/full_benchmark/run.py --horizon-eta 50 \
+    --ppo-model /scratch/epatard/models/ppo/best_model \
+    --sac-model /scratch/epatard/models/sac/best_model \
+    --td3-model /scratch/epatard/models/td3/best_model
+
+# Use a custom config file
+python benchmark/full_benchmark/run.py --horizon-eta 50 --config /path/to/eval.yaml
 ```
 
-### RL + planning benchmark (`run_rl.py`)
-
-Evaluates PPO, SAC, TD3 alongside FiPla, GreedyMyopic, Shading×4, MPC×5, MPCOracle×5, MPCTimeBinned×20.
-
-```bash
-# Edit the PPO_MODEL_PATH, SAC_MODEL_PATH, TD3_MODEL_PATH variables at the top of run_rl.py first.
-python benchmark/full_benchmark/run_rl.py --horizon-eta <η>
-```
+When RL models are found the output filename carries an `_rl` suffix
+(`<scenario_id>_eta<η>_rl_<timestamp>.csv`); otherwise the suffix is omitted.
 
 ### Shared evaluation parameters
 
@@ -256,14 +263,12 @@ python -m benchmark.train_mlp --n-episodes 500 --n-epochs 500 --hidden-dims 128 
 
 Expected wall-clock time: a few minutes on CPU.
 
-### 4. Run evaluation
+### 4. Configure and run evaluation
+
+Set `rl_models` paths in `benchmark/conf/eval.yaml` (or pass `--ppo-model` / `--sac-model` / `--td3-model` on the command line), then:
 
 ```bash
-# Planning policies only
 python benchmark/full_benchmark/run.py --horizon-eta <η>
-
-# RL + planning policies (set model paths in run_rl.py first)
-python benchmark/full_benchmark/run_rl.py --horizon-eta <η>
 ```
 
 Results are written to `benchmark/full_benchmark/results/` (local) or `/scratch/epatard/full_benchmark/results/` (cluster).
@@ -282,12 +287,12 @@ Pretrained model weights (PPO, SAC, TD3) are available at:
 
 > **[TODO: add Zenodo / HuggingFace DOI link here]**
 
-Download and unpack them so the directory layout matches what `run_rl.py` expects:
+Download and unpack them so the directory layout matches what `run.py` expects:
 
 ```
 benchmark/models/
 ├── ppo/
-│   ├── best_model.zip   # SB3 model weights (loaded by run_rl.py)
+│   ├── best_model.zip   # SB3 model weights
 │   └── obs_rms.pkl      # VecNormalize observation statistics
 ├── sac/
 │   ├── best_model.zip
@@ -301,7 +306,7 @@ benchmark/models/
 
 `best_model.zip` is the checkpoint saved by SB3's `EvalCallback` at the timestep with the highest mean evaluation reward. `obs_rms.pkl` contains the running-mean/variance statistics of `VecNormalize` and must be loaded alongside the model to reproduce the correct observation normalization at inference time.
 
-Once in place, set the model paths in `run_rl.py` and skip directly to step 4 (evaluation).
+Once in place, set the paths in `benchmark/conf/eval.yaml` and skip directly to step 4 (evaluation).
 
 ---
 

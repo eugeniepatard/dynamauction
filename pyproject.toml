@@ -1,4 +1,5 @@
 # TODO: Créer fonction visualisation
+# TODO : mettre une licence
 # TODO : Ajouter autres baselines (ex: bidding policy)
 # TODO : Ajouter un moyen de créer automatoquement les nouvelles optionsdans registery (si qqun rajoute un new kernel rajouter cette option
 # dans create_kernel())
@@ -34,6 +35,7 @@ benchmark = [
   "stable-baselines3[extra]>=2.3.0",
   "shimmy>=0.2.0",
   "tensorboard>=2.14.0",
+  "hydra-core>=1.3.0",
   "submitit>=1.5.0",
   "tabulate",
   "seaborn",

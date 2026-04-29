@@ -1,0 +1,40 @@
+# Evaluation configuration for the full benchmark.
+# Used by benchmark/evaluate.py (and benchmark/full_benchmark/run.py).
+# All values can be overridden on the command line.
+
+scenario_id: survival-second-price-exponential
+
+eval:
+  n_seeds: 30
+  policy_seed: 0
+  baselines: [fipla]   # available: fipla, constant, random
+
+# Which simulation-based planning policies to include.
+# Override with --sim-policies on the CLI.
+policies:
+  include_greedy: true
+  include_shading: true
+  include_mpc: true
+  include_mpc_oracle: true
+  include_mpc_timebin: true
+
+shading:
+  alphas: [0.2, 0.4, 0.6, 0.8]
+
+mpc:
+  # Path to a pre-trained MLPValuationHead .pt file.
+  # Set to null to use the default auto-resolved path.
+  mlp_model: null
+  horizons: [0.0, 4.0, 7.0, 10.0, 15.0, 25.0]
+  alpha_candidates: [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5]
+  n_bins: [2, 3, 5, 10]
+
+# Paths to trained RL model checkpoints (without .zip extension).
+# obs_rms.pkl is expected in the same directory as best_model.zip.
+# Set to null to skip that algorithm.
+# Example:
+#   ppo: /scratch/epatard/models/ppo/best_model
+rl_models:
+  ppo: null
+  sac: null
+  td3: null
