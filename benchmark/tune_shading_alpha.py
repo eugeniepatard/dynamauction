@@ -30,7 +30,7 @@ from dynamicauc.baseline.policies import ConstantPolicy
 from benchmark.evaluate import EvalConfig, evaluate_policy
 
 SCENARIO_ID = "survival-second-price-exponential"
-_RESULTS_DIR = Path(__file__).resolve().parent / "shading_alpha_results"
+_RESULTS_DIR = Path(__file__).resolve().parent / "benchmark_results"
 
 
 def tune_shading_alpha(
