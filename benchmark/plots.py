@@ -768,6 +768,62 @@ def plot_full_benchmark(
     return fig
 
 
+def plot_mpc_alpha_chosen(
+    df:       pd.DataFrame,
+    policies: Optional[List[str]] = None,
+    title:    str                 = "MPC chosen α* distribution",
+    save:     bool                = True,
+    filename: str                 = "mpc_alpha_chosen.pdf",
+) -> Optional[plt.Figure]:
+    """
+    Violin + strip plot of the α* values chosen at each step by MPC-family policies.
+    Reads the ``alpha_chosen`` column logged by ``evaluate.py``.
+
+    Parameters
+    ----------
+    df : per-step benchmark DataFrame (must contain ``alpha_chosen`` column).
+    policies : optional subset of policy names to include.
+    """
+    if "alpha_chosen" not in df.columns:
+        print("[INFO] No 'alpha_chosen' column found — re-run the benchmark with the updated evaluate.py.")
+        return None
+
+    mpc_df = df[df["alpha_chosen"].notna()].copy()
+    if policies:
+        mpc_df = mpc_df[mpc_df["policy"].isin(policies)]
+    if mpc_df.empty:
+        print("[INFO] No MPC alpha data found in dataframe.")
+        return None
+
+    # Sort policies numerically so H=10 comes before H=25, etc.
+    policy_order = sorted(mpc_df["policy"].unique(), key=_numeric_sort_key)
+    palette      = _make_palette(policy_order)
+    candidates   = sorted(mpc_df["alpha_chosen"].unique())
+
+    _style()
+    fig, ax = plt.subplots(figsize=(max(5, len(policy_order) * 1.6), 4))
+
+    sns.violinplot(data=mpc_df, x="policy", y="alpha_chosen",
+                   order=policy_order, palette=palette,
+                   inner="box", cut=0, linewidth=1.2, ax=ax)
+    sns.stripplot(data=mpc_df, x="policy", y="alpha_chosen",
+                  order=policy_order,
+                  color="black", alpha=0.08, size=2, jitter=True, ax=ax)
+
+    for alpha in candidates:
+        ax.axhline(alpha, color="grey", lw=0.7, ls="--", alpha=0.5)
+
+    ax.set_xlabel("")
+    ax.set_ylabel(r"Chosen $\alpha^*$")
+    ax.set_yticks(candidates)
+    ax.set_title(title, fontweight="bold", pad=10)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=40, ha="right", fontsize=9)
+    fig.tight_layout()
+    if save:
+        _save(fig, filename)
+    return fig
+
+
 def plot_mpc_alpha_distribution(
     mpc_policies: Dict[str, Any],
     title:        str  = "MPC: chosen α* distribution",
