@@ -215,12 +215,11 @@ def _bootstrap_ci(
     hi = np.percentile(boots, (1 - (1 - ci) / 2) * 100)
     return float(stat_fn(arr)), float(lo), float(hi)
 
-
 def plot_aggregate_metrics(
     score_dict:   Dict[str, np.ndarray],
     metric:       str            = "iqm",
     normalize_by: Optional[str]  = "FiPla",
-    title:        str            = "Aggregate Performance",
+    title:        Optional[str]  = None,
     save:         bool           = True,
     filename:     str            = "aggregate_metrics.pdf",
 ) -> plt.Figure:
@@ -236,6 +235,11 @@ def plot_aggregate_metrics(
         Normalise all scores by the mean score of this reference policy.
     """
     _style()
+    metric_label = {"iqm": "IQM", "median": "Median", "mean": "Mean"}.get(metric, metric.upper())
+    norm_label   = f", normalised by {normalize_by}" if normalize_by else ""
+    if title is None:
+        title = f"Aggregate Performance — {metric_label} of total episode reward{norm_label}"
+
     scores = {k: v.copy().astype(float) for k, v in score_dict.items()}
 
     stat = {"iqm": lambda x: np.percentile(x, [25, 75]).mean(),
@@ -266,9 +270,15 @@ def plot_aggregate_metrics(
             alpha=0.85, height=0.55, error_kw={"elinewidth": 1.5})
     if normalize_by:
         ax.axvline(1.0, color="black", lw=0.8, ls="--", alpha=0.6, label="FiPla baseline")
+
+    from matplotlib.lines import Line2D
+    ci_handle = Line2D([0], [0], color="black", lw=1.5,
+                       marker="|", markersize=8, label="95 % bootstrap CI")
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles=handles + [ci_handle], labels=labels + ["95 % bootstrap CI"], fontsize=9)
+
     ax.set_xlabel(xlabel)
     ax.set_title(title, fontweight="bold", pad=10)
-    ax.legend(fontsize=9)
     fig.tight_layout()
 
     if save:
@@ -389,16 +399,17 @@ def plot_reward_distribution(
                .median().sort_values(ascending=False).index.tolist())
     palette = _make_palette(order)
 
-    fig, ax = plt.subplots(figsize=(max(6, len(order) * 1.3), 5))
+    fig, ax = plt.subplots(figsize=(max(6, len(order) * 1.6), 5))
     sns.violinplot(data=summary, x="policy", y="episode_reward",
                    order=order, palette=palette, inner="box",
                    cut=0, linewidth=1.2, ax=ax)
     sns.stripplot(data=summary, x="policy", y="episode_reward",
                   order=order, color="black", alpha=0.35, size=3,
                   jitter=True, ax=ax)
-    ax.set_xlabel("Policy")
+    ax.set_xlabel("")
     ax.set_ylabel("Total episode reward")
     ax.set_title(title, fontweight="bold", pad=10)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=40, ha="right", fontsize=9)
     fig.tight_layout()
     if save:
         _save(fig, filename)
@@ -621,14 +632,15 @@ def plot_win_rate(
     order   = summary.groupby("policy")["win_rate"].mean().sort_values(ascending=False).index.tolist()
     palette = _make_palette(order)
 
-    fig, ax = plt.subplots(figsize=(max(5, len(order) * 1.2), 4))
+    fig, ax = plt.subplots(figsize=(max(5, len(order) * 1.6), 4))
     sns.barplot(data=summary, x="policy", y="win_rate",
                 order=order, palette=palette,
                 errorbar=("ci", 95), capsize=0.1, ax=ax)
-    ax.set_xlabel("Policy")
+    ax.set_xlabel("")
     ax.set_ylabel("Win rate")
     ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
     ax.set_title(title, fontweight="bold", pad=10)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=40, ha="right", fontsize=9)
     fig.tight_layout()
     if save:
         _save(fig, filename)
