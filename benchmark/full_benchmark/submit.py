@@ -4,8 +4,9 @@ Submit full benchmark jobs to the Inria Margaret (SLURM) cluster via submitit.
 Jobs are split by policy group so each runs independently:
   greedy_fipla  — 1 job per horizon_eta
   shading       — 1 job per horizon_eta
-  mpc           — 1 job per horizon_eta × mpc_horizon          (6 horizons → 6 jobs/eta)
-  mpc_timebin   — 1 job per horizon_eta × mpc_horizon × n_bins (6 × 4 = 24 jobs/eta)
+  mpc           — 1 job per horizon_eta × mpc_horizon
+  mpc_oracle    — 1 job per horizon_eta × mpc_horizon
+  mpc_timebin   — 1 job per horizon_eta × mpc_horizon × n_bins
   rl            — 1 job per horizon_eta (via run_rl.py, requires model paths)
 
 Default: submit all job types for all horizon_etas.
@@ -67,7 +68,7 @@ def _build_planning_jobs(
             if jt in ("greedy_fipla", "shading"):
                 # mpc_horizon and n_bins are ignored for these types
                 jobs.append((eta, jt, 0.0, 2, n_seeds, None, None, n_workers))
-            elif jt == "mpc":
+            elif jt in ("mpc", "mpc_oracle"):
                 for H in MPC_HORIZONS:
                     jobs.append((eta, jt, H, 2, n_seeds, None, None, n_workers))
             elif jt == "mpc_timebin":

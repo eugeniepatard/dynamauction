@@ -4,8 +4,9 @@ Full benchmark (planning policies) — one policy group per invocation.
 Job types
 ---------
   greedy_fipla  — FiPla + GreedyMyopic            (1 job per horizon_eta)
-  shading       — Shading × 4 alphas               (1 job per horizon_eta)
-  mpc           — MPC(H) + MPCOracle(H)            (1 job per horizon_eta × mpc_horizon)
+  shading       — Shading × alphas                 (1 job per horizon_eta)
+  mpc           — MPC(H)                           (1 job per horizon_eta × mpc_horizon)
+  mpc_oracle    — MPCOracle(H)                     (1 job per horizon_eta × mpc_horizon)
   mpc_timebin   — MPCTimeBinned(H, K)              (1 job per horizon_eta × mpc_horizon × n_bins)
 
 Usage (from repo root)
@@ -13,6 +14,7 @@ Usage (from repo root)
     python benchmark/full_benchmark/run.py --horizon-eta 50 --job-type greedy_fipla
     python benchmark/full_benchmark/run.py --horizon-eta 50 --job-type shading
     python benchmark/full_benchmark/run.py --horizon-eta 50 --job-type mpc --mpc-horizon 7.0
+    python benchmark/full_benchmark/run.py --horizon-eta 50 --job-type mpc_oracle --mpc-horizon 7.0
     python benchmark/full_benchmark/run.py --horizon-eta 50 --job-type mpc_timebin --mpc-horizon 7.0 --n-bins 5
 """
 from __future__ import annotations
@@ -42,7 +44,7 @@ SHADING_ALPHAS       = [0.7]
 MPC_ALPHA_CANDIDATES = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 MPC_N_BINS           = [2, 3]
 
-JOB_TYPES = ("greedy_fipla", "shading", "mpc", "mpc_timebin")
+JOB_TYPES = ("greedy_fipla", "shading", "mpc", "mpc_oracle", "mpc_timebin")
 
 _SCRATCH_RESULTS = Path("/scratch/epatard/full_benchmark/results")
 _LOCAL_RESULTS   = Path(__file__).resolve().parent / "results"
@@ -105,6 +107,13 @@ def run_job(
             **base,
             baselines=[],
             include_mpc=True,
+            mpc_model_paths=[_resolve_mlp(mlp_model)],
+            mpc_planning_horizons=[mpc_horizon],
+        )
+    elif job_type == "mpc_oracle":
+        cfg = EvalConfig(
+            **base,
+            baselines=[],
             include_mpc_oracle=True,
             mpc_model_paths=[_resolve_mlp(mlp_model)],
             mpc_planning_horizons=[mpc_horizon],
@@ -132,6 +141,8 @@ def run_job(
     ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if job_type == "mpc":
         tag = f"_mpc_H{mpc_horizon:g}"
+    elif job_type == "mpc_oracle":
+        tag = f"_mpcoracle_H{mpc_horizon:g}"
     elif job_type == "mpc_timebin":
         tag = f"_mpctimebin_H{mpc_horizon:g}_K{n_bins}"
     elif job_type == "shading":
