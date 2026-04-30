@@ -37,7 +37,7 @@ from benchmark.full_benchmark.run import (
     JOB_TYPES,
 )
 
-HORIZON_ETAS = [50]
+HORIZON_ETAS = [50, 100]
 
 _SCRATCH_DIR         = Path("/scratch/epatard")
 _SUBMITIT_LOG_FOLDER = str(_SCRATCH_DIR / "submitit_logs" / "full_benchmark" / "%j")
