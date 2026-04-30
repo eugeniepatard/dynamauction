@@ -37,10 +37,12 @@ _DEFAULT_MLP_MODEL = (
     / "survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt"
 )
 
-MPC_HORIZONS         = [0.0, 4.0, 7.0, 10.0]
+MPC_HORIZONS         = [10.0, 25.0]
 SHADING_ALPHAS       = [0.2, 0.4, 0.6, 0.8]
-MPC_ALPHA_CANDIDATES = [0.2, 0.4, 0.6, 0.8, 1.0, 1.2]
-MPC_N_BINS           = [2, 5, 10]
+MPC_ALPHA_CANDIDATES = [0.3, 0.5, 0.7, 0.9, 1.0]
+MPC_N_BINS           = [3, 5, 10]
+
+JOB_TYPES = ("greedy_fipla", "shading", "mpc", "mpc_timebin")
 
 _SCRATCH_RESULTS = Path("/scratch/epatard/full_benchmark/results")
 _LOCAL_RESULTS   = Path(__file__).resolve().parent / "results"
