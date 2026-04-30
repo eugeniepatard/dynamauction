@@ -99,9 +99,9 @@ def main() -> None:
     )
     parser.add_argument("--horizon-eta",  type=int,   required=True,
                         help="Exponential horizon parameter η.")
-    parser.add_argument("--n-alphas",     type=int,   default=20,
+    parser.add_argument("--n-alphas",     type=int,   default=10,
                         help="Number of α values evenly spaced in [alpha-min, alpha-max] (default: 20).")
-    parser.add_argument("--alpha-min",    type=float, default=0.0)
+    parser.add_argument("--alpha-min",    type=float, default=0.1)
     parser.add_argument("--alpha-max",    type=float, default=1.0)
     parser.add_argument("--n-seeds",      type=int,   default=30)
     parser.add_argument("--n-rollouts",   type=int,   default=10,
