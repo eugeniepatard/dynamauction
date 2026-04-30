@@ -1,3 +1,12 @@
+"""
+Gymnasium environment for repeated auctions with dynamic values.
+
+Defines ``AuctionEnv``, registered as ``DynamicAuction-v0``, which implements
+the full episode loop: auction arrival, bid submission, competing bid draw,
+payment computation, delayed reward accumulation, and context update.
+The observation space is a Dict of named arrays; the action space is a
+scalar bid clipped to ``[0, 1e12]``.
+"""
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from abc import ABC, abstractmethod

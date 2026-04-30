@@ -1,3 +1,14 @@
+"""
+Internal helpers for simulation-based planning rollouts.
+
+``_resample_remaining_horizon``: replaces the pre-baked horizon and future
+auction schedule of a copied environment with a fresh independent draw,
+removing oracle knowledge of the true remaining campaign length.
+``_rollout_to_end``: runs a policy to episode termination and returns the
+cumulative reward.
+``_obs_to_features``: converts a Dict observation to a flat numpy feature
+vector for the MLPValuationHead.
+"""
 from typing import Any, Dict, Optional
 import gymnasium as gym
 import numpy as np

@@ -1,3 +1,11 @@
+"""
+Core dataclasses shared across the package.
+
+``Scenario`` bundles all environment primitives (auction rule, competition
+distribution, kernel, gamma, horizon generator, …) into a single object
+passed to ``AuctionEnv`` and ``Simulator``.
+``AuctionState`` holds the mutable per-episode state updated at each step.
+"""
 from dataclasses import dataclass
 from typing import Callable
 

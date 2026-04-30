@@ -1,3 +1,10 @@
+"""
+Conversion probe: bridges a RewardKernel and a DelaySampler.
+
+``ConversionProbe`` wraps a ``RewardKernel`` and exposes the sampling
+primitives needed by ``DelaySampler`` to decide how many conversions a
+display produces and to draw their individual delay times.
+"""
 from abc import ABC, abstractmethod
 from typing import List, Optional
 import numpy as np

@@ -1,5 +1,9 @@
-# ── Auction rules ──────────────────────────────────────────────────────────────
+"""
+Auction rules determining payment from bid and competing bid.
 
+``FirstPriceAuction``: winner pays their own bid.
+``SecondPriceAuction``: winner pays the highest competing bid (Vickrey).
+"""
 from abc import ABC, abstractmethod
 
 

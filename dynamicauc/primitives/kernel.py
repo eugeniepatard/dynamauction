@@ -1,3 +1,15 @@
+"""
+Reward kernels modelling how repeated exposures accumulate value.
+
+``RewardKernel`` (abstract): maps (user features, display features, context,
+exogenous signal, time) to a reward distribution.
+Concrete implementations:
+- ``SurvivalKernel``: value decays with the number of prior exposures
+  (Cox-style hazard; models ad fatigue / survival of attention).
+- ``SaturationKernel``: value saturates as cumulative context grows.
+- ``RecencyDisplayKernel``: value depends on elapsed time since last win.
+- ``MixedKernel``: weighted combination of multiple kernels.
+"""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

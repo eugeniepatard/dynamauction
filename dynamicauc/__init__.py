@@ -1,3 +1,18 @@
+"""
+dynamicauc — Repeated auction environment with dynamic values.
+
+Entry point: use ``dac.make(scenario_id, **overrides)`` to instantiate a
+pre-built scenario, then ``gym.make("DynamicAuction-v0", scenario=scenario)``
+to get a Gymnasium environment.
+
+    import dynamicauc as dac
+    scenario = dac.make("survival-second-price-exponential", horizon_eta=50)
+
+The package also exposes all primitives (kernels, gamma models, auction rules,
+…) for building custom scenarios via ``ScenarioBuilder``, as well as planning
+baseline policies (FiPla, GreedyMyopic, Shading, MPC, …) and Gymnasium
+wrappers for RL training.
+"""
 from importlib.metadata import version
 
 from dynamicauc.scenarios import (

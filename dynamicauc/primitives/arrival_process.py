@@ -1,5 +1,11 @@
-# ── Opportunity arrival ────────────────────────────────────────────────────────
+"""
+Auction opportunity arrival processes.
 
+``ArrivalProcess`` (abstract): generates the sequence of auction times
+``t⁽¹⁾ < … < t⁽ᴺ⁾`` within a campaign horizon T.
+``PiecewiseConstantPoisson``: Poisson process with a piecewise-constant
+rate λ(t), generalising the homogeneous Poisson case.
+"""
 from abc import ABC, abstractmethod
 from typing import List
 import numpy as np

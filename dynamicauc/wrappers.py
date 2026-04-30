@@ -1,18 +1,20 @@
+"""
+Gymnasium wrappers and RL-policy adapters for the auction environment.
+
+- ``FlatAuctionObsWrapper``: flattens the Dict observation into a 1-D vector.
+- ``MaskExpectedRewardWrapper``: removes the oracle ``expected_reward`` field
+  so that RL agents do not have privileged information.
+- ``BidScaleWrapper``: restricts the action space to ``[0, max_bid]`` for
+  more stable RL exploration.
+- ``SB3PolicyWrapper``: adapts a trained Stable-Baselines3 model to the
+  ``BiddingPolicy`` interface for evaluation alongside planning baselines.
+"""
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from typing import Any, Dict, List
 
 from dynamicauc.baseline.policies import BiddingPolicy
-
-"""
-Wrappers for the auction environment to connect it to RL algorithms more easily :
-
-- FlatAuctionObsWrapper: flatten the Dict obs space into a 1-D vector.
-- MaskExpectedRewardWrapper: remove the "expected_reward" field from the obs space, so that RL agents don't have privileged oracle information.
-- BidScaleWrapper: restrict the bid action space to [0, max_bid] for more stable RL training.
-- SB3PolicyWrapper: adapt a trained Stable-Baselines3 model to the BiddingPolicy interface
-"""
 
 class FlatAuctionObsWrapper(gym.ObservationWrapper):
     """

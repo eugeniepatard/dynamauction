@@ -1,3 +1,11 @@
+"""
+User feature generators sampling the fixed user vector u once per episode.
+
+``UserFeatureGenerator`` (abstract): samples u ∈ Rᵈ at episode start.
+Only the first d_obs ≤ d components are included in the agent's observation,
+modelling partial observability of user attributes.
+``UniformUser``: each component drawn i.i.d. from Uniform(0, 1).
+"""
 from abc import ABC, abstractmethod
 import numpy as np
 

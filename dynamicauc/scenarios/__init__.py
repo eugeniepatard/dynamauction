@@ -1,3 +1,10 @@
+"""
+Scenario registry and factory.
+
+Use ``make(scenario_id, **overrides)`` to instantiate a built-in scenario,
+``list_scenarios()`` to enumerate available presets, and ``ScenarioBuilder``
+to compose a fully custom scenario from primitives.
+"""
 from .presets import SCENARIO_PRESETS
 from .builder import (
     make,

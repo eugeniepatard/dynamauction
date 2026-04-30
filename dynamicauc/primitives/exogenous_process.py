@@ -1,5 +1,11 @@
-# ── Exogenous process ──────────────────────────────────────────────────────────
+"""
+Exogenous time-varying signal y(t) independent of the bidding policy.
 
+``ExogenousProcess`` (abstract): evaluates the signal at time t.
+``TrivialProcess``: always returns 1.0 (no exogenous variation).
+The signal is passed to the ``RewardKernel`` and observed by the agent,
+modelling external factors such as seasonality or user engagement trends.
+"""
 from abc import ABC, abstractmethod
 
 import numpy as np

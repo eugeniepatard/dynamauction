@@ -1,5 +1,13 @@
-# ── Display feature samplers ───────────────────────────────────────────────────
+"""
+Display feature samplers generating the ad creative / slot vector x at each step.
 
+``DisplaySampler`` (abstract): samples a feature vector x ∈ Rᵈ independently
+at each auction opportunity.
+Concrete implementations:
+- ``IIDUniformSampler``: each component drawn i.i.d. from Uniform(0, 1).
+- ``CatalogueSampler``: samples uniformly from a fixed finite catalogue.
+- ``FixedSampler``: always returns the same feature vector (deterministic).
+"""
 from abc import ABC, abstractmethod
 from typing import List
 

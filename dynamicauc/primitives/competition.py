@@ -1,5 +1,12 @@
-# ── Competition distributions ──────────────────────────────────────────────────
+"""
+Competing bid distributions modelling the auction market.
 
+``CompetitionDistribution`` (abstract): samples the highest competing bid B.
+Concrete implementations:
+- ``UniformCompetition``: B ~ Uniform(low, high).
+- ``LogNormalCompetition``: B ~ LogNormal(μ, σ).
+- ``ExponentialCompetition``: B ~ Exponential(λ).
+"""
 from abc import ABC, abstractmethod
 import numpy as np
 

@@ -1,3 +1,11 @@
+"""
+Delay samplers for conversion timing after a won auction.
+
+``DelaySampler`` (abstract): given a ``ConversionProbe``, determines how
+many conversions a display generates and samples a delay for each.
+Delayed rewards are accumulated by the environment when their deadlines
+are reached in subsequent steps.
+"""
 from abc import ABC, abstractmethod
 from typing import Callable, List
 import numpy as np

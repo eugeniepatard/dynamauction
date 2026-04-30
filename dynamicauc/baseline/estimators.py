@@ -1,3 +1,15 @@
+"""
+Value estimators used by simulation-based planning policies.
+
+``SimulationEstimator``: Monte Carlo estimator of the incremental display
+value Δ(s, x) = V¹(s, x) − V⁰(s) via Common Random Numbers (CRN) rollouts.
+Shared random seeds across forced-win and forced-loss simulations reduce
+variance by cancelling environment noise.
+
+``MLPValuationHead``: small offline-trained MLP that approximates
+V₀(s, x) = E[reward | win, x, s]. Used by MPC-family policies to avoid
+expensive MC rollouts at every decision step.
+"""
 from pathlib import Path
 from typing import Optional
 
