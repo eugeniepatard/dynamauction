@@ -123,6 +123,13 @@ def _run_episode(
         obs, reward, done, _truncated, info = env.step(action)
         cum_reward += float(reward)
         step       += 1
+
+        alpha_chosen = float("nan")
+        if hasattr(policy, "alpha_log") and policy.alpha_log:
+            last = policy.alpha_log[-1]
+            # MPCTimeBinned logs tuples (one α per bin); record the executed first-bin α
+            alpha_chosen = float(last[0]) if isinstance(last, (tuple, list)) else float(last)
+
         rows.append({
             "policy":          policy_name,
             "seed":            seed,
@@ -136,6 +143,7 @@ def _run_episode(
             "ctx":             float(obs["ctx"].ravel()[0]),
             "expected_reward": float(obs["expected_reward"].ravel()[0]),
             "competing_bid":   float(info["auction"]["competing_bid"]),
+            "alpha_chosen":    alpha_chosen,
         })
 
     return pd.DataFrame(rows)
