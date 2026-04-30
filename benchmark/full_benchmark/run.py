@@ -38,9 +38,9 @@ _DEFAULT_MLP_MODEL = (
 )
 
 MPC_HORIZONS         = [10.0, 25.0]
-SHADING_ALPHAS       = [0.2, 0.4, 0.6, 0.8]
-MPC_ALPHA_CANDIDATES = [0.3, 0.5, 0.7, 0.9, 1.0]
-MPC_N_BINS           = [3, 5, 10]
+SHADING_ALPHAS       = [0.7]
+MPC_ALPHA_CANDIDATES = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+MPC_N_BINS           = [2, 3]
 
 JOB_TYPES = ("greedy_fipla", "shading", "mpc", "mpc_timebin")
 
