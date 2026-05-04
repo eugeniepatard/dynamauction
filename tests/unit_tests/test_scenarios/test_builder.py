@@ -46,8 +46,8 @@ def test_builder_with_survival_probe_and_multi_sampler():
     assert scenario.probe.__class__.__name__ == "SurvivalProbe"
     assert scenario.delay_sampler.__class__.__name__ == "MultiConversionSampler"
 
-def test_make_paper_experiment_scenario():
-    scenario = dac.make("paper-experiment-scenario")
+def test_make_survival_second_price_exponential():
+    scenario = dac.make("survival-second-price-exponential", horizon_eta=50)
     assert scenario is not None
-    assert scenario.kernel.__class__.__name__ == "MixedKernel"
-    assert scenario.max_history == 1
+    assert scenario.kernel.__class__.__name__ == "SurvivalKernel"
+    assert scenario.max_history >= 1

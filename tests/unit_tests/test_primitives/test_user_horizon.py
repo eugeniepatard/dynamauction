@@ -23,6 +23,6 @@ def test_fixed_horizon():
 
 def test_exponential_horizon():
     rng = np.random.default_rng(42)
-    horizon_gen = ExponentialHorizon(mean=10.0)
+    horizon_gen = ExponentialHorizon(eta=10.0)
     sample = horizon_gen.sample(rng)
     assert sample >= 0.0

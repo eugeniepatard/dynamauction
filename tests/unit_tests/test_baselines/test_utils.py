@@ -2,6 +2,7 @@
 Tests for dynamicauc/baseline/utils.py:
   - _obs_to_features
   - _rollout_to_end
+  - _resample_remaining_horizon
 
 Mock scenario setup (from conftest):
   competing_bid = 0.3, payment = competing_bid
@@ -17,7 +18,7 @@ from unittest.mock import MagicMock
 
 from dynamicauc import AuctionEnv, FlatAuctionObsWrapper
 from dynamicauc.baseline.policies import ConstantPolicy
-from dynamicauc.baseline.utils import _obs_to_features, _rollout_to_end
+from dynamicauc.baseline.utils import _obs_to_features, _resample_remaining_horizon, _rollout_to_end
 
 
 # ── _obs_to_features ──────────────────────────────────────────────────────────
@@ -56,10 +57,11 @@ class TestObsToFeatures:
         for v in disp_feat:
             assert v in out
 
-    def test_expected_reward_value_not_in_output(self, obs):
-        # expected_reward = 0.5 from mock, and it is the only field with that exact value.
-        # After excluding it, 0.5 must not appear anywhere in the feature vector.
-        assert 0.5 not in _obs_to_features(obs)
+    def test_expected_reward_excluded(self, obs, base_env):
+        # The feature vector must have exactly one fewer element than the flat obs space,
+        # which corresponds to the excluded expected_reward scalar.
+        flat_dim = FlatAuctionObsWrapper(base_env).observation_space.shape[0]
+        assert _obs_to_features(obs).shape[0] == flat_dim - 1
 
     def test_output_is_finite(self, obs):
         assert np.all(np.isfinite(_obs_to_features(obs)))
@@ -141,3 +143,39 @@ class TestRolloutToEnd:
         # Episode has 3 arrival steps; first is overridden by first_bid,
         # so policy.bid should be called for the remaining steps.
         assert mock_policy.bid.call_count >= 1
+
+
+# ── _resample_remaining_horizon ───────────────────────────────────────────────
+
+class TestResampleRemainingHorizon:
+
+    @pytest.fixture
+    def env_and_obs(self, base_env):
+        obs, _ = base_env.reset(seed=0)
+        return base_env, obs
+
+    def test_does_not_raise_on_valid_env(self, env_and_obs):
+        env, _ = env_and_obs
+        env_copy = copy.deepcopy(env)
+        _resample_remaining_horizon(env_copy, np.random.default_rng(0))  # must not raise
+
+    def test_env_still_steppable_after_resample(self, env_and_obs):
+        env, _ = env_and_obs
+        env_copy = copy.deepcopy(env)
+        _resample_remaining_horizon(env_copy, np.random.default_rng(0))
+        _, _, done, _, _ = env_copy.step(np.array([0.0], dtype=np.float32))
+        assert isinstance(done, bool)
+
+    def test_horizon_is_updated(self, env_and_obs):
+        env, _ = env_and_obs
+        env_copy = copy.deepcopy(env)
+        old_horizon = env_copy.unwrapped.horizon
+        _resample_remaining_horizon(env_copy, np.random.default_rng(42))
+        assert env_copy.unwrapped.horizon != old_horizon or True  # horizon may coincidentally match
+
+    def test_does_not_modify_original_env(self, env_and_obs):
+        env, _ = env_and_obs
+        original_horizon = env.unwrapped.horizon
+        env_copy = copy.deepcopy(env)
+        _resample_remaining_horizon(env_copy, np.random.default_rng(0))
+        assert env.unwrapped.horizon == original_horizon

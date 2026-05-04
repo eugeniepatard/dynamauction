@@ -143,22 +143,17 @@ class TestMLPValuationHead:
         mlp = MLPValuationHead(input_dim=dim)
         assert np.isfinite(mlp.predict(obs))
 
-    def test_predict_consistent_in_eval_mode(self, mlp, data):
-        X, y = data
-        mlp.fit(X, y, n_epochs=5)
-        obs_dict = {
-            "t":    np.array([0.0], dtype=np.float32),
-            "ctx":  np.array([0.0], dtype=np.float32),
-            "step": 0,
-            "user_features":    np.zeros(3, dtype=np.float32),
-            "display_features": np.zeros(3, dtype=np.float32),
-            "y_now":            np.array([0.0], dtype=np.float32),
-            "cumulative_reward_since_last_step":  np.array([0.0], dtype=np.float32),
-            "conversion_times_since_last_step":   np.array([0.0], dtype=np.float32),
-            "expected_reward":  np.array([0.5], dtype=np.float32),
-        }
-        pred1 = mlp.predict(obs_dict)
-        pred2 = mlp.predict(obs_dict)
+    def test_predict_consistent_in_eval_mode(self, base_env):
+        from dynamicauc.baseline.utils import _obs_to_features
+        obs, _ = base_env.reset(seed=0)
+        dim = _obs_to_features(obs).shape[0]
+        mlp = MLPValuationHead(input_dim=dim, hidden_dims=(16, 16))
+        rng = np.random.default_rng(0)
+        X = rng.standard_normal((50, dim)).astype(np.float32)
+        y = X.sum(axis=1).astype(np.float32)
+        mlp.fit(X, y, n_epochs=3)
+        pred1 = mlp.predict(obs)
+        pred2 = mlp.predict(obs)
         assert pred1 == pytest.approx(pred2)
 
     def test_save_load_roundtrip_predictions(self, mlp, data, tmp_path):
@@ -195,3 +190,28 @@ class TestMLPValuationHead:
         path = tmp_path / "model.pt"
         mlp.save(path)
         assert path.exists()
+
+    def test_default_activation_is_tanh(self, mlp):
+        assert mlp.activation == "tanh"
+
+    def test_custom_activation_stored(self):
+        mlp = MLPValuationHead(input_dim=self.D, hidden_dims=(16,), activation="relu")
+        assert mlp.activation == "relu"
+
+    def test_invalid_activation_raises(self):
+        with pytest.raises(ValueError, match="activation"):
+            MLPValuationHead(input_dim=self.D, hidden_dims=(16,), activation="sigmoid")
+
+    def test_save_load_restores_activation(self, tmp_path):
+        mlp = MLPValuationHead(input_dim=self.D, hidden_dims=(16,), activation="leaky_relu")
+        path = tmp_path / "mlp_leaky.pt"
+        mlp.save(path)
+        loaded = MLPValuationHead.load(path)
+        assert loaded.activation == "leaky_relu"
+
+    @pytest.mark.parametrize("activation", ["tanh", "relu", "leaky_relu"])
+    def test_all_activations_train_and_predict(self, data, activation):
+        X, y = data
+        mlp = MLPValuationHead(input_dim=self.D, hidden_dims=(16,), activation=activation)
+        mlp.fit(X, y, n_epochs=3)
+        assert isinstance(mlp.history_["train"][-1], float)
