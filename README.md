@@ -2,7 +2,7 @@
 
 ## Overview
 
-DynamAuction is a Python library for simulating repeated auction environments in which the value of a display evolves over time and depends on the history of previous interactions. The library is designed as a flexible research environment for studying sequential decision-making in non-stationary auction settings, and serves as the official implementation accompanying the paper: "Dynamauction: a reinforcement learning environment for repeated auction with dynamic value". # TODO : changer nom papier
+DynamAuction is a Python library for simulating repeated auction environments in which the value of a display evolves over time and depends on the history of previous interactions. The library is designed as a flexible research environment for studying sequential decision-making in non-stationary auction settings, and serves as the official implementation accompanying the paper: "Dynamauction: a reinforcement learning environment for repeated auction with dynamic value".
 
 The framework models realistic advertiser dynamics where conversion probabilities change over time due to effects such as frequency saturation, recency, or competitor activity. It provides a standardized Gymnasium-compatible environment and a modular simulator, enabling systematic evaluation of bidding policies under dynamic and history-dependent value generation.
 
