@@ -824,6 +824,78 @@ def plot_mpc_alpha_chosen(
     return fig
 
 
+def plot_alpha_over_normalized_time(
+    df:         pd.DataFrame,
+    policies:   Optional[List[str]] = None,
+    num_points: int                 = 100,
+    title:      str                 = "MPC chosen α* over normalised campaign time",
+    save:       bool                = True,
+    filename:   str                 = "mpc_alpha_over_time.pdf",
+) -> Optional[plt.Figure]:
+    """
+    Mean chosen α* as a function of normalised campaign time for MPC-family policies.
+
+    Because each campaign has a different horizon length, time is normalised to
+    [0, 1] per (policy, seed) pair before averaging.  Only rows with a valid
+    ``alpha_chosen`` value (non-NaN) are used.
+
+    Parameters
+    ----------
+    df : per-step benchmark DataFrame (must contain ``alpha_chosen``, ``t``,
+        ``policy``, and ``seed`` columns).
+    policies : optional subset of policy names to include.
+    num_points : number of points on the normalised time grid.
+    """
+    if "alpha_chosen" not in df.columns:
+        print("[INFO] No 'alpha_chosen' column — re-run the benchmark with the updated evaluate.py.")
+        return None
+
+    mpc_df = df[df["alpha_chosen"].notna()].copy()
+    if policies:
+        mpc_df = mpc_df[mpc_df["policy"].isin(policies)]
+    if mpc_df.empty:
+        print("[INFO] No MPC alpha data found in dataframe.")
+        return None
+
+    policy_order = sorted(mpc_df["policy"].unique(), key=_numeric_sort_key)
+    palette      = _make_palette(policy_order)
+    linestyles   = _make_linestyles(policy_order)
+
+    t_grid = np.linspace(0.0, 1.0, num_points)
+
+    _style()
+    fig, ax = plt.subplots(figsize=(8, 4))
+
+    for policy in policy_order:
+        pol_df = mpc_df[mpc_df["policy"] == policy]
+        curves = []
+        for _, sg in pol_df.groupby("seed"):
+            sg = sg.sort_values("t")
+            t_max = sg["t"].max()
+            if t_max <= 0:
+                continue
+            t_norm = sg["t"].values / t_max
+            curves.append(np.interp(t_grid, t_norm, sg["alpha_chosen"].values))
+
+        if not curves:
+            continue
+        mat  = np.array(curves)
+        mean = mat.mean(0)
+        std  = mat.std(0)
+        c    = palette[policy]
+        ax.plot(t_grid, mean, label=policy, color=c, lw=2, linestyle=linestyles[policy])
+        ax.fill_between(t_grid, mean - std, mean + std, alpha=0.15, color=c)
+
+    ax.set_xlabel("Normalised campaign time")
+    ax.set_ylabel(r"Chosen $\alpha^*$")
+    ax.set_title(title, fontweight="bold", pad=10)
+    ax.legend(title="Policy", bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=9)
+    fig.tight_layout()
+    if save:
+        _save(fig, filename)
+    return fig
+
+
 def plot_mpc_alpha_distribution(
     mpc_policies: Dict[str, Any],
     title:        str  = "MPC: chosen α* distribution",

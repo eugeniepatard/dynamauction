@@ -97,6 +97,7 @@ def train_mlp(
     n_episodes: int = 500,
     val_frac: float = 0.15,
     hidden_dims: Optional[List[int]] = None,
+    activation: str = "tanh",
     n_epochs: int = 500,
     lr: float = 1e-3,
     batch_size: int = 256,
@@ -111,7 +112,7 @@ def train_mlp(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     dims_str = "-".join(str(d) for d in hidden_dims)
-    stem = f"{scenario_id}_h{dims_str}_ep{n_episodes}_e{n_epochs}_lr{lr:g}_s{seed}"
+    stem = f"{scenario_id}_h{dims_str}_act{activation}_ep{n_episodes}_e{n_epochs}_lr{lr:g}_s{seed}"
     tb_dir = Path(log_dir) if log_dir else MLP_LOGS_DIR / scenario_id / stem
     tb_dir.mkdir(parents=True, exist_ok=True)
 
@@ -129,7 +130,7 @@ def train_mlp(
 
     print("Training …")
     print(f"  TensorBoard: tensorboard --logdir {tb_dir}")
-    mlp = MLPValuationHead(input_dim=X.shape[1], hidden_dims=hidden_dims)
+    mlp = MLPValuationHead(input_dim=X.shape[1], hidden_dims=hidden_dims, activation=activation)
     mlp.fit(
         X_train, y_train,
         X_val=X_val, y_val=y_val,
@@ -203,6 +204,9 @@ def main() -> None:
     parser.add_argument("--n-episodes",  type=int,   default=500,         help="Rollout episodes for data collection (default: 500).")
     parser.add_argument("--val-frac",    type=float, default=0.2,        help="Fraction of samples held out for validation (default: 0.15).")
     parser.add_argument("--hidden-dims", type=int,   nargs="+", default=[64, 64], help="Hidden layer widths (default: 64 64).")
+    parser.add_argument("--activation",  type=str,   default="tanh",
+                        choices=["tanh", "relu", "leaky_relu"],
+                        help="Hidden layer activation (default: tanh).")
     parser.add_argument("--n-epochs",    type=int,   default=500,         help="Training epochs (default: 500).")
     parser.add_argument("--lr",          type=float, default=1e-3,        help="Adam learning rate (default: 1e-3).")
     parser.add_argument("--batch-size",  type=int,   default=256,         help="Mini-batch size (default: 256).")
@@ -215,6 +219,7 @@ def main() -> None:
         n_episodes=args.n_episodes,
         val_frac=args.val_frac,
         hidden_dims=args.hidden_dims,
+        activation=args.activation,
         n_epochs=args.n_epochs,
         lr=args.lr,
         batch_size=args.batch_size,
