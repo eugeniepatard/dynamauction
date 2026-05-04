@@ -1,5 +1,3 @@
-# TODO : mettre une licence
-
 [build-system]
 requires = ["setuptools>=64.0"]
 build-backend = "setuptools.build_meta"
@@ -9,17 +7,34 @@ name = "dynamauction"
 version = "0.1.0"
 description = "Kernel causal models for repeated auctions with dynamic values"
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.9"
 
+[[project.authors]]
+name = "Anonymous Authors"
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
 dependencies = [
-  "numpy",
-  "scikit-learn",
-  "matplotlib",
-  "scipy",
-  "pandas",
-  "gymnasium",
-  "torch",
-  "tqdm",
+  "numpy>=1.24",
+  "scikit-learn>=1.2",
+  "matplotlib>=3.7",
+  "scipy>=1.10",
+  "pandas>=2.0",
+  "gymnasium>=0.29",
+  "torch>=2.0",
+  "tqdm>=4.65",
 ]
 
 [project.optional-dependencies]
@@ -41,3 +56,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["dynamauction*"] # limits what gets installed excludes benchmark/, tests/, docs/
+
+[tool.pytest.ini_options]
+markers = ["slow: marks tests as slow (deselect with -m 'not slow')"]
