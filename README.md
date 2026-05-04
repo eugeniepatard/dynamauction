@@ -32,8 +32,8 @@ The figure below shows a sample campaign: grey dots are lost auctions, green dot
 ## Installation
 
 ```bash
-git clone https://github.com/your-repo/repeated-auction-dynamic-value.git
-cd repeated-auction-dynamic-value
+git clone https://github.com/eugeniepatard/dynamauction.git
+cd dynamauction
 pip install -e .                    # core library
 pip install -e ".[benchmark]"       # + benchmark dependencies (SB3, TensorBoard, …)
 pip install -e ".[dev]"             # + development tools (pytest, black, flake8)
