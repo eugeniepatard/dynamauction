@@ -35,9 +35,9 @@ import numpy as np
 import pandas as pd
 import gymnasium as gym
 
-import dynamicauc as dac
-from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
-from dynamicauc.baseline import (
+import dynamauction as dac
+from dynamauction.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
+from dynamauction.baseline import (
     SimulationEstimator,
     GreedyMyopicPolicy,
     ShadingPolicy,
@@ -52,7 +52,7 @@ from benchmark.train_rl import (
     load_model,
 )
 from benchmark.train_mlp import load_mlp
-from dynamicauc.wrappers import SB3PolicyWrapper
+from dynamauction.wrappers import SB3PolicyWrapper
 
 RESULTS_DIR = Path(__file__).parent / "benchmark_results"
 
@@ -152,7 +152,7 @@ def evaluate_policy(
     cfg:         EvalConfig,
     policy_name: str,
 ) -> pd.DataFrame:
-    env    = gym.make("DynamicAuction-v0", scenario=scenario)
+    env    = gym.make("DynamAuction-v0", scenario=scenario)
     frames = []
     for s in tqdm(cfg.seeds, desc=f"Evaluating {policy_name}", unit="seed"):
         frames.append(_run_episode(policy, env, s, policy_name))
@@ -266,7 +266,7 @@ def get_rl_policies(
     algos: List[str] = ("ppo", "sac", "td3"),
     mask_expected_reward: bool = True,
 ) -> Dict[str, SB3PolicyWrapper]:
-    raw_env   = gym.make("DynamicAuction-v0", scenario=scenario)
+    raw_env   = gym.make("DynamAuction-v0", scenario=scenario)
     obs_space = raw_env.observation_space
     raw_env.close()
 
