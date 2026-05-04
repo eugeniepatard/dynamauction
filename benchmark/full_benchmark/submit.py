@@ -7,7 +7,7 @@ Jobs are split by policy group so each runs independently:
   mpc           — 1 job per horizon_eta × mpc_horizon
   mpc_oracle    — 1 job per horizon_eta × mpc_horizon
   mpc_timebin   — 1 job per horizon_eta × mpc_horizon × n_bins
-  rl            — 1 job per horizon_eta (via run_rl.py, requires model paths)
+  rl            — 1 job per horizon_eta × algo
 
 Default: submit all job types for all horizon_etas.
 
@@ -16,8 +16,8 @@ Usage (from repo root, on the cluster)
     python benchmark/full_benchmark/submit.py --dry-run
     python benchmark/full_benchmark/submit.py
     python benchmark/full_benchmark/submit.py --job-types greedy_fipla shading mpc mpc_timebin
-    python benchmark/full_benchmark/submit.py --job-types rl \\
-        --ppo-model /scratch/epatard/models/ppo/best_model
+    python benchmark/full_benchmark/submit.py --job-types rl
+    python benchmark/full_benchmark/submit.py --job-types rl --algos ppo td3
     python benchmark/full_benchmark/submit.py --horizon-etas 50 100
 """
 from __future__ import annotations
@@ -36,9 +36,13 @@ from benchmark.full_benchmark.run import (
     MPC_HORIZONS,
     MPC_N_BINS,
     JOB_TYPES,
+    _DEFAULT_PPO_MODEL,
+    _DEFAULT_SAC_MODEL,
+    _DEFAULT_TD3_MODEL,
 )
 
 HORIZON_ETAS = [50, 100]
+RL_ALGOS     = ["ppo", "sac", "td3"]
 
 _SCRATCH_DIR         = Path("/scratch/epatard")
 _SUBMITIT_LOG_FOLDER = str(_SCRATCH_DIR / "submitit_logs" / "full_benchmark" / "%j")
@@ -54,32 +58,54 @@ SLURM_PARAMS: dict[str, Any] = {
     "slurm_signal_delay_s":  120,
 }
 
+# run_job positional order:
+#   horizon_eta, job_type, mpc_horizon, n_bins, mlp_model,
+#   ppo_model, sac_model, td3_model, algos, n_seeds, out_dir, n_workers
+_ALGO_MODEL_IDX = {"ppo": 5, "sac": 6, "td3": 7}  # position of each model arg in the tuple
 
-def _build_planning_jobs(
+
+def _planning_tuple(eta, jt, H, K, n_seeds, n_workers):
+    return (eta, jt, H, K, None, None, None, None, None, n_seeds, None, n_workers)
+
+
+def _rl_tuple(eta, algo, model_path, n_seeds, n_workers):
+    ppo = model_path if algo == "ppo" else None
+    sac = model_path if algo == "sac" else None
+    td3 = model_path if algo == "td3" else None
+    return (eta, "rl", 0.0, 2, None, ppo, sac, td3, [algo], n_seeds, None, n_workers)
+
+
+def _build_jobs(
     horizon_etas: list[int],
-    job_types: list[str],
+    planning_types: list[str],
+    rl_algos: list[str],
+    algo_models: dict[str, Path],
     n_seeds: int,
     n_workers: int | None,
 ) -> list[tuple]:
-    """Build the list of (positional) argument tuples for run_job."""
     jobs = []
+
     for eta in horizon_etas:
-        for jt in job_types:
+        for jt in planning_types:
             if jt in ("greedy_fipla", "shading"):
-                # mpc_horizon and n_bins are ignored for these types
-                jobs.append((eta, jt, 0.0, 2, n_seeds, None, None, n_workers))
+                jobs.append(_planning_tuple(eta, jt, 0.0, 2, n_seeds, n_workers))
             elif jt in ("mpc", "mpc_oracle"):
                 for H in MPC_HORIZONS:
-                    jobs.append((eta, jt, H, 2, n_seeds, None, None, n_workers))
+                    jobs.append(_planning_tuple(eta, jt, H, 2, n_seeds, n_workers))
             elif jt == "mpc_timebin":
                 for H in MPC_HORIZONS:
                     for K in MPC_N_BINS:
-                        jobs.append((eta, jt, H, K, n_seeds, None, None, n_workers))
+                        jobs.append(_planning_tuple(eta, jt, H, K, n_seeds, n_workers))
+
+        for algo in rl_algos:
+            jobs.append(_rl_tuple(eta, algo, algo_models[algo], n_seeds, n_workers))
+
     return jobs
 
 
 def main() -> None:
-    all_types = list(JOB_TYPES) + ["rl"]
+    planning_only_types = [jt for jt in JOB_TYPES if jt != "rl"]
+    all_types           = planning_only_types + ["rl"]
 
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -91,69 +117,69 @@ def main() -> None:
     )
     parser.add_argument(
         "--horizon-etas", type=int, nargs="+", default=HORIZON_ETAS,
-        help=f"horizon_eta values to submit (default: {HORIZON_ETAS}).",
+        help=f"horizon_eta values (default: {HORIZON_ETAS}).",
     )
-    parser.add_argument("--n-seeds",    type=int,  default=30)
-    parser.add_argument("--n-workers",  type=int,  default=None,
+    parser.add_argument(
+        "--algos", nargs="+", choices=RL_ALGOS, default=RL_ALGOS,
+        help=f"RL algorithms to submit (default: all). Only used when rl is in --job-types.",
+    )
+    parser.add_argument("--n-seeds",   type=int,  default=30)
+    parser.add_argument("--n-workers", type=int,  default=None,
                         help="Worker processes per job (default: SLURM_CPUS_PER_TASK).")
-    parser.add_argument("--dry-run",    action="store_true")
+    parser.add_argument("--dry-run",   action="store_true")
     parser.add_argument("--log-folder", default=_SUBMITIT_LOG_FOLDER)
-    parser.add_argument("--ppo-model",  type=Path, default=None,
-                        help="PPO best_model path (without .zip) — forwarded to RL jobs.")
-    parser.add_argument("--sac-model",  type=Path, default=None,
-                        help="SAC best_model path (without .zip) — forwarded to RL jobs.")
-    parser.add_argument("--td3-model",  type=Path, default=None,
-                        help="TD3 best_model path (without .zip) — forwarded to RL jobs.")
+    parser.add_argument("--ppo-model", type=Path, default=None,
+                        help=f"PPO model path (without .zip). Default: {_DEFAULT_PPO_MODEL}")
+    parser.add_argument("--sac-model", type=Path, default=None,
+                        help=f"SAC model path (without .zip). Default: {_DEFAULT_SAC_MODEL}")
+    parser.add_argument("--td3-model", type=Path, default=None,
+                        help=f"TD3 model path (without .zip). Default: {_DEFAULT_TD3_MODEL}")
     args = parser.parse_args()
 
     planning_types = [jt for jt in args.job_types if jt != "rl"]
-    do_rl          = "rl" in args.job_types
+    rl_algos       = args.algos if "rl" in args.job_types else []
 
-    planning_jobs = _build_planning_jobs(
-        args.horizon_etas, planning_types, args.n_seeds, args.n_workers
+    algo_models = {
+        "ppo": args.ppo_model or _DEFAULT_PPO_MODEL,
+        "sac": args.sac_model or _DEFAULT_SAC_MODEL,
+        "td3": args.td3_model or _DEFAULT_TD3_MODEL,
+    }
+
+    all_jobs = _build_jobs(
+        args.horizon_etas, planning_types, rl_algos, algo_models,
+        args.n_seeds, args.n_workers,
     )
 
-    # RL jobs: (horizon_eta, n_seeds, out_dir, n_workers, ppo, sac, td3)
-    rl_jobs: list[tuple] = []
-    if do_rl:
-        for eta in args.horizon_etas:
-            rl_jobs.append((
-                eta, args.n_seeds, None, args.n_workers,
-                args.ppo_model, args.sac_model, args.td3_model,
-            ))
-
-    total = len(planning_jobs) + len(rl_jobs)
+    n_planning = sum(1 for j in all_jobs if j[1] != "rl")
+    n_rl       = sum(1 for j in all_jobs if j[1] == "rl")
 
     print(f"Job breakdown (dry-run={args.dry_run}):")
     print(f"  horizon_etas  : {args.horizon_etas}")
     print(f"  planning types: {planning_types}")
-    print(f"  planning jobs : {len(planning_jobs)}")
-    print(f"  RL jobs       : {len(rl_jobs)}")
-    print(f"  Total         : {total}")
+    print(f"  RL algos      : {rl_algos}")
+    print(f"  planning jobs : {n_planning}")
+    print(f"  RL jobs       : {n_rl}  (1 per eta × algo)")
+    print(f"  Total         : {len(all_jobs)}")
 
     if args.dry_run:
-        for job_args in planning_jobs:
-            eta, jt, H, K, *_ = job_args
-            print(f"  [DRY RUN] run_job(eta={eta}, type={jt}, H={H:g}, K={K})")
-        for job_args in rl_jobs:
-            eta, *_ = job_args
-            print(f"  [DRY RUN] run_rl_job(eta={eta})")
-        print(f"\nTotal: {total} jobs (dry run, nothing submitted)")
+        for j in all_jobs:
+            eta, jt, H, K = j[0], j[1], j[2], j[3]
+            algos = j[8]
+            if jt == "rl":
+                print(f"  [DRY RUN] run_job(eta={eta}, type=rl, algo={algos[0]})")
+            else:
+                print(f"  [DRY RUN] run_job(eta={eta}, type={jt}, H={H:g}, K={K})")
+        print(f"\nTotal: {len(all_jobs)} jobs (dry run, nothing submitted)")
+        return
+
+    if not all_jobs:
+        print("Nothing to submit.")
         return
 
     executor = submitit.AutoExecutor(folder=args.log_folder)
-    job_ids: list[str] = []
-
-    if planning_jobs:
-        executor.update_parameters(**SLURM_PARAMS, slurm_job_name="dynac_bench")
-        p_jobs = executor.map_array(run_job, *zip(*planning_jobs))
-        job_ids.extend(j.job_id for j in p_jobs)
-
-    if rl_jobs:
-        from benchmark.full_benchmark.run_rl import run_rl_job
-        executor.update_parameters(**SLURM_PARAMS, slurm_job_name="dynac_rl_bench")
-        r_jobs = executor.map_array(run_rl_job, *zip(*rl_jobs))
-        job_ids.extend(j.job_id for j in r_jobs)
+    executor.update_parameters(**SLURM_PARAMS, slurm_job_name="dynac_bench")
+    jobs    = executor.map_array(run_job, *zip(*all_jobs))
+    job_ids = [j.job_id for j in jobs]
 
     print(f"\nSubmitted {len(job_ids)} jobs — IDs: {job_ids[0]} … {job_ids[-1]}")
     print(f"Check status  : squeue -u epatard")
