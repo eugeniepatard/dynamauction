@@ -3,9 +3,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
 
-**DynamAuction** is a Python library for simulating repeated auction environments in which the value of a display evolves over time and depends on the history of previous interactions.
+**DynamAuction** is a [Gymnasium](https://gymnasium.farama.org/)-compatible reinforcement learning environment for repeated auctions with dynamic display value.
 
-It provides a modular **kernel causal model** framework for display advertising, a standardized [Gymnasium](https://gymnasium.farama.org/)-compatible environment, and a full suite of baseline bidding policies — from simple heuristics to model-predictive control — for benchmarking sequential decision-making under dynamic, history-dependent value generation.
+It is built on a **kernel causal model** that captures realistic advertiser dynamics — frequency saturation, recency effects, delayed conversions, and competitor interference — making it suitable for studying sequential bidding policies in non-stationary settings. The library also ships a modular simulator for multi-policy comparison and a full suite of baseline policies, from simple heuristics to model-predictive control.
 
 ---
 
