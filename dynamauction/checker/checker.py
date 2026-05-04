@@ -1,4 +1,3 @@
-# TODO : enlever ce fichier peut-être
 """
 check_env: a Gymnasium-style sanity checker for AuctionEnv.
 

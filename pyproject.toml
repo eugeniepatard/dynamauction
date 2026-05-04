@@ -1,8 +1,4 @@
-# TODO: Créer fonction visualisation
 # TODO : mettre une licence
-# TODO : Ajouter autres baselines (ex: bidding policy)
-# TODO : Ajouter un moyen de créer automatoquement les nouvelles optionsdans registery (si qqun rajoute un new kernel rajouter cette option
-# dans create_kernel())
 
 [build-system]
 requires = ["setuptools>=64.0"]
@@ -14,10 +10,6 @@ version = "0.1.0"
 description = "Kernel causal models for repeated auctions with dynamic values"
 readme = "README.md"
 requires-python = ">=3.9"
-
-authors = [
-  { name = "Your Name", email = "your@email.com" }
-]
 
 dependencies = [
   "numpy",
