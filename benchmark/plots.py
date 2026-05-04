@@ -342,8 +342,10 @@ def plot_cumulative_reward(
     filename:   str                 = "cumulative_reward.pdf",
 ) -> plt.Figure:
     """
-    Mean ± std cumulative reward trajectories over time, interpolated onto a
-    common time grid across seeds.
+    Mean ± std cumulative reward trajectories over normalised campaign time.
+
+    Time is normalised to [0, 1] per (policy, seed) pair before averaging,
+    so campaigns of different lengths are aligned.
     """
     _style()
     plot_df = df[df["policy"].isin(policies)].copy() if policies else df.copy()
@@ -352,15 +354,20 @@ def plot_cumulative_reward(
     palette    = _make_palette(names)
     linestyles = _make_linestyles(names)
 
-    mean_max_t = plot_df.groupby("seed")["t"].max().mean()
-    t_grid     = np.linspace(plot_df["t"].min(), mean_max_t, num_points)
-    fig, ax    = plt.subplots(figsize=(8, 5))
+    t_grid = np.linspace(0.0, 1.0, num_points)
+    fig, ax = plt.subplots(figsize=(8, 5))
 
     for policy, grp in plot_df.groupby("policy"):
-        curves = [
-            np.interp(t_grid, sg.sort_values("t")["t"], sg.sort_values("t")["cum_reward"])
-            for _, sg in grp.groupby("seed")
-        ]
+        curves = []
+        for _, sg in grp.groupby("seed"):
+            sg = sg.sort_values("t")
+            t_max = sg["t"].max()
+            if t_max <= 0:
+                continue
+            t_norm = sg["t"].values / t_max
+            curves.append(np.interp(t_grid, t_norm, sg["cum_reward"].values))
+        if not curves:
+            continue
         mat  = np.array(curves)
         mean = mat.mean(0)
         std  = mat.std(0)
@@ -368,7 +375,7 @@ def plot_cumulative_reward(
         ax.plot(t_grid, mean, label=policy, color=c, lw=2, linestyle=linestyles[policy])
         ax.fill_between(t_grid, mean - std, mean + std, alpha=0.15, color=c)
 
-    ax.set_xlabel(r"Campaign time $t$")
+    ax.set_xlabel("Normalised campaign time")
     ax.set_ylabel("Cumulative net reward")
     ax.set_title(title, fontweight="bold", pad=10)
     ax.legend(title="Policy", bbox_to_anchor=(1.02, 1), loc="upper left")
@@ -507,9 +514,12 @@ def plot_context_dynamics(
 ) -> plt.Figure:
     """
     Two-panel figure:
-      * Top   — context / saturation state over campaign time
-      * Bottom — expected reward over campaign time
+      * Top   — context / saturation state over normalised campaign time
+      * Bottom — expected reward over normalised campaign time
     Both with mean ± std bands across seeds.
+
+    Time is normalised to [0, 1] per (policy, seed) pair before averaging,
+    so campaigns of different lengths are aligned.
     """
     _style()
     plot_df    = df[df["policy"].isin(policies)].copy() if policies else df.copy()
@@ -517,8 +527,7 @@ def plot_context_dynamics(
     palette    = _make_palette(names)
     linestyles = _make_linestyles(names)
 
-    mean_max_t = plot_df.groupby("seed")["t"].max().mean()
-    t_grid     = np.linspace(plot_df["t"].min(), mean_max_t, num_points)
+    t_grid = np.linspace(0.0, 1.0, num_points)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 7), sharex=True)
     fig.suptitle(title, fontweight="bold", fontsize=13)
@@ -527,10 +536,16 @@ def plot_context_dynamics(
         c  = palette[policy]
         ls = linestyles[policy]
         for ax, col in ((ax1, "ctx"), (ax2, "expected_reward")):
-            curves = [
-                np.interp(t_grid, sg.sort_values("t")["t"], sg.sort_values("t")[col])
-                for _, sg in grp.groupby("seed")
-            ]
+            curves = []
+            for _, sg in grp.groupby("seed"):
+                sg = sg.sort_values("t")
+                t_max = sg["t"].max()
+                if t_max <= 0:
+                    continue
+                t_norm = sg["t"].values / t_max
+                curves.append(np.interp(t_grid, t_norm, sg[col].values))
+            if not curves:
+                continue
             mat  = np.array(curves)
             mean = mat.mean(0)
             std  = mat.std(0)
@@ -539,7 +554,7 @@ def plot_context_dynamics(
 
     ax1.set_ylabel("Context (kernel state)")
     ax1.legend(title="Policy", bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=9)
-    ax2.set_xlabel(r"Campaign time $t$")
+    ax2.set_xlabel("Normalised campaign time")
     ax2.set_ylabel(r"Expected reward $\hat{R}$")
 
     fig.tight_layout()
