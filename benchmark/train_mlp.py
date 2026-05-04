@@ -6,6 +6,8 @@ Usage
     python -m benchmark.train_mlp
     python -m benchmark.train_mlp --n-episodes 500 --n-epochs 600 --lr 3e-4
     python -m benchmark.train_mlp --hidden-dims 128 128 --val-frac 0.2
+    python -m benchmark.train_mlp --tensorboard          # launch TensorBoard live
+    python -m benchmark.train_mlp --tensorboard --port 6007
 
 Outputs (benchmark/models/mlp_valuation_head/)
 ----------------------------------------------
@@ -18,6 +20,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import signal
+import subprocess
+import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -199,10 +205,22 @@ def load_mlp(scenario_id: str = SCENARIO_ID, path: Optional[str] = None) -> MLPV
     return mlp
 
 
+def _start_tensorboard(log_dir: Path, port: int) -> subprocess.Popen:
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "tensorboard.main", "--logdir", str(log_dir), "--port", str(port)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    time.sleep(2)
+    print(f"\n  TensorBoard running → http://localhost:{port}")
+    print(  "  (open in your browser; updates every ~30 s during training)\n")
+    return proc
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train MLPValuationHead for MPCPolicy.")
     parser.add_argument("--n-episodes",  type=int,   default=500,         help="Rollout episodes for data collection (default: 500).")
-    parser.add_argument("--val-frac",    type=float, default=0.2,        help="Fraction of samples held out for validation (default: 0.15).")
+    parser.add_argument("--val-frac",    type=float, default=0.2,         help="Fraction of samples held out for validation (default: 0.15).")
     parser.add_argument("--hidden-dims", type=int,   nargs="+", default=[64, 64], help="Hidden layer widths (default: 64 64).")
     parser.add_argument("--activation",  type=str,   default="tanh",
                         choices=["tanh", "relu", "leaky_relu"],
@@ -210,23 +228,47 @@ def main() -> None:
     parser.add_argument("--n-epochs",    type=int,   default=500,         help="Training epochs (default: 500).")
     parser.add_argument("--lr",          type=float, default=1e-3,        help="Adam learning rate (default: 1e-3).")
     parser.add_argument("--batch-size",  type=int,   default=256,         help="Mini-batch size (default: 256).")
-    parser.add_argument("--seed",        type=int,   default=42,           help="Base random seed (default: 0).")
+    parser.add_argument("--seed",        type=int,   default=42,           help="Base random seed (default: 42).")
     parser.add_argument("--save-dir",    type=str,   default=None,        help="Override output directory.")
     parser.add_argument("--log-dir",     type=str,   default=None,        help="Override TensorBoard log directory.")
+    parser.add_argument("--tensorboard", action="store_true",             help="Launch TensorBoard in the background during training.")
+    parser.add_argument("--port",        type=int,   default=6006,        help="TensorBoard port (default: 6006).")
     args = parser.parse_args()
 
-    train_mlp(
-        n_episodes=args.n_episodes,
-        val_frac=args.val_frac,
-        hidden_dims=args.hidden_dims,
-        activation=args.activation,
-        n_epochs=args.n_epochs,
-        lr=args.lr,
-        batch_size=args.batch_size,
-        seed=args.seed,
-        save_dir=args.save_dir,
-        log_dir=args.log_dir,
-    )
+    log_dir = Path(args.log_dir) if args.log_dir else MLP_LOGS_DIR
+
+    tb_proc: Optional[subprocess.Popen] = None
+    if args.tensorboard:
+        tb_proc = _start_tensorboard(log_dir, args.port)
+
+    def _cleanup(sig=None, frame=None):
+        if tb_proc is not None and tb_proc.poll() is None:
+            print("\nStopping TensorBoard …")
+            tb_proc.terminate()
+        sys.exit(0)
+
+    if tb_proc is not None:
+        signal.signal(signal.SIGINT,  _cleanup)
+        signal.signal(signal.SIGTERM, _cleanup)
+
+    try:
+        train_mlp(
+            n_episodes=args.n_episodes,
+            val_frac=args.val_frac,
+            hidden_dims=args.hidden_dims,
+            activation=args.activation,
+            n_epochs=args.n_epochs,
+            lr=args.lr,
+            batch_size=args.batch_size,
+            seed=args.seed,
+            save_dir=args.save_dir,
+            log_dir=args.log_dir,
+        )
+    finally:
+        if tb_proc is not None and tb_proc.poll() is None:
+            print(f"\nTraining finished.  TensorBoard still running at http://localhost:{args.port}")
+            print("Press Ctrl-C to stop it.")
+            tb_proc.wait()
 
 
 if __name__ == "__main__":

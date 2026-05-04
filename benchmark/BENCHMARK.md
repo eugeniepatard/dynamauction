@@ -152,8 +152,8 @@ These three policy families require a pre-trained `MLPValuationHead` that approx
 # Train with the configuration used in the paper
 python -m benchmark.train_mlp --n-episodes 500 --n-epochs 500 --hidden-dims 128 128 --seed 42
 
-# Monitor training in TensorBoard (logs written automatically)
-tensorboard --logdir benchmark/logs/mlp_valuation_head
+# Train and launch TensorBoard live (open http://localhost:6006)
+python -m benchmark.train_mlp --n-episodes 500 --n-epochs 500 --hidden-dims 128 128 --seed 42 --tensorboard
 ```
 
 | Parameter | Value used in paper |
@@ -182,32 +182,7 @@ Outputs written to `benchmark/models/mlp_valuation_head/`:
 
 ## Evaluation Protocol
 
-A single script `benchmark/full_benchmark/run.py` evaluates all policies (planning baselines and, optionally, RL agents) for a given `horizon_eta`.
-
-Evaluation parameters (shading factors, MPC horizons, α candidates, etc.) are declared in **`benchmark/conf/eval.yaml`** and loaded automatically. RL model paths are also configured there.
-
-### Running the benchmark
-
-```bash
-# Planning baselines only (FiPla, GreedyMyopic, Shading×4, MPC×6, MPCOracle×6, MPCTimeBinned×24)
-python benchmark/full_benchmark/run.py --horizon-eta 50
-python benchmark/full_benchmark/run.py --horizon-eta 100
-
-# RL + planning: set rl_models paths in benchmark/conf/eval.yaml, then run the same command
-python benchmark/full_benchmark/run.py --horizon-eta 50
-
-# Or pass model paths directly on the command line (overrides eval.yaml)
-python benchmark/full_benchmark/run.py --horizon-eta 50 \
-    --ppo-model /scratch/epatard/models/ppo/best_model \
-    --sac-model /scratch/epatard/models/sac/best_model \
-    --td3-model /scratch/epatard/models/td3/best_model
-
-# Use a custom config file
-python benchmark/full_benchmark/run.py --horizon-eta 50 --config /path/to/eval.yaml
-```
-
-When RL models are found the output filename carries an `_rl` suffix
-(`<scenario_id>_eta<η>_rl_<timestamp>.csv`); otherwise the suffix is omitted.
+The evaluation entry-point is `benchmark/evaluate.py`. It evaluates all policies (planning baselines and, optionally, RL agents) sequentially.
 
 ### Shared evaluation parameters
 
@@ -275,9 +250,12 @@ Results are written to `benchmark/full_benchmark/results/` (local) or `/scratch/
 
 ### 5. Generate plots
 
-Open and execute `benchmark/benchmark_results.ipynb`.
+```bash
+python -m benchmark.plots --horizon-eta 50
+python -m benchmark.plots --horizon-eta 100
+```
 
-Output PDFs are written to `benchmark/plots/`.
+Output PDFs are written to `benchmark/plots/` (gitignored — generated on demand).
 
 ---
 
