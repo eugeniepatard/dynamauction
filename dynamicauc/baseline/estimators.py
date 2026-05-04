@@ -112,15 +112,26 @@ class SimulationEstimator:
 
         return (v1_sum - v0_sum) / self.n_rollouts
 
+_ACTIVATIONS = {
+    "tanh":       nn.Tanh,
+    "relu":       nn.ReLU,
+    "leaky_relu": nn.LeakyReLU,
+}
+
+
 class _MLPNet(nn.Module):
     """MLP backbone."""
 
-    def __init__(self, input_dim: int, hidden_dims: Sequence[int]) -> None:
+    def __init__(self, input_dim: int, hidden_dims: Sequence[int],
+                 activation: str = "tanh") -> None:
         super().__init__()
+        if activation not in _ACTIVATIONS:
+            raise ValueError(f"Unknown activation {activation!r}. Choose from {list(_ACTIVATIONS)}.")
+        act_cls = _ACTIVATIONS[activation]
         layers: list = []
         prev = input_dim
         for h in hidden_dims:
-            layers += [nn.Linear(prev, h), nn.Tanh()]
+            layers += [nn.Linear(prev, h), act_cls()]
             prev = h
         layers.append(nn.Linear(prev, 1))
         self.net = nn.Sequential(*layers)
@@ -168,10 +179,12 @@ class MLPValuationHead:
         self,
         input_dim: int,
         hidden_dims: Sequence[int] = (64, 64),
+        activation: str = "tanh",
     ) -> None:
         self.input_dim = input_dim
         self.hidden_dims = list(hidden_dims)
-        self._net = _MLPNet(input_dim, self.hidden_dims)
+        self.activation = activation
+        self._net = _MLPNet(input_dim, self.hidden_dims, activation)
 
     def fit(
         self,
@@ -300,6 +313,7 @@ class MLPValuationHead:
             {
                 "input_dim":   self.input_dim,
                 "hidden_dims": self.hidden_dims,
+                "activation":  self.activation,
                 "state_dict":  self._net.state_dict(),
             },
             path,
@@ -331,7 +345,8 @@ class MLPValuationHead:
                 weights = [v for k, v in data["state_dict"].items() if k.endswith(".weight")]
                 hidden_dims = [w.shape[0] for w in weights[:-1]]
 
-        obj = cls(input_dim=data["input_dim"], hidden_dims=hidden_dims)
+        activation = data.get("activation", "tanh")  # backward-compat default
+        obj = cls(input_dim=data["input_dim"], hidden_dims=hidden_dims, activation=activation)
         obj._net.load_state_dict(data["state_dict"])
         obj._net.eval()
         return obj
