@@ -8,7 +8,7 @@ Tests for dynamauction/baseline/baseline_algo.py:
 """
 import numpy as np
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from dynamauction import AuctionEnv
 from dynamauction.baseline.baseline_algo import (
@@ -350,3 +350,123 @@ class TestMPCTimeBinnedPolicy:
         assert len(policy.alpha_log) == 1
         policy.bid(obs)
         assert len(policy.alpha_log) == 2
+
+
+class TestNoOracleAccess:
+    """
+    MPCPolicy and MPCTimeBinnedPolicy must not see the true future auction schedule.
+    They must call _resample_remaining_horizon on every rollout copy to replace the
+    pre-baked horizon and arrival times with a fresh independent draw.
+    MPCOraclePolicy is the deliberate exception: it skips resampling (oracle access).
+    """
+
+    # ── mechanism tests: count _resample_remaining_horizon invocations ────────
+
+    def test_mpc_calls_resample_per_rollout(self, mock_mlp, live_env):
+        """_resample_remaining_horizon is called exactly n_candidates × n_rollouts times."""
+        env, obs = live_env
+        n_candidates, n_rollouts = 3, 4
+        policy = MPCPolicy(
+            v0=mock_mlp,
+            alpha_candidates=[0.5, 1.0, 1.5],
+            n_rollouts=n_rollouts,
+            planning_horizon=0.0,
+        )
+        policy.set_env(env)
+
+        with patch("dynamauction.baseline.baseline_algo._resample_remaining_horizon") as mock_resample:
+            policy.bid(obs)
+
+        assert mock_resample.call_count == n_candidates * n_rollouts
+
+    def test_mpc_timebinned_calls_resample_per_rollout(self, mock_mlp, live_env):
+        """MPCTimeBinnedPolicy calls _resample_remaining_horizon once per (candidate_vec × rollout)."""
+        env, obs = live_env
+        n_candidates, n_bins, n_rollouts = 2, 2, 3
+        policy = MPCTimeBinnedPolicy(
+            v0=mock_mlp,
+            alpha_candidates=[0.8, 1.2],
+            n_bins=n_bins,
+            n_rollouts=n_rollouts,
+            planning_horizon=0.0,
+        )
+        policy.set_env(env)
+
+        with patch("dynamauction.baseline.baseline_algo._resample_remaining_horizon") as mock_resample:
+            policy.bid(obs)
+
+        assert mock_resample.call_count == (n_candidates ** n_bins) * n_rollouts
+
+    def test_mpc_oracle_never_calls_resample(self, mock_mlp, live_env):
+        """MPCOraclePolicy never calls _resample_remaining_horizon (oracle access by design)."""
+        env, obs = live_env
+        policy = MPCOraclePolicy(
+            v0=mock_mlp,
+            alpha_candidates=[0.5, 1.0, 1.5],
+            n_rollouts=4,
+            planning_horizon=0.0,
+        )
+        policy.set_env(env)
+
+        with patch("dynamauction.baseline.baseline_algo._resample_remaining_horizon") as mock_resample:
+            policy.bid(obs)
+
+        assert mock_resample.call_count == 0
+
+    # ── behavioral tests: verify actual auction_times state ───────────────────
+
+    def test_mpc_rollout_copies_have_resampled_auction_times(self, mock_mlp, live_env):
+        """After resampling, rollout copies have auction_times different from the live env."""
+        from dynamauction.baseline.utils import _resample_remaining_horizon as real_fn
+
+        env, obs = live_env
+        original_times = env.unwrapped.auction_times.copy()
+
+        captured_after: list = []
+
+        def spy(env_copy, rng):
+            real_fn(env_copy, rng)
+            captured_after.append(env_copy.unwrapped.auction_times.copy())
+
+        policy = MPCPolicy(
+            v0=mock_mlp,
+            alpha_candidates=[1.0],
+            n_rollouts=2,
+            planning_horizon=5.0,
+        )
+        policy.set_env(env)
+
+        with patch("dynamauction.baseline.baseline_algo._resample_remaining_horizon", side_effect=spy):
+            policy.bid(obs)
+
+        assert len(captured_after) > 0
+        for times in captured_after:
+            assert not np.array_equal(times, original_times), (
+                "Rollout copy retains original auction_times — _resample_remaining_horizon had no effect."
+            )
+
+    def test_live_env_auction_times_unchanged_after_mpc_bid(self, mock_mlp, live_env):
+        """MPCPolicy rollout deepcopies never mutate the live env's auction_times."""
+        env, obs = live_env
+        original_times = env.unwrapped.auction_times.copy()
+
+        policy = MPCPolicy(
+            v0=mock_mlp, alpha_candidates=[1.0], n_rollouts=3, planning_horizon=5.0
+        )
+        policy.set_env(env)
+        policy.bid(obs)
+
+        assert np.array_equal(env.unwrapped.auction_times, original_times)
+
+    def test_live_env_auction_times_unchanged_after_oracle_bid(self, mock_mlp, live_env):
+        """MPCOraclePolicy rollout deepcopies never mutate the live env's auction_times."""
+        env, obs = live_env
+        original_times = env.unwrapped.auction_times.copy()
+
+        policy = MPCOraclePolicy(
+            v0=mock_mlp, alpha_candidates=[1.0], n_rollouts=3, planning_horizon=5.0
+        )
+        policy.set_env(env)
+        policy.bid(obs)
+
+        assert np.array_equal(env.unwrapped.auction_times, original_times)
