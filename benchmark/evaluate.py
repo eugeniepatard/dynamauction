@@ -1,26 +1,66 @@
 """
-Evaluation and benchmarking for RL and planning policies (sequential).
+Evaluation and benchmarking for RL and planning policies (sequential, single process).
 
-Quick start
------------
-    from benchmark.evaluate import run_full_benchmark, EvalConfig
-    df = run_full_benchmark()
-    from benchmark.evaluate import score_matrix
-    scores = score_matrix(df)
+Output: per-step DataFrame with columns
+    policy, seed, step, t, reward, cum_reward, won, bid, payment,
+    ctx, expected_reward, competing_bid, alpha_chosen
 
-Selecting baselines (CLI)
--------------------------
-    python -m benchmark.evaluate --baselines fipla constant
-    python -m benchmark.evaluate --baselines none   # RL only
+    from benchmark.evaluate import run_full_benchmark, score_matrix, EvalConfig
 
-Available baselines: fipla, constant, random
+    df     = run_full_benchmark()           # all policies, default config
+    scores = score_matrix(df)              # {policy: np.ndarray} for rliable
 
-MPC requires a pre-trained MLPValuationHead — run train_mlp.py first:
-    python -m benchmark.train_mlp
-    python -m benchmark.evaluate --sim-policies mpc
+    # Custom seeds / scenario
+    df = run_full_benchmark(
+        algos=["ppo", "sac"],
+        cfg=EvalConfig(seeds=list(range(1000)), scenario_overrides={"horizon_eta": 50}),
+    )
 
-For parallel execution on a multi-core machine or cluster, use
-benchmark.full_benchmark.parallel_evaluate instead.
+    # Custom policy
+    df = run_full_benchmark(extra_policies={"MyPolicy": MyPolicy()})
+
+    # MPC (requires train_mlp.py first)
+    df = run_full_benchmark(algos=[], cfg=EvalConfig(
+        include_mpc=True, mpc_planning_horizons=[0.0, 7.0, 15.0],
+    ))
+
+CLI (run from repo root):
+    # Paper experiment: all policies, 1000 seeds, η=50
+    python -m benchmark.evaluate --n-seeds 1000 --sim-policies all
+
+    # Baselines only (no RL, no MPC)
+    python -m benchmark.evaluate --algos none --sim-policies none
+
+    # RL only (no baselines, no planning)
+    python -m benchmark.evaluate --baselines none --sim-policies none
+
+    # Single RL algorithm against FiPla
+    python -m benchmark.evaluate --algos ppo --baselines fipla --sim-policies none
+
+    # Shading α sweep (grid search)
+    python -m benchmark.evaluate --algos none --sim-policies shading \
+        --alphas 0.2 0.4 0.6 0.8 1.0 1.2
+
+    # MPC with several planning horizons (needs train_mlp.py first)
+    python -m benchmark.evaluate --algos none --sim-policies mpc \
+        --mpc-horizons 0 4 7 10 15 25
+
+    # MPCTimeBinned (needs train_mlp.py first)
+    python -m benchmark.evaluate --algos none --sim-policies mpc-timebin \
+        --mpc-horizons 7 15
+
+    # All MPC variants together
+    python -m benchmark.evaluate --algos none \
+        --sim-policies mpc mpc-oracle mpc-timebin --mpc-horizons 7 15
+
+    # Custom MLP weights path
+    python -m benchmark.evaluate --sim-policies mpc \
+        --mpc-models benchmark/models/mlp_valuation_head/my_model.pt
+
+    # Dry run (no CSV saved)
+    python -m benchmark.evaluate --no-save
+
+Results → benchmark/benchmark_results/<scenario_id>_<timestamp>.csv
 """
 from __future__ import annotations
 
@@ -54,9 +94,36 @@ from benchmark.train_rl import (
 from benchmark.train_mlp import load_mlp
 from dynamauction.wrappers import SB3PolicyWrapper
 
+# ── Paths ─────────────────────────────────────────────────────────────────────
+# SCENARIO_ID and MODELS_DIR are imported from train_rl (set via benchmark/conf/train.yaml).
 RESULTS_DIR = Path(__file__).parent / "benchmark_results"
 
-AVAILABLE_BASELINES: List[str] = ["fipla", "constant", "random"]
+# RL model weights — produced by train_rl.py (one sub-folder per algorithm).
+# Expected layout after training:
+#   benchmark/models/ppo/best_model.zip  +  obs_rms.pkl
+#   benchmark/models/sac/best_model.zip  +  obs_rms.pkl
+#   benchmark/models/td3/best_model.zip  +  obs_rms.pkl
+RL_MODEL_PATHS = {algo: MODELS_DIR / algo / "best_model" for algo in ["ppo", "sac", "td3"]}
+
+# MLP valuation head : produced by train_mlp.py. Required for MPC, MPCOracle, MPCTimeBinned.
+# Pass the .pt file path via --mpc-models or EvalConfig(mpc_model_paths=[...]).
+# Default is auto-resolved by load_mlp() from benchmark/models/mlp_valuation_head/.
+MLP_MODEL_PATH: Optional[Path] = None  # set to a Path(...) to hard-code your model
+
+# ── Defaults ──────────────────────────────────────────────────────────────────
+DEFAULT_N_SEEDS              = 30
+DEFAULT_ALGOS                = ["ppo", "sac", "td3"]
+DEFAULT_BASELINES            = ["fipla", "constant", "random"]
+DEFAULT_MAX_BID              = 5.0
+DEFAULT_CONSTANT_BID         = 0.5
+DEFAULT_RANDOM_MAX_BID       = 1.0
+DEFAULT_N_ROLLOUTS           = 10
+DEFAULT_SHADING_ALPHAS       = [0.8]
+DEFAULT_MPC_HORIZONS         = [7.0]
+DEFAULT_MPC_ALPHA_CANDIDATES = [0.6, 0.8, 1.0, 1.2, 1.5]
+DEFAULT_MPC_N_BINS           = [2]
+
+AVAILABLE_BASELINES: List[str] = DEFAULT_BASELINES
 
 
 def _make_baseline(name: str, constant_bid: float, random_max_bid: float) -> tuple[str, BiddingPolicy]:
@@ -75,29 +142,29 @@ def _make_baseline(name: str, constant_bid: float, random_max_bid: float) -> tup
 
 @dataclass
 class EvalConfig:
-    seeds:             List[int] = field(default_factory=lambda: list(range(30)))
-    scenario_id:       str       = SCENARIO_ID
-    scenario_overrides: dict     = field(default_factory=dict)
-    max_bid:           float     = 5.0
-    baselines:            List[str] = field(default_factory=lambda: list(AVAILABLE_BASELINES))
-    constant_bid:         float     = 0.5
-    random_max_bid:       float     = 1.0
-    mask_expected_reward: bool      = True
+    seeds:               List[int] = field(default_factory=lambda: list(range(DEFAULT_N_SEEDS)))
+    scenario_id:         str       = SCENARIO_ID
+    scenario_overrides:  dict      = field(default_factory=dict)
+    max_bid:             float     = DEFAULT_MAX_BID
+    baselines:           List[str] = field(default_factory=lambda: list(DEFAULT_BASELINES))
+    constant_bid:        float     = DEFAULT_CONSTANT_BID
+    random_max_bid:      float     = DEFAULT_RANDOM_MAX_BID
+    mask_expected_reward: bool     = True
     # Simulation-based planning policies
-    policy_seed:                int            = 0
-    include_greedy:              bool           = False
-    include_shading:             bool           = False
-    include_mpc:                 bool           = False
-    include_mpc_oracle:          bool           = False
-    include_mpc_timebin:         bool           = False
-    mpc_n_bins:                  List[int]      = field(default_factory=lambda: [2])
-    simulation_n_rollouts:       int            = 10
-    shading_alphas:              List[float]    = field(default_factory=lambda: [0.8])
-    mpc_model_paths:             List[Optional[str]] = field(default_factory=lambda: [None])
-    mpc_alpha_candidates:        List[float]    = field(default_factory=lambda: [0.6, 0.8, 1.0, 1.2, 1.5])
-    mpc_planning_horizons:       List[float]    = field(default_factory=lambda: [7.0])
+    policy_seed:             int            = 0
+    include_greedy:          bool           = False
+    include_shading:         bool           = False
+    include_mpc:             bool           = False
+    include_mpc_oracle:      bool           = False
+    include_mpc_timebin:     bool           = False
+    mpc_n_bins:              List[int]      = field(default_factory=lambda: list(DEFAULT_MPC_N_BINS))
+    simulation_n_rollouts:   int            = DEFAULT_N_ROLLOUTS
+    shading_alphas:          List[float]    = field(default_factory=lambda: list(DEFAULT_SHADING_ALPHAS))
+    mpc_model_paths:         List[Optional[str]] = field(default_factory=lambda: [None])
+    mpc_alpha_candidates:    List[float]    = field(default_factory=lambda: list(DEFAULT_MPC_ALPHA_CANDIDATES))
+    mpc_planning_horizons:   List[float]    = field(default_factory=lambda: list(DEFAULT_MPC_HORIZONS))
     # Used by parallel_evaluate.benchmark(); ignored here.
-    n_workers:                   Optional[int]  = None
+    n_workers:               Optional[int]  = None
 
 
 def _run_episode(
@@ -161,8 +228,6 @@ def evaluate_policy(
 
 
 def get_planning_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
-    if cfg.baselines == ["none"]:
-        return {}
     policies: Dict[str, BiddingPolicy] = {}
     for name in cfg.baselines:
         label, policy = _make_baseline(name, cfg.constant_bid, cfg.random_max_bid)
@@ -373,48 +438,51 @@ def main():
             "  python -m benchmark.evaluate --sim-policies mpc  # needs train_mlp.py first\n"
         ),
     )
-    parser.add_argument("--algos",           nargs="+", default=["ppo", "sac", "td3"], metavar="ALGO",
+    parser.add_argument("--algos",        nargs="+", default=DEFAULT_ALGOS, metavar="ALGO",
                         help="RL algorithms to evaluate. Use 'none' to skip all.")
-    parser.add_argument("--baselines",       nargs="+", default=AVAILABLE_BASELINES, metavar="BASELINE")
-    parser.add_argument("--policy-seed",    type=float, default=0.0, help="Seed for any policy components that require randomness (e.g. MPC rollouts).")
-    parser.add_argument("--constant-bid",    type=float, default=0.5)
-    parser.add_argument("--random-max-bid",  type=float, default=1.0)
-    parser.add_argument("--n-seeds",         type=int,   default=30)
-    parser.add_argument("--no-save",         action="store_true")
-    parser.add_argument("--no-mask-expected-reward", action="store_true")
-    parser.add_argument(
-        "--sim-policies", nargs="*", default=["all"],
-        choices=["greedy", "shading", "mpc", "mpc-oracle", "mpc-timebin", "all", "none"],
-        metavar="POLICY",
-    )
-    parser.add_argument("--n-rollouts",   type=int,   default=10)
-    parser.add_argument("--alphas",        type=float, nargs="+", default=[0.8],
-                        help="Shading factors α to evaluate (one Shading policy per value).")
+    parser.add_argument("--baselines",    nargs="+", default=DEFAULT_BASELINES, metavar="BASELINE",
+                        help="Simple baselines to include. Use 'none' to skip all.")
+    parser.add_argument("--sim-policies", nargs="+", default=["all"], metavar="POLICY",
+                        choices=["greedy", "shading", "mpc", "mpc-oracle", "mpc-timebin", "all", "none"],
+                        help="Simulation-based planning policies. Use 'none' to skip all.")
+    parser.add_argument("--n-seeds",      type=int,   default=DEFAULT_N_SEEDS)
+    parser.add_argument("--constant-bid", type=float, default=DEFAULT_CONSTANT_BID)
+    parser.add_argument("--random-max-bid", type=float, default=DEFAULT_RANDOM_MAX_BID)
+    parser.add_argument("--policy-seed",  type=float, default=0.0)
+    parser.add_argument("--n-rollouts",   type=int,   default=DEFAULT_N_ROLLOUTS)
+    parser.add_argument("--alphas",       type=float, nargs="+", default=DEFAULT_SHADING_ALPHAS,
+                        help="Shading factors α (one ShadingPolicy per value).")
+    parser.add_argument("--mpc-horizons", type=float, nargs="+", default=DEFAULT_MPC_HORIZONS,
+                        help="Planning horizons H for MPC variants.")
     parser.add_argument("--mpc-models",   type=str,   nargs="+", default=[None],
-                        help="Paths to MLPValuationHead .pt files (default: auto-resolved).")
-    parser.add_argument("--mpc-horizons", type=float, nargs="+", default=[7.0],
-                        help="Planning horizons H to evaluate for MPC.")
+                        help="Paths to MLPValuationHead .pt files (default: auto-resolved from MODELS_DIR).")
+    parser.add_argument("--no-save",      action="store_true")
+    parser.add_argument("--no-mask-expected-reward", action="store_true")
     args = parser.parse_args()
+
+    # Normalize 'none' → empty list uniformly for all three policy groups
+    algos     = [] if "none" in args.algos        else args.algos
+    baselines = [] if "none" in args.baselines     else args.baselines
+    sim_pols  = [] if "none" in args.sim_policies  else args.sim_policies
 
     cfg = EvalConfig(
         seeds=list(range(args.n_seeds)),
-        baselines=args.baselines,
+        baselines=baselines,
         constant_bid=args.constant_bid,
         random_max_bid=args.random_max_bid,
         policy_seed=args.policy_seed,
         mask_expected_reward=not args.no_mask_expected_reward,
-        include_greedy="greedy" in args.sim_policies or "all" in args.sim_policies,
-        include_shading="shading" in args.sim_policies or "all" in args.sim_policies,
-        include_mpc="mpc" in args.sim_policies or "all" in args.sim_policies,
-        include_mpc_oracle="mpc-oracle" in args.sim_policies or "all" in args.sim_policies,
         simulation_n_rollouts=args.n_rollouts,
-        include_mpc_timebin="mpc-timebin" in args.sim_policies or "all" in args.sim_policies,
         shading_alphas=args.alphas,
         mpc_model_paths=args.mpc_models,
         mpc_planning_horizons=args.mpc_horizons,
+        include_greedy  ="greedy"    in sim_pols or "all" in sim_pols,
+        include_shading ="shading"   in sim_pols or "all" in sim_pols,
+        include_mpc     ="mpc"       in sim_pols or "all" in sim_pols,
+        include_mpc_oracle  ="mpc-oracle"  in sim_pols or "all" in sim_pols,
+        include_mpc_timebin ="mpc-timebin" in sim_pols or "all" in sim_pols,
     )
 
-    algos = [] if args.algos == ["none"] else args.algos
     run_full_benchmark(algos=algos, cfg=cfg, save=not args.no_save)
 
 
