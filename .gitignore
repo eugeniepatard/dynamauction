@@ -12,3 +12,5 @@ benchmark/models/*
 benchmark/outputs/*
 NOTES.txt
 Pseudo-code.md
+benchmark/params_search/results/*
+benchmark/benchmark_results/*
