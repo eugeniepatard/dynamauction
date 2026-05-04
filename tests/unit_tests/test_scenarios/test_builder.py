@@ -1,4 +1,4 @@
-import dynamicauc as dac
+import dynamauction as dac
 
 def test_make_preset():
     scenario = dac.make("saturation-second-price-uniform")

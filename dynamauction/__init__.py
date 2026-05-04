@@ -1,11 +1,11 @@
 """
-dynamicauc — Repeated auction environment with dynamic values.
+dynamauction — Repeated auction environment with dynamic values.
 
 Entry point: use ``dac.make(scenario_id, **overrides)`` to instantiate a
-pre-built scenario, then ``gym.make("DynamicAuction-v0", scenario=scenario)``
+pre-built scenario, then ``gym.make("DynamAuction-v0", scenario=scenario)``
 to get a Gymnasium environment.
 
-    import dynamicauc as dac
+    import dynamauction as dac
     scenario = dac.make("survival-second-price-exponential", horizon_eta=50)
 
 The package also exposes all primitives (kernels, gamma models, auction rules,
@@ -15,20 +15,20 @@ wrappers for RL training.
 """
 from importlib.metadata import version
 
-from dynamicauc.scenarios import (
+from dynamauction.scenarios import (
     make,
     ScenarioBuilder,
     list_scenarios,
     get_scenario_info,
     describe_scenarios,
 )
-from dynamicauc.wrappers import FlatAuctionObsWrapper, BidScaleWrapper, SB3PolicyWrapper, MaskExpectedRewardWrapper
-from dynamicauc.dataclasses import Scenario
-from dynamicauc.simulator import Simulator
-from dynamicauc.env import AuctionEnv, OBSERVATION_KEYS
-from dynamicauc.checker import check_env
-from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
-from dynamicauc.baseline.baseline_algo import (
+from dynamauction.wrappers import FlatAuctionObsWrapper, BidScaleWrapper, SB3PolicyWrapper, MaskExpectedRewardWrapper
+from dynamauction.dataclasses import Scenario
+from dynamauction.simulator import Simulator
+from dynamauction.env import AuctionEnv, OBSERVATION_KEYS
+from dynamauction.checker import check_env
+from dynamauction.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
+from dynamauction.baseline.baseline_algo import (
     SimulationEstimator,
     MLPValuationHead,
     GreedyMyopicPolicy,
@@ -36,7 +36,7 @@ from dynamicauc.baseline.baseline_algo import (
     MPCOraclePolicy,
     MPCPolicy,
 )
-from dynamicauc.primitives import (
+from dynamauction.primitives import (
     # Auction rules
     FirstPriceAuction,
     SecondPriceAuction,
@@ -69,7 +69,7 @@ from dynamicauc.primitives import (
     UniformUser,
 )
 
-__version__ = version("dynamicauc")
+__version__ = version("dynamauction")
 
 __all__ = [
     # Checker
@@ -127,7 +127,7 @@ __all__ = [
 from gymnasium.envs.registration import register
 
 register(
-    id="DynamicAuction-v0",
-    entry_point="dynamicauc.env:AuctionEnv",
+    id="DynamAuction-v0",
+    entry_point="dynamauction.env:AuctionEnv",
     max_episode_steps=None, 
 )

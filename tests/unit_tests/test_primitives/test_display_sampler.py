@@ -1,5 +1,5 @@
 import numpy as np
-from dynamicauc.primitives.display_sampler import IIDUniformSampler, CatalogueSampler, FixedSampler
+from dynamauction.primitives.display_sampler import IIDUniformSampler, CatalogueSampler, FixedSampler
 
 def test_iid_uniform_sampler():
     rng = np.random.default_rng(42)

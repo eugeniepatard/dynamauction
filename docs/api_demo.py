@@ -1,5 +1,5 @@
 """
-Examples demonstrating professional API usage for dynamicauc.
+Examples demonstrating professional API usage for dynamauction.
 
 This module shows recommended patterns for:
   1. Creating scenarios (presets, builder, YAML config)
@@ -13,8 +13,8 @@ def example_preset_quick_start():
     """
     Quickest way to get started: use a built-in preset.
     """
-    import dynamicauc as dac
-    from dynamicauc.simulator import Simulator
+    import dynamauction as dac
+    from dynamauction.simulator import Simulator
 
     # List available presets
     print("Available scenarios:", dac.list_scenarios())
@@ -40,8 +40,8 @@ def example_builder_pattern():
     """
     Flexible construction using fluent builder API.
     """
-    import dynamicauc as dac
-    from dynamicauc.simulator import Simulator
+    import dynamauction as dac
+    from dynamauction.simulator import Simulator
     
     # Note: .with_policy() is no longer part of the builder
     scenario = (
@@ -75,7 +75,7 @@ def example_preset_with_overrides():
     """
     Start from a preset but customize specific parameters.
     """
-    import dynamicauc as dac
+    import dynamauction as dac
     
     # Start from preset, override horizon
     scenario = dac.make(
@@ -94,7 +94,7 @@ def example_gym_environment():
     Using the Gym-compatible environment for step-by-step simulation.
     """
     import gymnasium as gym
-    import dynamicauc as dac
+    import dynamauction as dac
     import numpy as np
     
     # Create scenario
@@ -102,7 +102,7 @@ def example_gym_environment():
     
     # Register and create environment
     # (Note: Adjust this if the environment is already registered elsewhere)
-    env = gym.make("DynamicAuction-v0", scenario=scenario, stochastic_reward=True)
+    env = gym.make("DynamAuction-v0", scenario=scenario, stochastic_reward=True)
     obs, _ = env.reset(seed=42)
     
     # Run one episode
@@ -133,10 +133,10 @@ def example_policy_comparison():
     """
     Compare multiple policies on the same scenario.
     """
-    import dynamicauc as dac
-    from dynamicauc.simulator import Simulator
-    from dynamicauc.baseline.policies import FiPlaPolicy
-    from dynamicauc.baseline.policies import ConstantPolicy, RandomPolicy
+    import dynamauction as dac
+    from dynamauction.simulator import Simulator
+    from dynamauction.baseline.policies import FiPlaPolicy
+    from dynamauction.baseline.policies import ConstantPolicy, RandomPolicy
     
     # Create base scenario
     scenario = dac.make("saturation-first-price-uniform")
@@ -172,7 +172,7 @@ def example_scenario_discovery():
     """
     Discover and inspect available scenarios.
     """
-    import dynamicauc as dac
+    import dynamauction as dac
     
     # Print all available scenarios
     print(dac.describe_scenarios())

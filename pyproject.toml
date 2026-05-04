@@ -9,7 +9,7 @@ requires = ["setuptools>=64.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dynamicauc"
+name = "dynamauction"
 version = "0.1.0"
 description = "Kernel causal models for repeated auctions with dynamic values"
 readme = "README.md"

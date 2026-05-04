@@ -9,7 +9,7 @@ are reached in subsequent steps.
 from abc import ABC, abstractmethod
 from typing import Callable, List
 import numpy as np
-from dynamicauc.primitives.conversion_probe import ConversionProbe
+from dynamauction.primitives.conversion_probe import ConversionProbe
 
 
 class DelaySampler(ABC):

@@ -1,7 +1,7 @@
-"""Tests for dynamicauc/primitives/auctions.py: FirstPriceAuction, SecondPriceAuction."""
+"""Tests for dynamauction/primitives/auctions.py: FirstPriceAuction, SecondPriceAuction."""
 import pytest
 
-from dynamicauc.primitives.auctions import FirstPriceAuction, SecondPriceAuction
+from dynamauction.primitives.auctions import FirstPriceAuction, SecondPriceAuction
 
 
 class TestFirstPriceAuction:

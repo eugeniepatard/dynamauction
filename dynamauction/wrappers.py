@@ -14,7 +14,7 @@ from gymnasium import spaces
 import numpy as np
 from typing import Any, Dict, List
 
-from dynamicauc.baseline.policies import BiddingPolicy
+from dynamauction.baseline.policies import BiddingPolicy
 
 class FlatAuctionObsWrapper(gym.ObservationWrapper):
     """

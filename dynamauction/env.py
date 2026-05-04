@@ -1,7 +1,7 @@
 """
 Gymnasium environment for repeated auctions with dynamic values.
 
-Defines ``AuctionEnv``, registered as ``DynamicAuction-v0``, which implements
+Defines ``AuctionEnv``, registered as ``DynamAuction-v0``, which implements
 the full episode loop: auction arrival, bid submission, competing bid draw,
 payment computation, delayed reward accumulation, and context update.
 The observation space is a Dict of named arrays; the action space is a
@@ -16,8 +16,8 @@ from gymnasium import spaces
 import numpy as np
 from numpy.random import seed, Generator
 
-from dynamicauc.dataclasses import AuctionState, Scenario
-from dynamicauc.primitives import RewardKernel
+from dynamauction.dataclasses import AuctionState, Scenario
+from dynamauction.primitives import RewardKernel
 
 
 ObsType = Dict[str, Any]

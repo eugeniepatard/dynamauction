@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from unittest.mock import MagicMock, patch
-from dynamicauc.simulator import Simulator
+from dynamauction.simulator import Simulator
 
 # --- Fixtures ---
 
@@ -36,7 +36,7 @@ def mock_env_output():
 
 class TestSimulator:
     
-    @patch("dynamicauc.simulator.AuctionEnv")
+    @patch("dynamauction.simulator.AuctionEnv")
     def test_run_single_flow(self, mock_env_class, mock_scenario, mock_env_output):
         """Verify that _run_single correctly iterates through an environment."""
         # Setup Mock Environment
@@ -113,7 +113,7 @@ class TestSimulator:
         sim_func = Simulator(mock_scenario, lambda x: 10.0, {"n_runs": 1, "seed": 0})
         assert callable(sim_func.policies["default"])
 
-    @patch("dynamicauc.simulator.AuctionEnv")
+    @patch("dynamauction.simulator.AuctionEnv")
     def test_seed_determinism(self, mock_env_class, mock_scenario):
         """Ensure that the simulator passes the correct seeds to ensure pairing."""
         mock_env = mock_env_class.return_value

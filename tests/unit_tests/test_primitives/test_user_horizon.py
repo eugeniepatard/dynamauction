@@ -1,6 +1,6 @@
 import numpy as np
-from dynamicauc.primitives.user import UniformUser
-from dynamicauc.primitives.horizon import FixedHorizon, ExponentialHorizon
+from dynamauction.primitives.user import UniformUser
+from dynamauction.primitives.horizon import FixedHorizon, ExponentialHorizon
 
 def test_uniform_user():
     rng = np.random.default_rng(42)

@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from dynamicauc.primitives import LogNormalCompetition, UniformCompetition, ExponentialCompetition
+from dynamauction.primitives import LogNormalCompetition, UniformCompetition, ExponentialCompetition
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────

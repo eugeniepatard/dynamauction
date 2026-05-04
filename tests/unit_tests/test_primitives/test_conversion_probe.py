@@ -1,10 +1,10 @@
-"""Tests for dynamicauc/primitives/conversion_probe.py: PoissonProbe, SurvivalProbe."""
+"""Tests for dynamauction/primitives/conversion_probe.py: PoissonProbe, SurvivalProbe."""
 import numpy as np
 import pytest
 from unittest.mock import MagicMock
 
-from dynamicauc.primitives.conversion_probe import PoissonProbe, SurvivalProbe
-from dynamicauc.primitives.kernel import SurvivalKernel
+from dynamauction.primitives.conversion_probe import PoissonProbe, SurvivalProbe
+from dynamauction.primitives.kernel import SurvivalKernel
 
 _U = np.ones(2, dtype=np.float32)
 _X = np.ones(2, dtype=np.float32)
@@ -13,7 +13,7 @@ _Y = lambda t: 0.0  # noqa: E731
 
 def _poisson_kernel(lam_max=2.0, lam=1.0):
     """Mock kernel for PoissonProbe (no isinstance check involved)."""
-    from dynamicauc.primitives.kernel import RewardKernel
+    from dynamauction.primitives.kernel import RewardKernel
     k = MagicMock(spec=RewardKernel)
     k.lambda_upper_bound.return_value = lam_max
     k.lambda_.return_value = lam
@@ -139,7 +139,7 @@ class TestSurvivalProbe:
         assert r1 == r2
 
     def test_requires_survival_kernel(self):
-        from dynamicauc.primitives.kernel import RewardKernel
+        from dynamauction.primitives.kernel import RewardKernel
         wrong_kernel = MagicMock(spec=RewardKernel)
         probe = SurvivalProbe(wrong_kernel)
         with pytest.raises(AssertionError):

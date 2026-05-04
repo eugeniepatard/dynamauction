@@ -1,5 +1,5 @@
 """
-DynamicAuc API Reference & Best Practices
+DynamAuction API Reference & Best Practices
 ==========================================
 
 This document describes the professional API for creating and running
@@ -21,8 +21,8 @@ Table of Contents
 
 The fastest way to get started:
 
-    import dynamicauc as dac
-    from dynamicauc.simulator import Simulator
+    import dynamauction as dac
+    from dynamauction.simulator import Simulator
     
     # Create a scenario from preset
     scenario = dac.make("saturation-second-price-uniform")
@@ -110,7 +110,7 @@ Method 3: HYBRID (Start from preset, customize parameters)
 
 The registry provides factory functions for each primitive type:
 
-    from dynamicauc.scenarios.builder import (
+    from dynamauction.scenarios.builder import (
         create_kernel,
         create_auction,
         create_competition,
@@ -134,7 +134,7 @@ These are mostly used internally, but useful for custom scenarios.
 
 Basic simulation:
 
-    from dynamicauc.simulator import Simulator
+    from dynamauction.simulator import Simulator
     
     sim = Simulator(scenario, campaign_cfg={
         "horizon": 10.0,
@@ -170,7 +170,7 @@ Output DataFrames:
 
 Compare multiple policies on the same scenario:
 
-    from dynamicauc.simulator import Simulator
+    from dynamauction.simulator import Simulator
     
     policies = {
         "FiPla": dac.FiPlaPolicy(),
@@ -186,7 +186,7 @@ Compare multiple policies on the same scenario:
     })
     print(results)
 
-For more sophisticated benchmarking workflows, see dynamicauc/benchmark.py (when implemented).
+For more sophisticated benchmarking workflows, see dynamauction/benchmark.py (when implemented).
 
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -196,10 +196,10 @@ For more sophisticated benchmarking workflows, see dynamicauc/benchmark.py (when
 Use the Gym environment for step-by-step simulation:
 
     import gymnasium as gym
-    import dynamicauc as dac
+    import dynamauction as dac
     
     scenario = dac.make("saturation-second-price-uniform")
-    env = gym.make("DynamicAuction-v0", scenario=scenario, stochastic_reward=True)
+    env = gym.make("DynamAuction-v0", scenario=scenario, stochastic_reward=True)
     
     obs, info = env.reset(seed=42)
     
@@ -226,18 +226,18 @@ Action space:
 Reward:
     - Stochastic reward based on the kernel and probe dynamics. Immediate conversions yield reward at the same step, while delayed conversions yield reward in future steps when they mature.
 
-**Note** : To learn how to use more in depth the dynamicauc gym environment, please refer to the `docs/dynamicauc_tutorial.ipynb` notebook.
+**Note** : To learn how to use more in depth the dynamauction gym environment, please refer to the `docs/dynamauction_tutorial.ipynb` notebook.
 
 
 ═══════════════════════════════════════════════════════════════════════════════
 7. WRAPPERS
 ═══════════════════════════════════════════════════════════════════════════════
 
-Three wrappers ship with dynamicauc to bridge the raw AuctionEnv with RL
+Three wrappers ship with dynamauction to bridge the raw AuctionEnv with RL
 libraries and evaluation tools.
 
-    from dynamicauc import FlatAuctionObsWrapper, BidScaleWrapper
-    from dynamicauc.wrappers import SB3PolicyWrapper
+    from dynamauction import FlatAuctionObsWrapper, BidScaleWrapper
+    from dynamauction.wrappers import SB3PolicyWrapper
 
 FlatAuctionObsWrapper (ObservationWrapper)
 ──────────────────────────────────────────
@@ -245,7 +245,7 @@ Flattens the raw Dict observation space into a 1-D float32 vector.
 Discrete fields are cast to float; Box fields are concatenated in insertion
 order. Required by any MLP-based RL policy (PPO, SAC, TD3).
 
-    env = gym.make("DynamicAuction-v0", scenario=scenario)
+    env = gym.make("DynamAuction-v0", scenario=scenario)
     env = FlatAuctionObsWrapper(env)
     # env.observation_space → Box(-inf, inf, shape=(N,), float32)
 
@@ -269,7 +269,7 @@ internally and optionally applies VecNormalize statistics saved at train time.
     with open("models/ppo/obs_rms.pkl", "rb") as f:
         obs_rms = pickle.load(f)
 
-    raw_env = gym.make("DynamicAuction-v0", scenario=scenario)
+    raw_env = gym.make("DynamAuction-v0", scenario=scenario)
     policy  = SB3PolicyWrapper(model, raw_env.observation_space, obs_rms=obs_rms)
     bid     = policy.bid(obs)   # obs is a raw Dict
 
@@ -284,7 +284,7 @@ gives it privileged information a real advertiser would not have, making the
 RL vs FiPla comparison unfair.  Apply this wrapper whenever RL policies
 should be evaluated on equal footing with FiPla.
 
-    env = gym.make("DynamicAuction-v0", scenario=scenario)
+    env = gym.make("DynamAuction-v0", scenario=scenario)
     env = MaskExpectedRewardWrapper(env)   # ← drops expected_reward from obs
     env = FlatAuctionObsWrapper(env)
     # env.observation_space → Box of dim N-1  (expected_reward excluded)
@@ -316,9 +316,9 @@ Recommended training stack (without mask, oracle access):
 ═══════════════════════════════════════════════════════════════════════════════
 
 Three planning-based bidding policies ship alongside the simple baselines.
-All inherit from ``BiddingPolicy`` and are importable from ``dynamicauc.baseline``.
+All inherit from ``BiddingPolicy`` and are importable from ``dynamauction.baseline``.
 
-    from dynamicauc.baseline import (
+    from dynamauction.baseline import (
         SimulationEstimator,
         MLPValuationHead,
         GreedyMyopicPolicy,

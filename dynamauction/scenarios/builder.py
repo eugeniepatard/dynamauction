@@ -33,10 +33,10 @@ import copy
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
-from dynamicauc.dataclasses import Scenario
-from dynamicauc.scenarios.presets import SCENARIO_PRESETS
-from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy
-from dynamicauc.primitives import (
+from dynamauction.dataclasses import Scenario
+from dynamauction.scenarios.presets import SCENARIO_PRESETS
+from dynamauction.baseline.policies import BiddingPolicy, FiPlaPolicy
+from dynamauction.primitives import (
     AuctionRule,
     ArrivalProcess,
     UserFeatureGenerator,

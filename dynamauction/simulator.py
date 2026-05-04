@@ -6,13 +6,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, List, Any, Dict, Tuple, Union, TYPE_CHECKING
 
-from dynamicauc.env import AuctionEnv
-from dynamicauc.baseline.policies import BiddingPolicy
+from dynamauction.env import AuctionEnv
+from dynamauction.baseline.policies import BiddingPolicy
 
 import numpy as np
 import pandas as pd
-from dynamicauc.dataclasses import Scenario
-from dynamicauc.primitives.kernel import RewardKernel
+from dynamauction.dataclasses import Scenario
+from dynamauction.primitives.kernel import RewardKernel
 
 class Simulator:
     def __init__(self, scenario: Scenario, 

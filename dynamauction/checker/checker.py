@@ -8,7 +8,7 @@ to confirm obs / reward / done / info contracts.
 
 Usage
 -----
-    from dynamicauc.checker import check_env
+    from dynamauction.checker import check_env
     check_env(env)               # raises AssertionError on any error
     check_env(env, warn_only=True)   # only warns, never raises
 """
@@ -19,9 +19,9 @@ from typing import List, Tuple
 
 import numpy as np
 
-from dynamicauc.env import AuctionEnv, OBSERVATION_KEYS
-from dynamicauc.dataclasses import Scenario
-from dynamicauc.primitives import (
+from dynamauction.env import AuctionEnv, OBSERVATION_KEYS
+from dynamauction.dataclasses import Scenario
+from dynamauction.primitives import (
     AuctionRule,
     ArrivalProcess,
     CompetitionDistribution,

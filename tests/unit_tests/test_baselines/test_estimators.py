@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 import torch
 
-from dynamicauc.baseline.estimators import SimulationEstimator, MLPValuationHead
-from dynamicauc.baseline.policies import ConstantPolicy, FiPlaPolicy
+from dynamauction.baseline.estimators import SimulationEstimator, MLPValuationHead
+from dynamauction.baseline.policies import ConstantPolicy, FiPlaPolicy
 
 
 class TestSimulationEstimator:
@@ -130,7 +130,7 @@ class TestMLPValuationHead:
 
     def test_predict_returns_float(self, base_env):
         obs, _ = base_env.reset(seed=0)
-        from dynamicauc.baseline.utils import _obs_to_features
+        from dynamauction.baseline.utils import _obs_to_features
         dim = _obs_to_features(obs).shape[0]
         mlp = MLPValuationHead(input_dim=dim)
         result = mlp.predict(obs)
@@ -138,13 +138,13 @@ class TestMLPValuationHead:
 
     def test_predict_is_finite(self, base_env):
         obs, _ = base_env.reset(seed=0)
-        from dynamicauc.baseline.utils import _obs_to_features
+        from dynamauction.baseline.utils import _obs_to_features
         dim = _obs_to_features(obs).shape[0]
         mlp = MLPValuationHead(input_dim=dim)
         assert np.isfinite(mlp.predict(obs))
 
     def test_predict_consistent_in_eval_mode(self, base_env):
-        from dynamicauc.baseline.utils import _obs_to_features
+        from dynamauction.baseline.utils import _obs_to_features
         obs, _ = base_env.reset(seed=0)
         dim = _obs_to_features(obs).shape[0]
         mlp = MLPValuationHead(input_dim=dim, hidden_dims=(16, 16))

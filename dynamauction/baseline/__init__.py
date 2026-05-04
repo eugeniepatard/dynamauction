@@ -7,8 +7,8 @@ Simulation-based planning policies (``GreedyMyopicPolicy``, ``ShadingPolicy``,
 ``MPCPolicy``, ``MPCOraclePolicy``, ``MPCTimeBinnedPolicy``) and the
 ``SimulationEstimator`` / ``MLPValuationHead`` are in ``baseline_algo.py``.
 """
-from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
-from dynamicauc.baseline.baseline_algo import (
+from dynamauction.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
+from dynamauction.baseline.baseline_algo import (
     SimulationEstimator,
     MLPValuationHead,
     GreedyMyopicPolicy,

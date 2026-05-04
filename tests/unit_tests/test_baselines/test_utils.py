@@ -1,5 +1,5 @@
 """
-Tests for dynamicauc/baseline/utils.py:
+Tests for dynamauction/baseline/utils.py:
   - _obs_to_features
   - _rollout_to_end
   - _resample_remaining_horizon
@@ -16,9 +16,9 @@ import numpy as np
 import pytest
 from unittest.mock import MagicMock
 
-from dynamicauc import AuctionEnv, FlatAuctionObsWrapper
-from dynamicauc.baseline.policies import ConstantPolicy
-from dynamicauc.baseline.utils import _obs_to_features, _resample_remaining_horizon, _rollout_to_end
+from dynamauction import AuctionEnv, FlatAuctionObsWrapper
+from dynamauction.baseline.policies import ConstantPolicy
+from dynamauction.baseline.utils import _obs_to_features, _resample_remaining_horizon, _rollout_to_end
 
 
 # ── _obs_to_features ──────────────────────────────────────────────────────────

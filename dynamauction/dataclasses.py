@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
-from dynamicauc.primitives import (
+from dynamauction.primitives import (
     AuctionRule,
     ArrivalProcess,
     CompetitionDistribution,

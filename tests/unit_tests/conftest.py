@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from unittest.mock import MagicMock
 
-from dynamicauc import AuctionEnv
+from dynamauction import AuctionEnv
 
 
 @pytest.fixture

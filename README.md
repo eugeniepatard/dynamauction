@@ -1,10 +1,10 @@
-# repeated-auction-dynamic-value
+# DynamAuction
 
 ## Overview
 
-**DynamicAuc** is a Python library for simulating repeated auctions where the value of a display is dynamic and depends on the history of previous wins. It is the official implementation accompanying the paper: *"Benchmarking Bidding Strategies in Repeated Auctions with Dynamic Conversion Values"*. # TODO: mettre à jour nom papier
+DynamAuction is a Python library for simulating repeated auction environments in which the value of a display evolves over time and depends on the history of previous interactions. The library is designed as a flexible research environment for studying sequential decision-making in non-stationary auction settings, and serves as the official implementation accompanying the paper: "Benchmarking Bidding Strategies in Repeated Auctions with Dynamic Conversion Values". # TODO : changer nom papier
 
-The library models realistic advertiser behavior where conversion probabilities evolve based on frequency (saturation), recency, or competitor actions. It provides a standardized Gymnasium environment and simulator for evaluating bidding policies in non-stationary auction settings.
+The framework models realistic advertiser dynamics where conversion probabilities change over time due to effects such as frequency saturation, recency, or competitor activity. It provides a standardized Gymnasium-compatible environment and a modular simulator, enabling systematic evaluation of bidding policies under dynamic and history-dependent value generation.
 
 ## About the Kernel Causal Model Framework
 
@@ -49,7 +49,7 @@ Requirements: Python 3.9+.
 ## Package Structure
 
 ```
-dynamicauc/
+dynamauction/
 ├── primitives/         Auction rules, kernels, competition, arrival, display,
 │                       exogenous process, gamma, user features, probe & delay samplers
 ├── baseline/           Bidding policies (FiPla, Constant, Random, GreedyMyopic,
@@ -65,7 +65,7 @@ dynamicauc/
 ## Quick Start
 
 ```python
-import dynamicauc as dac
+import dynamauction as dac
 
 # Create a preset scenario
 scenario = dac.make("survival-second-price-exponential")
@@ -78,7 +78,7 @@ obs, info = env.reset(seed=42)
 dac.check_env(env)
 
 # Run a multi-policy simulation campaign
-from dynamicauc.simulator import Simulator
+from dynamauction.simulator import Simulator
 
 sim = Simulator(scenario, {"FiPla": dac.FiPlaPolicy()}, campaign_cfg={"n_runs": 20, "seed": 42})
 auctions_df, displays_df, conversions_df, summary_df = sim.run()
@@ -92,5 +92,5 @@ The `benchmark/` directory contains a full experimental pipeline for reproducing
 
 - [docs/API_REFERENCE.md](docs/API_REFERENCE.md) — full API reference: scenario creation (preset, builder, hybrid), simulation, Gymnasium integration, wrappers, and planning baselines.
 - [benchmark/BENCHMARK.md](benchmark/BENCHMARK.md) — experimental setup, training protocol, hyperparameters, and evaluation procedure.
-- `docs/dynamicauc_tutorial.ipynb` — step-by-step tutorial for the Gymnasium environment.
+- `docs/dynamauction_tutorial.ipynb` — step-by-step tutorial for the Gymnasium environment.
 - `docs/simulator_tutorial.ipynb` — tutorial for the simulation API.

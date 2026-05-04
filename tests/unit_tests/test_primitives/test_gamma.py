@@ -1,8 +1,8 @@
-"""Tests for dynamicauc/primitives/gamma.py: carry-over context functions."""
+"""Tests for dynamauction/primitives/gamma.py: carry-over context functions."""
 import numpy as np
 import pytest
 
-from dynamicauc.primitives.gamma import (
+from dynamauction.primitives.gamma import (
     AdditiveGamma,
     ConstantGamma,
     LastWonTimeGamma,

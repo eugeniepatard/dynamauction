@@ -1,5 +1,5 @@
 """
-Tests for dynamicauc/baseline/baseline_algo.py:
+Tests for dynamauction/baseline/baseline_algo.py:
   - GreedyMyopicPolicy
   - ShadingPolicy
   - MPCPolicy
@@ -10,16 +10,16 @@ import numpy as np
 import pytest
 from unittest.mock import MagicMock
 
-from dynamicauc import AuctionEnv
-from dynamicauc.baseline.baseline_algo import (
+from dynamauction import AuctionEnv
+from dynamauction.baseline.baseline_algo import (
     GreedyMyopicPolicy,
     MPCOraclePolicy,
     MPCPolicy,
     MPCTimeBinnedPolicy,
     ShadingPolicy,
 )
-from dynamicauc.baseline.estimators import SimulationEstimator, MLPValuationHead
-from dynamicauc.baseline.policies import ConstantPolicy
+from dynamauction.baseline.estimators import SimulationEstimator, MLPValuationHead
+from dynamauction.baseline.policies import ConstantPolicy
 
 @pytest.fixture
 def mock_estimator():
@@ -208,7 +208,7 @@ class TestMPCPolicy:
         assert np.isfinite(bid)
 
     def test_end_to_end_real_mlp(self, live_env):
-        from dynamicauc.baseline.utils import _obs_to_features
+        from dynamauction.baseline.utils import _obs_to_features
         env, obs = live_env
         dim = _obs_to_features(obs).shape[0]
         mlp = MLPValuationHead(input_dim=dim, hidden_dims=(8,))

@@ -1,8 +1,8 @@
-"""Tests for dynamicauc/primitives/user.py: user feature generators."""
+"""Tests for dynamauction/primitives/user.py: user feature generators."""
 import numpy as np
 import pytest
 
-from dynamicauc.primitives.user import FixedUser, NormalUser, UniformUser
+from dynamauction.primitives.user import FixedUser, NormalUser, UniformUser
 
 
 class TestUniformUser:

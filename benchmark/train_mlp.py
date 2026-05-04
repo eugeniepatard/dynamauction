@@ -26,10 +26,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 
-import dynamicauc as dac
-from dynamicauc.baseline import MLPValuationHead
-from dynamicauc.baseline.utils import _obs_to_features
-from dynamicauc.env import AuctionEnv
+import dynamauction as dac
+from dynamauction.baseline import MLPValuationHead
+from dynamauction.baseline.utils import _obs_to_features
+from dynamauction.env import AuctionEnv
 from tqdm import tqdm
 
 from benchmark.train_rl import SCENARIO_ID, MODELS_DIR, LOGS_DIR

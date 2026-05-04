@@ -2,8 +2,8 @@ import pytest
 import numpy as np
 from unittest.mock import MagicMock
 from gymnasium.utils.env_checker import check_env
-from dynamicauc import AuctionEnv, OBSERVATION_KEYS
-from dynamicauc.primitives import PoissonProbe
+from dynamauction import AuctionEnv, OBSERVATION_KEYS
+from dynamauction.primitives import PoissonProbe
 
 @pytest.fixture
 def mock_scenario():

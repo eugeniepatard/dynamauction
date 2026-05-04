@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from unittest.mock import patch
 
-from dynamicauc import AuctionEnv, FlatAuctionObsWrapper, BidScaleWrapper
+from dynamauction import AuctionEnv, FlatAuctionObsWrapper, BidScaleWrapper
 
 
 def _make_vec_normalize(mock_scenario, norm_reward=True, training=True):

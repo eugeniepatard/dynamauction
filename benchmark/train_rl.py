@@ -45,8 +45,8 @@ from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import VecNormalize
-import dynamicauc as dac
-from dynamicauc.primitives import FixedHorizon
+import dynamauction as dac
+from dynamauction.primitives import FixedHorizon
 
 import hydra
 from omegaconf import DictConfig
@@ -145,7 +145,7 @@ def _build_model(algo: str, env, cfg: TrainingConfig, log_dir: Path):
 
 
 def _env_factory(scenario, max_bid: float, mask_expected_reward: bool = True) -> gym.Env:
-    env = gym.make("DynamicAuction-v0", scenario=scenario)
+    env = gym.make("DynamAuction-v0", scenario=scenario)
     if mask_expected_reward:
         env = dac.MaskExpectedRewardWrapper(env)
     env = dac.FlatAuctionObsWrapper(env)

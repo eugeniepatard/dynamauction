@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from unittest.mock import MagicMock
-from dynamicauc.primitives import TrivialProcess, CompetitorClickProcess
+from dynamauction.primitives import TrivialProcess, CompetitorClickProcess
 
 
 # ── TrivialProcess ─────────────────────────────────────────────────────────────

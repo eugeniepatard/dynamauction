@@ -8,7 +8,7 @@ display produces and to draw their individual delay times.
 from abc import ABC, abstractmethod
 from typing import List, Optional
 import numpy as np
-from dynamicauc.primitives.kernel import RewardKernel
+from dynamauction.primitives.kernel import RewardKernel
 
 
 class ConversionProbe(ABC):
@@ -99,7 +99,7 @@ class SurvivalProbe(ConversionProbe):
     """
 
     def _draw(self, u, x, ctx, t, horizon, rng) -> List[float]:
-        from dynamicauc.primitives.kernel import SurvivalKernel
+        from dynamauction.primitives.kernel import SurvivalKernel
         assert isinstance(self.kernel, SurvivalKernel), (
             "SurvivalProbe requires a SurvivalKernel"
         )

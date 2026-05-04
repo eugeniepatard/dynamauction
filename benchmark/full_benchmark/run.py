@@ -36,7 +36,7 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-import dynamicauc as dac
+import dynamauction as dac
 
 from benchmark.evaluate import (
     get_planning_policies,

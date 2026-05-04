@@ -2,7 +2,7 @@
 import pytest
 import numpy as np
 from typing import Callable
-from dynamicauc import (
+from dynamauction import (
     SaturationKernel, 
     RecencyDisplayKernel, 
     CompetitorExtinctionKernel, 

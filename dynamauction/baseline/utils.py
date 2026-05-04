@@ -12,7 +12,7 @@ vector for the MLPValuationHead.
 from typing import Any, Dict, Optional
 import gymnasium as gym
 import numpy as np
-from dynamicauc.baseline.policies import BiddingPolicy
+from dynamauction.baseline.policies import BiddingPolicy
 
 
 def _resample_remaining_horizon(env: gym.Env, rng: np.random.Generator) -> None:

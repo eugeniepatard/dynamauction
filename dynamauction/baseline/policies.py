@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Dict, Any
 import numpy as np
 
 if TYPE_CHECKING:
-    from dynamicauc.simulator import Scenario
+    from dynamauction.simulator import Scenario
 
 class BiddingPolicy(ABC):
     """

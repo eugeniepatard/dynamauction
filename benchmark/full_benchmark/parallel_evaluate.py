@@ -27,8 +27,8 @@ import gymnasium as gym
 import pandas as pd
 from tqdm import tqdm
 
-import dynamicauc as dac
-from dynamicauc.baseline.policies import BiddingPolicy
+import dynamauction as dac
+from dynamauction.baseline.policies import BiddingPolicy
 
 # Re-export everything from the sequential module so callers can import from
 # either evaluate or parallel_evaluate interchangeably.
@@ -82,7 +82,7 @@ def _init_worker(policies_pkl: bytes, scenario_id: str, scenario_overrides: dict
 
 def _run_task(policy_name: str, seed: int) -> pd.DataFrame:
     policy = copy.deepcopy(_WORKER_POLICIES[policy_name])
-    env    = gym.make("DynamicAuction-v0", scenario=_WORKER_SCENARIO)
+    env    = gym.make("DynamAuction-v0", scenario=_WORKER_SCENARIO)
     df     = _run_episode(policy, env, seed, policy_name)
     env.close()
     return df
@@ -144,7 +144,7 @@ def run_full_benchmark(
     benchmark() so the SLURM / multi-core path is taken automatically.
     """
     from datetime import datetime
-    import dynamicauc as dac
+    import dynamauction as dac
 
     scenario = dac.make(cfg.scenario_id, **cfg.scenario_overrides)
 

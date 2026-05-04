@@ -4,8 +4,8 @@ from gymnasium import spaces
 from gymnasium.utils.env_checker import check_env
 from unittest.mock import MagicMock, patch
 
-from dynamicauc import AuctionEnv, FlatAuctionObsWrapper, BidScaleWrapper, MaskExpectedRewardWrapper
-from dynamicauc.wrappers import SB3PolicyWrapper
+from dynamauction import AuctionEnv, FlatAuctionObsWrapper, BidScaleWrapper, MaskExpectedRewardWrapper
+from dynamauction.wrappers import SB3PolicyWrapper
 
 
 @pytest.fixture

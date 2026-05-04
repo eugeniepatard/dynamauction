@@ -17,7 +17,7 @@ from typing import Callable, List
 
 import numpy as np
 
-from dynamicauc.primitives.gamma import Gamma, AdditiveGamma, LastWonTimeGamma, ConstantGamma
+from dynamauction.primitives.gamma import Gamma, AdditiveGamma, LastWonTimeGamma, ConstantGamma
 
 # ── Reward kernels ─────────────────────────────────────────────────────────────
 

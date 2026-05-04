@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from dynamicauc.baseline.policies import BiddingPolicy, ConstantPolicy, FiPlaPolicy, RandomPolicy
+from dynamauction.baseline.policies import BiddingPolicy, ConstantPolicy, FiPlaPolicy, RandomPolicy
 
 
 class TestBiddingPolicyInterface:

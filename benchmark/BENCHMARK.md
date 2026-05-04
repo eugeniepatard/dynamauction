@@ -9,7 +9,7 @@ This document details the full experimental protocol used to produce the results
 All experiments use the built-in preset scenario **`survival-second-price-exponential`**, accessible via:
 
 ```python
-import dynamicauc as dac
+import dynamauction as dac
 scenario = dac.make("survival-second-price-exponential", horizon_eta=<η>)
 ```
 
@@ -23,7 +23,7 @@ This scenario features:
 
 ## Environment Wrappers
 
-The raw `DynamicAuction-v0` Gymnasium environment is wrapped in the following order for RL training:
+The raw `DynamAuction-v0` Gymnasium environment is wrapped in the following order for RL training:
 
 | Wrapper | Purpose |
 |---|---|
@@ -224,7 +224,7 @@ To add a fully custom policy, use the Python API (the CLI cannot accept arbitrar
 
 ```python
 from benchmark.evaluate import run_full_benchmark, EvalConfig
-from dynamicauc.baseline.policies import BiddingPolicy
+from dynamauction.baseline.policies import BiddingPolicy
 
 class MyPolicy(BiddingPolicy):
     def bid(self, obs):

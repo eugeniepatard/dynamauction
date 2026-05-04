@@ -8,10 +8,10 @@ from typing import Dict, Any, List, Optional, Sequence, Tuple
 
 import numpy as np
 import gymnasium as gym
-from dynamicauc.baseline.estimators import MLPValuationHead, SimulationEstimator
-from dynamicauc.baseline.policies import BiddingPolicy
-from dynamicauc.baseline.utils import _resample_remaining_horizon
-from dynamicauc.env import AuctionEnv
+from dynamauction.baseline.estimators import MLPValuationHead, SimulationEstimator
+from dynamauction.baseline.policies import BiddingPolicy
+from dynamauction.baseline.utils import _resample_remaining_horizon
+from dynamauction.env import AuctionEnv
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Planning policies

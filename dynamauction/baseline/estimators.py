@@ -19,9 +19,9 @@ from torch import nn
 import gymnasium as gym
 from torch.utils.data import DataLoader, TensorDataset
 from typing import Sequence
-from dynamicauc.baseline.policies import BiddingPolicy, FiPlaPolicy
-from dynamicauc.baseline.utils import _obs_to_features, _rollout_to_end, _resample_remaining_horizon
-from dynamicauc.env import AuctionEnv
+from dynamauction.baseline.policies import BiddingPolicy, FiPlaPolicy
+from dynamauction.baseline.utils import _obs_to_features, _rollout_to_end, _resample_remaining_horizon
+from dynamauction.env import AuctionEnv
 import copy
 import gymnasium as gym
 from typing import Dict, Any

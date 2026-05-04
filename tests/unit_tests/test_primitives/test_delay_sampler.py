@@ -1,14 +1,14 @@
-"""Tests for dynamicauc/primitives/delay_sampler.py: SingleConversionSampler, MultiConversionSampler."""
+"""Tests for dynamauction/primitives/delay_sampler.py: SingleConversionSampler, MultiConversionSampler."""
 import numpy as np
 import pytest
 from unittest.mock import MagicMock
 
-from dynamicauc.primitives.delay_sampler import MultiConversionSampler, SingleConversionSampler
+from dynamauction.primitives.delay_sampler import MultiConversionSampler, SingleConversionSampler
 
 
 def _make_probe(return_value):
     """Return a mock ConversionProbe with configurable sample_one / sample_all outputs."""
-    from dynamicauc.primitives.conversion_probe import ConversionProbe
+    from dynamauction.primitives.conversion_probe import ConversionProbe
     probe = MagicMock(spec=ConversionProbe)
     probe.sample_one.return_value = return_value
     probe.sample_all.return_value = return_value

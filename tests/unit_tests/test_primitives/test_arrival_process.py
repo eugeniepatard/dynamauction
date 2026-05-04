@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from dynamicauc.primitives import PiecewiseConstantPoisson
+from dynamauction.primitives import PiecewiseConstantPoisson
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
