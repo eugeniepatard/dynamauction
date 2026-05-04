@@ -2,13 +2,13 @@
 
 ## Overview
 
-DynamAuction is a Python library for simulating repeated auction environments in which the value of a display evolves over time and depends on the history of previous interactions. The library is designed as a flexible research environment for studying sequential decision-making in non-stationary auction settings, and serves as the official implementation accompanying the paper: "Benchmarking Bidding Strategies in Repeated Auctions with Dynamic Conversion Values". # TODO : changer nom papier
+DynamAuction is a Python library for simulating repeated auction environments in which the value of a display evolves over time and depends on the history of previous interactions. The library is designed as a flexible research environment for studying sequential decision-making in non-stationary auction settings, and serves as the official implementation accompanying the paper: "Dynamauction: a reinforcement learning environment for repeated auction with dynamic value". # TODO : changer nom papier
 
 The framework models realistic advertiser dynamics where conversion probabilities change over time due to effects such as frequency saturation, recency, or competitor activity. It provides a standardized Gymnasium-compatible environment and a modular simulator, enabling systematic evaluation of bidding policies under dynamic and history-dependent value generation.
 
 ## About the Kernel Causal Model Framework
 
-This environment is built upon the framework proposed in *"A kernel causal model for repeated auctions with dynamic values."* The paper introduces a mathematical model for display advertising that treats user conversion probabilities as dynamic, evolving states rather than static numbers. It is specifically designed to simulate complex, real-world advertising phenomena, including **delay** (conversions happening long after a view), **saturation** (diminishing returns from repeated exposures), **recency**, and **external competitor interference**.
+The paper introduces a mathematical model for display advertising that treats user conversion probabilities as dynamic, evolving states rather than static numbers. It is specifically designed to simulate complex, real-world advertising phenomena, including **delay** (conversions happening long after a view), **saturation** (diminishing returns from repeated exposures), **recency**, and **external competitor interference**.
 
 At the core of the environment is the **reward kernel**, which dictates the distribution of conversion times for a given user after an ad is displayed. This kernel decomposes into two parts: an immediate conversion weight $\kappa$ (a purchase or click occurring right at display time) and a delayed conversion intensity $\lambda$ (a conversion happening sometime after the display, functioning similarly to a hazard/density model in survival analysis).
 
