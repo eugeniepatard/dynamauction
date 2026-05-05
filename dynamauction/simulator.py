@@ -4,7 +4,9 @@ Scenario dataclass and Simulator.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, List, Any, Dict, Tuple, Union, TYPE_CHECKING
+from typing import Callable, List, Any, Dict, Optional, Tuple, Union
+
+import gymnasium as gym
 
 from dynamauction.env import AuctionEnv
 from dynamauction.baseline.policies import BiddingPolicy
@@ -15,12 +17,27 @@ from dynamauction.dataclasses import Scenario
 from dynamauction.primitives.kernel import RewardKernel
 
 class Simulator:
-    def __init__(self, scenario: Scenario, 
-                 policy: Union[BiddingPolicy, Callable[[Dict[str, Any]], float], Dict[str, Union[BiddingPolicy, Callable[[Dict[str, Any]], float]]]], 
-                 campaign_cfg: Dict[str, Any]):
+    def __init__(
+        self,
+        scenario: Scenario,
+        policy: Union[
+            BiddingPolicy,
+            Callable[[Dict[str, Any]], float],
+            Dict[str, Union[BiddingPolicy, Callable[[Dict[str, Any]], float]]],
+        ],
+        campaign_cfg: Dict[str, Any],
+        env_wrappers: Optional[List[Callable[[gym.Env], gym.Env]]] = None,
+    ):
         self.scenario = scenario
         self.policies = policy if isinstance(policy, dict) else {"default": policy}
         self.cfg = campaign_cfg
+        self.env_wrappers = env_wrappers or []
+
+    def _make_env(self) -> gym.Env:
+        env: gym.Env = AuctionEnv(scenario=self.scenario)
+        for wrap in self.env_wrappers:
+            env = wrap(env)
+        return env
 
     def run(self) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
@@ -91,23 +108,23 @@ class Simulator:
         seed: int,
     ) -> Tuple[List[dict], List[dict], List[dict]]:
         
-        env = AuctionEnv(scenario=self.scenario)
-        
+        env = self._make_env()
+
         # The seed sets the seed for the whole episode, ensuring pairing across policies.
         obs, _ = env.reset(seed=seed)
 
         auctions: List[dict] = []
         displays: List[dict] = []
         conversions: List[dict] = []
-        
+
         done = False
         while not done:
             if hasattr(policy, "bid"):
                 bid = policy.bid(obs)
             else:
-                bid = policy(obs) # Allows passing a lambda or predict function directly
-            
-            obs, _, done, _, info = env.step(bid)
+                bid = policy(obs)
+
+            obs, _, done, _, info = env.step(np.array([bid], dtype=np.float32))
 
             # Collect data from the info dictionary
             auction_record = info["auction"]

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from unittest.mock import MagicMock, patch
 from dynamauction.simulator import Simulator
+from dynamauction.env import AuctionEnv
 
 # --- Fixtures ---
 
@@ -137,7 +138,137 @@ class TestSimulator:
         """Verify simulator doesn't crash if no auctions occur."""
         empty_a = pd.DataFrame(columns=["run_id", "won", "payment"])
         empty_c = pd.DataFrame(columns=["run_id", "is_immediate"])
-        
+
         summary = Simulator._summarise(empty_a, empty_c, n_runs=1)
         assert summary.loc[0, "n_auctions"] == 0
         assert summary.loc[0, "total_spend"] == 0.0
+
+
+class TestSimulatorWrapperSupport:
+    """Tests for env_wrappers parameter and gymnasium-conformant action format."""
+
+    @pytest.fixture
+    def full_env(self):
+        """AuctionEnv with a fully configured mock scenario (mirrors conftest)."""
+        scenario = MagicMock()
+        scenario.user_feature_generator.observable_dim = 3
+        scenario.user_feature_generator.generate.return_value = np.array([1.0, 0.5, 0.2])
+        scenario.user_feature_generator.get_observable_features.return_value = np.array([1.0, 0.5, 0.2])
+        scenario.display_sampler.dim = 3
+        scenario.display_sampler.sample.return_value = np.array([0.1, 0.2, 0.3])
+        scenario.horizon_generator.sample.return_value = 10.0
+        scenario.arrival.sample_times.return_value = np.array([1.0, 2.0, 5.0])
+        scenario.exogenous.y = lambda t: 0.0
+        scenario.exogenous.generate = MagicMock()
+        scenario.kernel.kappa.return_value = 0.0
+        scenario.kernel.lambda_.return_value = 0.5
+        scenario.kernel.lambda_upper_bound.return_value = 1.0
+        scenario.kernel.expected_reward.return_value = 0.5
+        scenario.gamma.initiate_context.return_value = 0.0
+        scenario.gamma.update_context.side_effect = lambda ctx, x, u, t, t_past: ctx + 1.0
+        scenario.competition.sample.return_value = 0.3
+        scenario.auction.win.side_effect = lambda bid, comp: bid > comp
+        scenario.auction.payment.side_effect = lambda bid, comp: comp
+        scenario.delay_sampler.sample.return_value = []
+        scenario.max_history = 1
+        scenario.conversion_value = 1.0
+        return AuctionEnv(scenario)
+
+    @patch("dynamauction.simulator.AuctionEnv")
+    def test_env_wrapper_applied(self, mock_env_class, mock_scenario, mock_env_output):
+        """env_wrappers callables are applied to the env in _make_env."""
+        inner_env = mock_env_class.return_value
+        wrapped_env = MagicMock()
+        wrapped_env.reset.return_value = ({}, {})
+        wrapped_env.step.return_value = ({}, 0.0, True, False, mock_env_output)
+
+        mock_wrapper = MagicMock(return_value=wrapped_env)
+
+        sim = Simulator(
+            mock_scenario, lambda x: 1.0, {"n_runs": 1, "seed": 0},
+            env_wrappers=[mock_wrapper],
+        )
+        sim._run_single(run_id=0, policy=lambda x: 1.0, seed=0)
+
+        mock_wrapper.assert_called_once_with(inner_env)
+        wrapped_env.step.assert_called()
+
+    @patch("dynamauction.simulator.AuctionEnv")
+    def test_env_wrappers_applied_in_order(self, mock_env_class, mock_scenario, mock_env_output):
+        """Multiple env_wrappers are composed left-to-right."""
+        call_order = []
+
+        base = mock_env_class.return_value
+        mid = MagicMock()
+        outer = MagicMock()
+        outer.reset.return_value = ({}, {})
+        outer.step.return_value = ({}, 0.0, True, False, mock_env_output)
+
+        def wrap1(env):
+            call_order.append(("wrap1", env))
+            return mid
+
+        def wrap2(env):
+            call_order.append(("wrap2", env))
+            return outer
+
+        sim = Simulator(
+            mock_scenario, lambda x: 0.5, {"n_runs": 1, "seed": 0},
+            env_wrappers=[wrap1, wrap2],
+        )
+        sim._run_single(run_id=0, policy=lambda x: 0.5, seed=0)
+
+        assert call_order[0] == ("wrap1", base)
+        assert call_order[1] == ("wrap2", mid)
+
+    @patch("dynamauction.simulator.AuctionEnv")
+    def test_action_passed_as_numpy_array(self, mock_env_class, mock_scenario, mock_env_output):
+        """env.step receives the bid wrapped in a float32 numpy array of shape (1,)."""
+        mock_env = mock_env_class.return_value
+        mock_env.reset.return_value = ({}, {})
+        mock_env.step.return_value = ({}, 0.0, True, False, mock_env_output)
+
+        sim = Simulator(mock_scenario, lambda x: 1.5, {"n_runs": 1, "seed": 0})
+        sim._run_single(run_id=0, policy=lambda x: 1.5, seed=0)
+
+        action = mock_env.step.call_args[0][0]
+        assert isinstance(action, np.ndarray)
+        assert action.dtype == np.float32
+        assert action.shape == (1,)
+        assert action[0] == pytest.approx(1.5)
+
+    def test_sb3_policy_wrapper_end_to_end(self, full_env):
+        """SB3PolicyWrapper drives a complete episode through the simulator."""
+        from dynamauction.wrappers import SB3PolicyWrapper
+
+        mock_model = MagicMock()
+        mock_model.predict.return_value = (np.array([1.0], dtype=np.float32), None)
+
+        policy = SB3PolicyWrapper(mock_model, full_env.observation_space)
+        sim = Simulator(full_env.scenario, policy, {"n_runs": 2, "seed": 0})
+        a_df, d_df, c_df, s_df = sim.run()
+
+        assert len(a_df) > 0
+        assert len(s_df) == 2
+        assert mock_model.predict.call_count > 0
+
+    def test_sb3_policy_wrapper_with_mask_wrapper(self, full_env):
+        """SB3PolicyWrapper(exclude_keys) + MaskExpectedRewardWrapper on the env is consistent."""
+        from dynamauction.wrappers import SB3PolicyWrapper, MaskExpectedRewardWrapper
+
+        mock_model = MagicMock()
+        mock_model.predict.return_value = (np.array([0.8], dtype=np.float32), None)
+
+        policy = SB3PolicyWrapper(
+            mock_model,
+            full_env.observation_space,
+            exclude_keys=["expected_reward"],
+        )
+        sim = Simulator(
+            full_env.scenario, policy, {"n_runs": 1, "seed": 0},
+            env_wrappers=[MaskExpectedRewardWrapper],
+        )
+        a_df, _, _, _ = sim.run()
+
+        assert len(a_df) > 0
+        assert mock_model.predict.call_count > 0
