@@ -28,14 +28,6 @@ from dynamauction.simulator import Simulator
 from dynamauction.env import AuctionEnv, OBSERVATION_KEYS
 from dynamauction.checker import check_env
 from dynamauction.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
-from dynamauction.baseline.baseline_algo import (
-    SimulationEstimator,
-    MLPValuationHead,
-    GreedyMyopicPolicy,
-    ShadingPolicy,
-    MPCOraclePolicy,
-    MPCPolicy,
-)
 from dynamauction.primitives import (
     # Auction rules
     FirstPriceAuction,
@@ -116,12 +108,6 @@ __all__ = [
     "BidScaleWrapper",
     "SB3PolicyWrapper",
     "OBSERVATION_KEYS",
-    "SimulationEstimator",
-    "MLPValuationHead",
-    "GreedyMyopicPolicy",
-    "ShadingPolicy",
-    "MPCOraclePolicy",
-    "MPCPolicy",
 ]
 
 from gymnasium.envs.registration import register
