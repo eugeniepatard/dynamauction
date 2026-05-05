@@ -123,6 +123,7 @@ DEFAULT_SHADING_ALPHAS       = [0.8]
 DEFAULT_MPC_HORIZONS         = [7.0]
 DEFAULT_MPC_ALPHA_CANDIDATES = [0.6, 0.8, 1.0, 1.2, 1.5]
 DEFAULT_MPC_N_BINS           = [2]
+DEFAULT_HORIZON_ETA          = 50.0
 
 AVAILABLE_BASELINES: List[str] = DEFAULT_BASELINES
 
@@ -397,7 +398,8 @@ def run_full_benchmark(
 
     if save:
         RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-        out = RESULTS_DIR / f"{cfg.scenario_id}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+        eta = cfg.scenario_overrides.get("horizon_eta", "default")
+        out = RESULTS_DIR / f"{cfg.scenario_id}_eta{eta}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
         df.to_csv(out, index=False)
         print(f"\nResults saved → {out}")
 
@@ -443,26 +445,42 @@ def main():
             "  python -m benchmark.evaluate --sim-policies mpc  # needs train_mlp.py first\n"
         ),
     )
-    parser.add_argument("--algos",        nargs="+", default=DEFAULT_ALGOS, metavar="ALGO",
+    # ── Policy selection ──────────────────────────────────────────────────────
+    parser.add_argument("--algos",        nargs="+", default=DEFAULT_ALGOS,     metavar="ALGO",
                         help="RL algorithms to evaluate. Use 'none' to skip all.")
     parser.add_argument("--baselines",    nargs="+", default=DEFAULT_BASELINES, metavar="BASELINE",
                         help="Simple baselines to include. Use 'none' to skip all.")
-    parser.add_argument("--sim-policies", nargs="+", default=["all"], metavar="POLICY",
+    parser.add_argument("--sim-policies", nargs="+", default=["all"],           metavar="POLICY",
                         choices=["greedy", "shading", "mpc", "mpc-oracle", "mpc-timebin", "all", "none"],
                         help="Simulation-based planning policies. Use 'none' to skip all.")
-    parser.add_argument("--n-seeds",      type=int,   default=DEFAULT_N_SEEDS)
-    parser.add_argument("--constant-bid", type=float, default=DEFAULT_CONSTANT_BID)
-    parser.add_argument("--random-max-bid", type=float, default=DEFAULT_RANDOM_MAX_BID)
-    parser.add_argument("--policy-seed",  type=float, default=0.0)
-    parser.add_argument("--n-rollouts",   type=int,   default=DEFAULT_N_ROLLOUTS)
+
+    # ── Evaluation ────────────────────────────────────────────────────────────
+    parser.add_argument("--horizon-eta",           type=int,   default=DEFAULT_HORIZON_ETA,
+                        help="Exponential horizon rate η (overrides the scenario default).")
+    parser.add_argument("--n-seeds",               type=int,   default=DEFAULT_N_SEEDS)
+    parser.add_argument("--no-mask-expected-reward", action="store_true",
+                        help="Expose expected_reward to RL policies (disabled by default).")
+    parser.add_argument("--no-save",               action="store_true",
+                        help="Skip writing the results CSV.")
+
+    # ── Simple baseline parameters ────────────────────────────────────────────
+    parser.add_argument("--constant-bid",  type=float, default=DEFAULT_CONSTANT_BID,
+                        help="Fixed bid value for ConstantPolicy.")
+    parser.add_argument("--random-max-bid", type=float, default=DEFAULT_RANDOM_MAX_BID,
+                        help="Upper bound for RandomPolicy bids.")
+
+    # ── Simulation-based policy parameters ───────────────────────────────────
+    parser.add_argument("--policy-seed",  type=int,   default=0)
+    parser.add_argument("--n-rollouts",   type=int,   default=DEFAULT_N_ROLLOUTS,
+                        help="Monte Carlo rollouts per decision step.")
     parser.add_argument("--alphas",       type=float, nargs="+", default=DEFAULT_SHADING_ALPHAS,
                         help="Shading factors α (one ShadingPolicy per value).")
+
+    # ── MPC parameters ────────────────────────────────────────────────────────
     parser.add_argument("--mpc-horizons", type=float, nargs="+", default=DEFAULT_MPC_HORIZONS,
                         help="Planning horizons H for MPC variants.")
     parser.add_argument("--mpc-models",   type=str,   nargs="+", default=[_DEFAULT_MLP],
-                        help="Paths to MLPValuationHead .pt files (default: auto-resolved from MODELS_DIR).")
-    parser.add_argument("--no-save",      action="store_true")
-    parser.add_argument("--no-mask-expected-reward", action="store_true")
+                        help="Paths to MLPValuationHead .pt files (default: pretrained weights in benchmark/models/).")
     args = parser.parse_args()
 
     # Normalize 'none' → empty list uniformly for all three policy groups
@@ -470,8 +488,13 @@ def main():
     baselines = [] if "none" in args.baselines     else args.baselines
     sim_pols  = [] if "none" in args.sim_policies  else args.sim_policies
 
+    scenario_overrides = {}
+    if args.horizon_eta is not None:
+        scenario_overrides["horizon_eta"] = args.horizon_eta
+
     cfg = EvalConfig(
         seeds=list(range(args.n_seeds)),
+        scenario_overrides=scenario_overrides,
         baselines=baselines,
         constant_bid=args.constant_bid,
         random_max_bid=args.random_max_bid,
