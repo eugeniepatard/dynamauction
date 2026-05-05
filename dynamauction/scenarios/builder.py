@@ -89,8 +89,6 @@ from dynamauction.primitives import (
     MultiConversionSampler,
 )
 
-# TODO : Créer un builder utilisant un fichier yaml
-
 # ── Registry creators (primitive factories) ────────────────────────────────────
 
 def create_gamma(name: str, **kwargs) -> Gamma:

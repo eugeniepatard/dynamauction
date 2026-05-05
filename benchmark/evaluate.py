@@ -26,13 +26,13 @@ Output: per-step DataFrame with columns
 
 CLI (run from repo root):
     # Paper experiment: all policies, 1000 seeds, η=50
-    python -m benchmark.evaluate --n-seeds 1000 --sim-policies all
+    python -m benchmark.evaluate --n-seeds 1000 --sim-policies all --horizon-eta 50.0
 
     # Baselines only (no RL, no MPC)
     python -m benchmark.evaluate --algos none --sim-policies none
 
     # RL only (no baselines, no planning)
-    python -m benchmark.evaluate --baselines none --sim-policies none
+    python -m benchmark.evaluate --baselines none --sim-policies none --horizon-eta 50.0
 
     # Single RL algorithm against FiPla
     python -m benchmark.evaluate --algos ppo --baselines fipla --sim-policies none
