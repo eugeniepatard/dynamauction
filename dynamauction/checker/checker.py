@@ -19,7 +19,7 @@ from typing import List, Tuple
 import numpy as np
 
 from dynamauction.env import AuctionEnv, OBSERVATION_KEYS
-from dynamauction.dataclasses import Scenario
+from dynamauction.types import Scenario
 from dynamauction.primitives import (
     AuctionRule,
     ArrivalProcess,

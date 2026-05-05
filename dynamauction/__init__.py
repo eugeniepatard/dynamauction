@@ -23,7 +23,7 @@ from dynamauction.scenarios import (
     describe_scenarios,
 )
 from dynamauction.wrappers import FlatAuctionObsWrapper, BidScaleWrapper, SB3PolicyWrapper, MaskExpectedRewardWrapper
-from dynamauction.dataclasses import Scenario
+from dynamauction.types import Scenario
 from dynamauction.simulator import Simulator
 from dynamauction.env import AuctionEnv, OBSERVATION_KEYS
 from dynamauction.checker import check_env

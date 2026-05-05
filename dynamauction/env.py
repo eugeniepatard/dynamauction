@@ -16,7 +16,7 @@ from gymnasium import spaces
 import numpy as np
 from numpy.random import seed, Generator
 
-from dynamauction.dataclasses import AuctionState, Scenario
+from dynamauction.types import AuctionState, Scenario
 from dynamauction.primitives import RewardKernel
 
 

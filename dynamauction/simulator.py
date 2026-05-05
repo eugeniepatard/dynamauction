@@ -13,7 +13,8 @@ from dynamauction.baseline.policies import BiddingPolicy
 
 import numpy as np
 import pandas as pd
-from dynamauction.dataclasses import Scenario
+from tqdm.auto import tqdm
+from dynamauction.types import Scenario
 from dynamauction.primitives.kernel import RewardKernel
 
 class Simulator:
@@ -63,7 +64,7 @@ class Simulator:
             policy_displays = []
             policy_conversions = []
             
-            for run_id in range(n_runs):
+            for run_id in tqdm(range(n_runs), desc=policy_name, unit="run"):
                 # Seeding per run ensures identically paired environments across policies
                 run_seed = base_seed + run_id
                 a, d, c = self._run_single(run_id, current_policy, run_seed)
@@ -112,6 +113,8 @@ class Simulator:
 
         # The seed sets the seed for the whole episode, ensuring pairing across policies.
         obs, _ = env.reset(seed=seed)
+        if hasattr(policy, "set_env"):
+            policy.set_env(env)
 
         auctions: List[dict] = []
         displays: List[dict] = []

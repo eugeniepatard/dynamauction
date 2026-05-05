@@ -33,7 +33,7 @@ import copy
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
-from dynamauction.dataclasses import Scenario
+from dynamauction.types import Scenario
 from dynamauction.scenarios.presets import SCENARIO_PRESETS
 from dynamauction.baseline.policies import BiddingPolicy, FiPlaPolicy
 from dynamauction.primitives import (
