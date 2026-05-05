@@ -127,7 +127,29 @@ All simulation-based policies use the following parameters:
 | Monte Carlo rollouts per decision step (`n_rollouts`) | 10 |
 | Policy seed | 0 |
 
+### Constant Bid
+
+The `ConstantPolicy` always bids the same fixed value regardless of state. The optimal constant bid can be found via grid search:
+
+```bash
+python benchmark/tune_constant_bid.py --horizon-eta 50 --n-bids 20 --bid-min 0.1 --bid-max 3.0
+```
+
+| Parameter | Value |
+|---|---|
+| `--n-bids` | Number of values evenly spaced in `[bid-min, bid-max]` |
+| `--bid-min` / `--bid-max` | Search range (default: 0.1 – 2.0) |
+| `--n-seeds` | Evaluation seeds (default: 30) |
+
+Results are saved to `benchmark/benchmark_results/` as a CSV.
+
 ### Shading Factors
+
+The optimal shading multiplier α can be found via grid search:
+
+```bash
+python benchmark/tune_shading_alpha.py --horizon-eta 50 --n-alphas 20
+```
 
 | Policy family | Values evaluated |
 |---|---|
