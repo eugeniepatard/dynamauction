@@ -6,6 +6,7 @@ Concrete implementations:
 - ``UniformCompetition``: B ~ Uniform(low, high).
 - ``LogNormalCompetition``: B ~ LogNormal(μ, σ).
 - ``ExponentialCompetition``: B ~ Exponential(λ).
+- ``ConstantCompetition``: B = value (deterministic).
 """
 from abc import ABC, abstractmethod
 import numpy as np
@@ -40,4 +41,19 @@ class ExponentialCompetition(CompetitionDistribution):
 
     def sample(self, rng: np.random.Generator) -> float:
         return float(rng.exponential(self.scale))
-# TODO : rajouter constant 
+
+
+class ConstantCompetition(CompetitionDistribution):
+    """Deterministic competing bid: B = value at every auction.
+
+    Useful as a controlled baseline or for unit-testing auction mechanisms
+    where the competing bid should be fixed and known in advance.
+    """
+
+    def __init__(self, value: float = 1.0):
+        if value < 0:
+            raise ValueError(f"Competing bid value must be non-negative, got {value}.")
+        self.value = value
+
+    def sample(self, _rng: np.random.Generator) -> float:
+        return self.value

@@ -36,6 +36,7 @@ from dynamauction.primitives import (
     LogNormalCompetition,
     UniformCompetition,
     ExponentialCompetition,
+    ConstantCompetition,
     # Arrival processes
     PiecewiseConstantPoisson,
     # Reward kernels
@@ -83,6 +84,7 @@ __all__ = [
     "LogNormalCompetition",
     "UniformCompetition",
     "ExponentialCompetition",
+    "ConstantCompetition",
     "PiecewiseConstantPoisson",
     "SaturationKernel",
     "RecencyDisplayKernel",

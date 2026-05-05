@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from dynamauction.primitives import LogNormalCompetition, UniformCompetition, ExponentialCompetition
+from dynamauction.primitives import LogNormalCompetition, UniformCompetition, ExponentialCompetition, ConstantCompetition
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -20,6 +20,7 @@ def draw_samples(dist, n=N_SAMPLES, seed=42):
     LogNormalCompetition(),
     UniformCompetition(),
     ExponentialCompetition(),
+    ConstantCompetition(),
 ])
 def test_sample_returns_float(dist):
     rng = np.random.default_rng(0)
@@ -29,6 +30,7 @@ def test_sample_returns_float(dist):
     LogNormalCompetition(),
     UniformCompetition(),
     ExponentialCompetition(),
+    ConstantCompetition(),
 ])
 def test_sample_is_non_negative(dist):
     samples = draw_samples(dist)
@@ -38,6 +40,7 @@ def test_sample_is_non_negative(dist):
     LogNormalCompetition(),
     UniformCompetition(),
     ExponentialCompetition(),
+    ConstantCompetition(),
 ])
 def test_reproducibility_with_same_seed(dist):
     s1 = draw_samples(dist, seed=7)
@@ -148,3 +151,33 @@ def test_exponential_memoryless_property():
     p_gt_t = np.mean(samples > t)
     p_gt_s_plus_t_given_gt_s = np.mean(samples[samples > s] > s + t)
     assert abs(p_gt_s_plus_t_given_gt_s - p_gt_t) < 0.05
+
+
+# ── ConstantCompetition ────────────────────────────────────────────────────────
+
+def test_constant_default_params():
+    dist = ConstantCompetition()
+    assert dist.value == 1.0
+
+def test_constant_always_returns_same_value():
+    value = 2.5
+    dist = ConstantCompetition(value=value)
+    rng = np.random.default_rng(0)
+    samples = [dist.sample(rng) for _ in range(100)]
+    assert all(s == value for s in samples)
+
+def test_constant_zero_is_valid():
+    dist = ConstantCompetition(value=0.0)
+    rng = np.random.default_rng(0)
+    assert dist.sample(rng) == 0.0
+
+def test_constant_negative_raises():
+    with pytest.raises(ValueError):
+        ConstantCompetition(value=-0.1)
+
+def test_constant_rng_independence():
+    """Result must not depend on the rng state."""
+    dist = ConstantCompetition(value=3.0)
+    rng1 = np.random.default_rng(1)
+    rng2 = np.random.default_rng(99)
+    assert dist.sample(rng1) == dist.sample(rng2)

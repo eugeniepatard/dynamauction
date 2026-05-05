@@ -8,9 +8,6 @@ from typing import TYPE_CHECKING, Dict, Any
 
 import numpy as np
 
-if TYPE_CHECKING:
-    from dynamauction.simulator import Scenario
-
 class BiddingPolicy(ABC):
     """
     Interface for bidding policies.

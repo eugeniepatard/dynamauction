@@ -39,7 +39,7 @@ class MultiplicativeGamma(Gamma):
 
     def update_context(self, ctx: float, x: np.ndarray, u: np.ndarray, t_display: float, t_past_won_auctions: List[float]) -> float:
         sorted_past_won_auctions = sorted(t_past_won_auctions)
-        last_won_auction_time = sorted_past_won_auctions[-1] if sorted_past_won_auctions else self.initial_value # TODO : changer ça peut-être
+        last_won_auction_time = sorted_past_won_auctions[-1] if sorted_past_won_auctions else self.initial_value
         return ctx * (1.0 - self.c * np.exp(-(t_display - last_won_auction_time)))
 
 class LastWonTimeGamma(Gamma):

@@ -26,7 +26,6 @@ OBSERVATION_KEYS= ["t", "ctx", "step", "user_features",
                    "display_features", "y_now", "expected_reward", 
                    "cumulative_reward_since_last_step", 
                    "conversion_times_since_last_step"]
-# TODO : Réunir les paramètres de l'env dans State
 
 class AuctionEnv(Env):
     """
@@ -46,7 +45,6 @@ class AuctionEnv(Env):
         self.delay_sampler = scenario.delay_sampler
 
         # --------------Gym initialization params -----------------
-        # TODO : paramétrer la lower and upper bound de l'action space
         self.action_space = spaces.Box(low=0.0, high=1e12, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Dict({
             "t": spaces.Box(low=0.0, high=1e12, shape=(1,), dtype=np.float32),
@@ -203,7 +201,7 @@ class AuctionEnv(Env):
 
         return auction_data, display_data, conversions_data, new_ctx
 
-    def step(self, action: ActType) -> Tuple[ObsType, float, bool, Dict]:
+    def step(self, action: ActType) -> Tuple[ObsType, float, bool, bool, Dict]:
         """Incremental step-by-step environment interaction loop where an action is taken at each auction opportunity (t=t^{(i)}).
         Action = bid for the current auction opportunity.
         
@@ -222,6 +220,8 @@ class AuctionEnv(Env):
                 Reward obtained from the last action.
             done : bool
                 Whether the episode has ended (campaign is over).
+            truncated : bool
+                Whether the episode was truncated.
             info : dict
                 Additional information, including details of delayed events.
         """
