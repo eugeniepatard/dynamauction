@@ -222,21 +222,23 @@ df = run_full_benchmark(
 pip install -e ".[benchmark]"
 ```
 
-### 2. Train RL agents
+### 2. Train RL agents *(optional — pretrained weights are provided)*
 
 ```bash
 python -m benchmark.train_rl 'algo=ppo,sac,td3' --multirun
 ```
 
 Expected wall-clock time: ~30–60 min per algorithm on a single CPU.
+If you skip this step, `evaluate.py` automatically falls back to the pretrained weights in `benchmark/models/`.
 
-### 3. Train MLP valuation head (required for MPC, MPCOracle, MPCTimeBinned)
+### 3. Train MLP valuation head *(optional — pretrained weights are provided)*
 
 ```bash
 python -m benchmark.train_mlp --n-episodes 500 --n-epochs 500 --hidden-dims 128 128 --seed 42
 ```
 
 Expected wall-clock time: a few minutes on CPU.
+If you skip this step, the pretrained `.pt` file in `benchmark/models/mlp_valuation_head/` is used automatically.
 
 ### 4. Configure and run evaluation
 
@@ -261,30 +263,26 @@ Output PDFs are written to `benchmark/plots/` (gitignored — generated on deman
 
 ## Pretrained Models
 
-Pretrained model weights (PPO, SAC, TD3) are available at:
-
-> **[TODO: add Zenodo / HuggingFace DOI link here]**
-
-Download and unpack them so the directory layout matches what `run.py` expects:
+All pretrained weights used to produce the paper results are **shipped directly in this repository** under `benchmark/models/` — no download required.
 
 ```
 benchmark/models/
-├── ppo/
-│   ├── best_model.zip   # SB3 model weights
-│   └── obs_rms.pkl      # VecNormalize observation statistics
-├── sac/
+├── ppo/lr=0.0003_ent=0.02_steps=512_gamma=0.95_epochs=5/
+│   ├── best_model.zip   # SB3 checkpoint (highest eval reward)
+│   └── obs_rms.pkl      # VecNormalize running-mean/variance statistics
+├── sac/lr=5e-05_bs=512_warmup=500_gamma=0.95/
 │   ├── best_model.zip
 │   └── obs_rms.pkl
-├── td3/
+├── td3/lr=0.0001_bs=512_noise=0.1_warmup=500_gamma=0.99/
 │   ├── best_model.zip
 │   └── obs_rms.pkl
 └── mlp_valuation_head/
     └── survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt
 ```
 
-`best_model.zip` is the checkpoint saved by SB3's `EvalCallback` at the timestep with the highest mean evaluation reward. `obs_rms.pkl` contains the running-mean/variance statistics of `VecNormalize` and must be loaded alongside the model to reproduce the correct observation normalization at inference time.
+`best_model.zip` is the SB3 `EvalCallback` checkpoint saved at the timestep with the highest mean evaluation reward. `obs_rms.pkl` contains the `VecNormalize` statistics and must be loaded alongside the model to reproduce the correct observation normalisation at inference time.
 
-Once in place, set the paths in `benchmark/conf/eval.yaml` and skip directly to step 4 (evaluation).
+`evaluate.py` resolves these paths automatically — if no freshly trained model is found it falls back to the pretrained weights above. You can therefore **skip steps 2 and 3** below and go straight to evaluation.
 
 ---
 

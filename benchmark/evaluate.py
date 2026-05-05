@@ -98,17 +98,18 @@ from dynamauction.wrappers import SB3PolicyWrapper
 # SCENARIO_ID and MODELS_DIR are imported from train_rl (set via benchmark/conf/train.yaml).
 RESULTS_DIR = Path(__file__).parent / "benchmark_results"
 
-# RL model weights — produced by train_rl.py (one sub-folder per algorithm).
-# Expected layout after training:
-#   benchmark/models/ppo/best_model.zip  +  obs_rms.pkl
-#   benchmark/models/sac/best_model.zip  +  obs_rms.pkl
-#   benchmark/models/td3/best_model.zip  +  obs_rms.pkl
-RL_MODEL_PATHS = {algo: MODELS_DIR / algo / "best_model" for algo in ["ppo", "sac", "td3"]}
-
+# ── Pretrained model paths (shipped with the repo) ────────────────────────────
+# These point to the weights used to produce the paper results. Pass them
+# directly to evaluate.py or use them as defaults when no retrained model exists.
+_DEFAULT_PPO = MODELS_DIR / "ppo" / "lr=0.0003_ent=0.02_steps=512_gamma=0.95_epochs=5" / "best_model"
+_DEFAULT_SAC = MODELS_DIR / "sac" / "lr=5e-05_bs=512_warmup=500_gamma=0.95"            / "best_model"
+_DEFAULT_TD3 = MODELS_DIR / "td3" / "lr=0.0001_bs=512_noise=0.1_warmup=500_gamma=0.99" / "best_model"
 # MLP valuation head : produced by train_mlp.py. Required for MPC, MPCOracle, MPCTimeBinned.
 # Pass the .pt file path via --mpc-models or EvalConfig(mpc_model_paths=[...]).
 # Default is auto-resolved by load_mlp() from benchmark/models/mlp_valuation_head/.
-MLP_MODEL_PATH: Optional[Path] = None  # set to a Path(...) to hard-code your model
+_DEFAULT_MLP = MODELS_DIR / "mlp_valuation_head" / "survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt"
+
+DEFAULT_RL_MODEL_PATHS: Dict[str, Path] = {"ppo": _DEFAULT_PPO, "sac": _DEFAULT_SAC, "td3": _DEFAULT_TD3}
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 DEFAULT_N_SEEDS              = 30
@@ -341,10 +342,14 @@ def get_rl_policies(
     for algo in algos:
         model_path = MODELS_DIR / algo / "best_model"
         if not Path(str(model_path) + ".zip").exists():
-            print(f"  [WARNING] No saved model for {algo.upper()} at {model_path}.zip — skipping.")
-            continue
+            # Fall back to the pretrained weights shipped with the repo
+            model_path = DEFAULT_RL_MODEL_PATHS.get(algo)
+            if model_path is None or not Path(str(model_path) + ".zip").exists():
+                print(f"  [WARNING] No saved model for {algo.upper()} — skipping.")
+                continue
+            print(f"  Using pretrained weights for {algo.upper()} ← {model_path}.zip")
         obs_rms = None
-        obs_rms_path = MODELS_DIR / algo / "obs_rms.pkl"
+        obs_rms_path = Path(str(model_path).replace("best_model", "obs_rms")).with_suffix(".pkl")
         if obs_rms_path.exists():
             with open(obs_rms_path, "rb") as f:
                 obs_rms = pickle.load(f)
@@ -454,7 +459,7 @@ def main():
                         help="Shading factors α (one ShadingPolicy per value).")
     parser.add_argument("--mpc-horizons", type=float, nargs="+", default=DEFAULT_MPC_HORIZONS,
                         help="Planning horizons H for MPC variants.")
-    parser.add_argument("--mpc-models",   type=str,   nargs="+", default=[None],
+    parser.add_argument("--mpc-models",   type=str,   nargs="+", default=[_DEFAULT_MLP],
                         help="Paths to MLPValuationHead .pt files (default: auto-resolved from MODELS_DIR).")
     parser.add_argument("--no-save",      action="store_true")
     parser.add_argument("--no-mask-expected-reward", action="store_true")
