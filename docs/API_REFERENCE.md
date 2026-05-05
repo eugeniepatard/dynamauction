@@ -351,6 +351,22 @@ estimator = SimulationEstimator(
 )
 ```
 
+> **`pi0` receives the raw observation — `expected_reward` is always present.**
+>
+> The rollout env is never wrapped, so `pi0.bid(obs)` sees the full observation
+> dict including the oracle `expected_reward` field. `FiPlaPolicy` (the default)
+> uses it on purpose. If you use an RL model as `pi0`, wrap it with
+> `SB3PolicyWrapper(model, obs_space, exclude_keys=["expected_reward"])` so the
+> field is dropped internally before flattening — do **not** apply
+> `MaskExpectedRewardWrapper` to the env, which would break `FiPlaPolicy` if
+> it runs in the same benchmark.
+>
+> ```python
+> from dynamauction.wrappers import SB3PolicyWrapper
+> pi0 = SB3PolicyWrapper(model, obs_space, exclude_keys=["expected_reward"])
+> estimator = SimulationEstimator(pi0=pi0, n_rollouts=10)
+> ```
+
 ### MLPValuationHead
 
 MLP trained offline to approximate V₀(s, x) = E[reward | win display x in state s].

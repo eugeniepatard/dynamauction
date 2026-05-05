@@ -141,7 +141,7 @@ class MPCOraclePolicy(BiddingPolicy):
                 env_copy = copy.deepcopy(self._env)
                 env_copy.rng = np.random.default_rng(seed)
                 cumulative += self._mpc_rollout(
-                    env_copy, observations, alpha, v0_now, t_start
+                    env_copy, alpha, v0_now, t_start
                 )
             q_hat[alpha] = cumulative / self.n_rollouts
 
@@ -152,7 +152,6 @@ class MPCOraclePolicy(BiddingPolicy):
     def _mpc_rollout(
         self,
         env: AuctionEnv,
-        obs: Dict[str, Any],
         alpha_first: float,
         v0_now: float,
         t_start: float,
@@ -244,6 +243,7 @@ class MPCPolicy(BiddingPolicy):
                 "MPCPolicy requires a bound env for planning rollouts."
             )
 
+        # predict() uses _obs_to_features() to remove "expected_reward" from the input features, so it's safe to pass the raw obs.
         v0_now = self.v0.predict(observations)
         t_start = float(observations["t"].ravel()[0])
 
@@ -259,7 +259,7 @@ class MPCPolicy(BiddingPolicy):
                 _resample_remaining_horizon(env_copy, np.random.default_rng(seed))
                 env_copy.rng = np.random.default_rng(seed)
                 cumulative += self._mpc_rollout(
-                    env_copy, observations, alpha, v0_now, t_start
+                    env_copy, alpha, v0_now, t_start
                 )
             q_hat[alpha] = cumulative / self.n_rollouts
 
@@ -270,7 +270,6 @@ class MPCPolicy(BiddingPolicy):
     def _mpc_rollout(
         self,
         env: AuctionEnv,
-        obs: Dict[str, Any],
         alpha_first: float,
         v0_now: float,
         t_start: float,

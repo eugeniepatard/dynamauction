@@ -53,6 +53,26 @@ class SimulationEstimator:
     big_bid : float
         Bid used to force a win when estimating V¹.  Must exceed the
         highest possible competing bid in the scenario.  Default: 1e12.
+
+    .. warning:: **Observation dict passed to ``pi0`` always contains ``expected_reward``.**
+
+        The rollout env is never wrapped, so ``pi0.bid(obs)`` receives the
+        raw observation including the oracle ``expected_reward`` field.
+
+        * ``FiPlaPolicy`` (the default): reads ``expected_reward`` directly —
+          correct by design.
+        * **RL model as ``pi0``**: must be wrapped with
+          ``SB3PolicyWrapper(model, obs_space, exclude_keys=["expected_reward"])``
+          so the field is silently dropped during internal flattening.  Passing
+          a bare SB3 model or applying ``MaskExpectedRewardWrapper`` to the env
+          will either expose a field the model never saw during training, or
+          break ``FiPlaPolicy`` if it is also used in the same run.
+
+        Example::
+
+            from dynamauction.wrappers import SB3PolicyWrapper
+            pi0 = SB3PolicyWrapper(model, obs_space, exclude_keys=["expected_reward"])
+            estimator = SimulationEstimator(pi0=pi0, n_rollouts=10)
     """
 
     def __init__(
