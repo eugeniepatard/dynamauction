@@ -3,7 +3,7 @@ All model primitives: auction rules, competition distributions, arrival processe
 exogenous processes, display samplers, and reward kernels.
 """
 from .auctions import AuctionRule, FirstPriceAuction, SecondPriceAuction
-from .competition import CompetitionDistribution, UniformCompetition, LogNormalCompetition, ExponentialCompetition
+from .competition import CompetitionDistribution, UniformCompetition, LogNormalCompetition, ExponentialCompetition, ConstantCompetition
 from .exogenous_process import ExogenousProcess, CompetitorClickProcess, TrivialProcess
 from .arrival_process import ArrivalProcess, PiecewiseConstantPoisson, ConstantPoisson
 from .gamma import Gamma, AdditiveGamma, MultiplicativeGamma, LastWonTimeGamma, ConstantGamma
