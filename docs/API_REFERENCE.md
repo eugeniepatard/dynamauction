@@ -315,13 +315,13 @@ AuctionEnv → FlatAuctionObsWrapper → BidScaleWrapper → Monitor → VecNorm
 ## 8. Planning Baselines
 
 ```python
-from dynamauction.baseline import (
+from dynamauction.baseline.baseline_algo import (
     SimulationEstimator,
-    MLPValuationHead,
     GreedyMyopicPolicy,
     ShadingPolicy,
     MPCPolicy,
 )
+from dynamauction.baseline.estimators import MLPValuationHead  # requires torch
 ```
 
 ### `set_env()` hook

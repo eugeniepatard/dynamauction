@@ -25,7 +25,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import dynamauction as dac
-from dynamauction.baseline import SimulationEstimator, ShadingPolicy
+from dynamauction.baseline.baseline_algo import SimulationEstimator, ShadingPolicy
 from dynamauction.baseline.policies import ConstantPolicy
 from benchmark.evaluate import EvalConfig, evaluate_policy
 

@@ -77,7 +77,7 @@ import gymnasium as gym
 
 import dynamauction as dac
 from dynamauction.baseline.policies import BiddingPolicy, FiPlaPolicy, ConstantPolicy, RandomPolicy
-from dynamauction.baseline import (
+from dynamauction.baseline.baseline_algo import (
     SimulationEstimator,
     GreedyMyopicPolicy,
     ShadingPolicy,

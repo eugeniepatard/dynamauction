@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 import torch
 
 import dynamauction as dac
-from dynamauction.baseline import MLPValuationHead
+from dynamauction.baseline.estimators import MLPValuationHead
 from dynamauction.baseline.utils import _obs_to_features
 from dynamauction.env import AuctionEnv
 from tqdm import tqdm
