@@ -377,7 +377,7 @@ def get_rl_policies(
         if obs_rms_path.exists():
             with open(obs_rms_path, "rb") as f:
                 obs_rms = pickle.load(f)
-        model = load_model(algo)
+        model = load_model(algo, path=model_path)
         policies[algo.upper()] = SB3PolicyWrapper(
             model, obs_space, obs_rms=obs_rms, exclude_keys=exclude
         )
