@@ -62,7 +62,7 @@ PALETTE: Dict[str, str] = {
     # Shading, MPC, and MPCOracle are base colors used when only one variant is
     # present.  Multiple variants get a sequential gradient — see _make_palette.
     # MPCOracle must come before MPC so prefix matching finds it first.
-    "Shading":      "#2171B5",
+    "Shading":      "#000000",
     "MPCOracle":      "#2CA02C",
     "MPCTimeBinned":  "#9467BD",
     "MPC":            "#A67C00",
@@ -224,7 +224,7 @@ def plot_aggregate_metrics(
     filename:     str            = "aggregate_metrics.pdf",
 ) -> plt.Figure:
     """
-    Horizontal bar chart of aggregate performance with 95 % bootstrap CIs.
+    Vertical bar chart of aggregate performance with 95 % bootstrap CIs.
 
     Parameters
     ----------
@@ -253,7 +253,7 @@ def plot_aggregate_metrics(
     names   = list(scores.keys())
     palette = _make_palette(names)
     colors  = [palette[n] for n in names]
-    xlabel  = ("Normalised episode reward" if normalize_by
+    ylabel  = ("Normalised episode reward" if normalize_by
                else "Episode reward") + f"  [{metric.upper()}]"
 
     results = [_bootstrap_ci(scores[n], stat) for n in names]
@@ -261,15 +261,15 @@ def plot_aggregate_metrics(
     lows    = [r[1] for r in results]
     highs   = [r[2] for r in results]
 
-    fig, ax = plt.subplots(figsize=(7, max(3, 0.7 * len(names) + 1)))
+    fig, ax = plt.subplots(figsize=(max(4, 0.7 * len(names) + 1), 5))
 
-    xerr = [[p - lo for p, lo in zip(points, lows)],
+    yerr = [[p - lo for p, lo in zip(points, lows)],
             [hi - p for p, hi in zip(points, highs)]]
 
-    ax.barh(names, points, xerr=xerr, color=colors, capsize=4,
-            alpha=0.85, height=0.55, error_kw={"elinewidth": 1.5})
+    ax.bar(names, points, yerr=yerr, color=colors, capsize=4,
+           alpha=0.85, width=0.55, error_kw={"elinewidth": 1.5})
     if normalize_by:
-        ax.axvline(1.0, color="black", lw=0.8, ls="--", alpha=0.6, label="FiPla baseline")
+        ax.axhline(1.0, color="black", lw=0.8, ls="--", alpha=0.6, label="FiPla baseline")
 
     from matplotlib.lines import Line2D
     ci_handle = Line2D([0], [0], color="black", lw=1.5,
@@ -277,8 +277,10 @@ def plot_aggregate_metrics(
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles=handles + [ci_handle], labels=labels + ["95 % bootstrap CI"], fontsize=9)
 
-    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
     ax.set_title(title, fontweight="bold", pad=10)
+    ax.set_xticks(range(len(names)))
+    ax.set_xticklabels(names, rotation=45, ha="right", fontsize=11)
     fig.tight_layout()
 
     if save:
