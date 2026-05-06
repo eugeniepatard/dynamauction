@@ -1,40 +1,62 @@
-# Evaluation configuration for the full benchmark.
-# Used by benchmark/evaluate.py (and benchmark/full_benchmark/run.py).
-# All values can be overridden on the command line.
+# Default parameters for benchmark/evaluate.py
+#
+# Hydra loads this file automatically when running:
+#   python -m benchmark.evaluate
+#
+# Any field can be overridden on the command line with key=value syntax:
+#   python -m benchmark.evaluate horizon_eta=100 n_seeds=1000
+#   python -m benchmark.evaluate algos=[ppo,sac] baselines=[fipla]
+#   python -m benchmark.evaluate include_shading=true shading_alphas=[0.2,0.6,0.8]
+#   python -m benchmark.evaluate save=false          # dry run
+#
+# Run two eta values in parallel (Hydra multirun):
+#   python -m benchmark.evaluate --multirun horizon_eta=50,100
+#
+# Preview the resolved config without running:
+#   python -m benchmark.evaluate --cfg job
 
-scenario_id: survival-second-price-exponential
+# ── Scenario ──────────────────────────────────────────────────────────────────
+horizon_eta: 50
 
-eval:
-  n_seeds: 30
-  policy_seed: 0
-  baselines: [fipla]   # available: fipla, constant, random
+# ── Evaluation ────────────────────────────────────────────────────────────────
+n_seeds: 30
+policy_seed: 0
+max_bid: 5.0
+save: true
+mask_expected_reward: true
 
-# Which simulation-based planning policies to include.
-# Override with --sim-policies on the CLI.
-policies:
-  include_greedy: true
-  include_shading: true
-  include_mpc: true
-  include_mpc_oracle: true
-  include_mpc_timebin: true
+# ── Policy selection ──────────────────────────────────────────────────────────
+algos: [ppo, sac, td3]          # use [] to skip all RL
+baselines: [fipla, constant, random]  # use [] to skip all
 
-shading:
-  alphas: [0.2, 0.4, 0.6, 0.8]
+# ── Simple baseline parameters ────────────────────────────────────────────────
+constant_bid: 0.5
+random_max_bid: 1.0
 
-mpc:
-  # Path to a pre-trained MLPValuationHead .pt file.
-  # Set to null to use the default auto-resolved path.
-  mlp_model: null
-  horizons: [0.0, 4.0, 7.0, 10.0, 15.0, 25.0]
-  alpha_candidates: [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5]
-  n_bins: [2, 3, 5, 10]
+# ── Simulation-based policies ─────────────────────────────────────────────────
+n_rollouts: 10
+shading_alphas: [0.8]
 
-# Paths to trained RL model checkpoints (without .zip extension).
-# obs_rms.pkl is expected in the same directory as best_model.zip.
-# Set to null to skip that algorithm.
-# Example:
-#   ppo: /scratch/epatard/models/ppo/best_model
-rl_models:
-  ppo: null
-  sac: null
-  td3: null
+include_greedy:      false
+include_shading:     false
+include_mpc:         false
+include_mpc_oracle:  false
+include_mpc_timebin: false
+
+# ── MPC parameters ────────────────────────────────────────────────────────────
+mpc_horizons:         [7.0]
+mpc_alpha_candidates: [0.6, 0.8, 1.0, 1.2, 1.5]
+mpc_n_bins:           [2]
+mpc_model:            null   # null → auto-resolve pretrained weights
+
+# ── Hydra internals ───────────────────────────────────────────────────────────
+# Prevent Hydra from changing the working directory or creating output folders.
+hydra:
+  job:
+    chdir: false
+  output_subdir: null
+  run:
+    dir: .
+  sweep:
+    dir: .
+    subdir: ${hydra.job.num}
