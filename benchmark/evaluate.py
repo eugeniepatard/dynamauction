@@ -57,6 +57,16 @@ CLI (run from repo root)
     python -m benchmark.evaluate --sim-policies mpc \
         --mpc-models benchmark/models/mlp_valuation_head/my_model.pt
 
+    # Explicit model paths (override the automatic eta-based resolution)
+    python -m benchmark.evaluate --horizon-eta 100 \
+        --ppo-model benchmark/models/ppo/eta100/lr=0.0003_.../best_model \
+        --sac-model benchmark/models/sac/eta100/lr=5e-05_.../best_model \
+        --td3-model benchmark/models/td3/eta100/lr=0.0001_.../best_model
+
+    # Mix: explicit PPO, auto-resolved SAC and TD3
+    python -m benchmark.evaluate --horizon-eta 100 \
+        --ppo-model benchmark/models/ppo/eta100/lr=0.0003_.../best_model
+
     # Dry run (no CSV saved)
     python -m benchmark.evaluate --no-save
 
