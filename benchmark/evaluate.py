@@ -5,6 +5,8 @@ Output: per-step DataFrame with columns
     policy, seed, step, t, reward, cum_reward, won, bid, payment,
     ctx, expected_reward, competing_bid, alpha_chosen
 
+Python API
+----------
     from benchmark.evaluate import run_full_benchmark, score_matrix, EvalConfig
 
     df     = run_full_benchmark()           # all policies, default config
@@ -24,30 +26,28 @@ Output: per-step DataFrame with columns
         include_mpc=True, mpc_planning_horizons=[0.0, 7.0, 15.0],
     ))
 
-CLI (run from repo root):
+CLI (run from repo root)
+------------------------
     # Paper experiment: all policies, 1000 seeds, η=50
-    python -m benchmark.evaluate --n-seeds 1000 --sim-policies all --horizon-eta 50.0
+    python -m benchmark.evaluate --horizon-eta 50 --n-seeds 1000 \
+        --sim-policies greedy shading mpc mpc-oracle mpc-timebin
 
     # Baselines only (no RL, no MPC)
     python -m benchmark.evaluate --algos none --sim-policies none
 
-    # RL only (no baselines, no planning)
-    python -m benchmark.evaluate --baselines none --sim-policies none --horizon-eta 50.0
+    # RL only
+    python -m benchmark.evaluate --baselines none --sim-policies none --horizon-eta 50
 
     # Single RL algorithm against FiPla
     python -m benchmark.evaluate --algos ppo --baselines fipla --sim-policies none
 
-    # Shading α sweep (grid search)
+    # Shading α sweep
     python -m benchmark.evaluate --algos none --sim-policies shading \
         --alphas 0.2 0.4 0.6 0.8 1.0 1.2
 
     # MPC with several planning horizons (needs train_mlp.py first)
     python -m benchmark.evaluate --algos none --sim-policies mpc \
         --mpc-horizons 0 4 7 10 15 25
-
-    # MPCTimeBinned (needs train_mlp.py first)
-    python -m benchmark.evaluate --algos none --sim-policies mpc-timebin \
-        --mpc-horizons 7 15
 
     # All MPC variants together
     python -m benchmark.evaluate --algos none \
@@ -60,7 +60,7 @@ CLI (run from repo root):
     # Dry run (no CSV saved)
     python -m benchmark.evaluate --no-save
 
-Results → benchmark/benchmark_results/<scenario_id>_<timestamp>.csv
+Results → benchmark/benchmark_results/<scenario_id>_eta<η>_<timestamp>.csv
 """
 from __future__ import annotations
 
@@ -99,17 +99,27 @@ from dynamauction.wrappers import SB3PolicyWrapper
 RESULTS_DIR = Path(__file__).parent / "benchmark_results"
 
 # ── Pretrained model paths (shipped with the repo) ────────────────────────────
-# These point to the weights used to produce the paper results. Pass them
-# directly to evaluate.py or use them as defaults when no retrained model exists.
-_DEFAULT_PPO = MODELS_DIR / "ppo" / "lr=0.0003_ent=0.02_steps=512_gamma=0.95_epochs=5" / "best_model"
-_DEFAULT_SAC = MODELS_DIR / "sac" / "lr=5e-05_bs=512_warmup=500_gamma=0.95"            / "best_model"
-_DEFAULT_TD3 = MODELS_DIR / "td3" / "lr=0.0001_bs=512_noise=0.1_warmup=500_gamma=0.99" / "best_model"
+# Models are organised as benchmark/models/<algo>/eta<η>/<hyperparams>/best_model.zip.
+# _find_model_path() globs for best_model.zip inside the eta-specific directory so
+# the exact hyperparameter folder name does not need to be hardcoded here.
 # MLP valuation head : produced by train_mlp.py. Required for MPC, MPCOracle, MPCTimeBinned.
-# Pass the .pt file path via --mpc-models or EvalConfig(mpc_model_paths=[...]).
-# Default is auto-resolved by load_mlp() from benchmark/models/mlp_valuation_head/.
 _DEFAULT_MLP = MODELS_DIR / "mlp_valuation_head" / "survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt"
 
-DEFAULT_RL_MODEL_PATHS: Dict[str, Path] = {"ppo": _DEFAULT_PPO, "sac": _DEFAULT_SAC, "td3": _DEFAULT_TD3}
+
+def _find_model_path(algo: str, eta: Optional[int]) -> Optional[Path]:
+    """Return the best_model stem path (without .zip) for *algo* and horizon *eta*.
+
+    Search order:
+    1. ``MODELS_DIR/<algo>/eta<eta>/*/best_model.zip``  (shipped or freshly trained)
+    2. ``MODELS_DIR/<algo>/eta50/*/best_model.zip``     (fallback to eta=50 weights)
+    """
+    for search_eta in ([eta, 50] if eta is not None and eta != 50 else [50]):
+        search_dir = MODELS_DIR / algo / f"eta{search_eta}"
+        if search_dir.exists():
+            hits = sorted(search_dir.glob("*/best_model.zip"))
+            if hits:
+                return hits[0].with_suffix("")   # strip .zip → stem path
+    return None
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 DEFAULT_N_SEEDS              = 30
@@ -123,7 +133,7 @@ DEFAULT_SHADING_ALPHAS       = [0.8]
 DEFAULT_MPC_HORIZONS         = [7.0]
 DEFAULT_MPC_ALPHA_CANDIDATES = [0.6, 0.8, 1.0, 1.2, 1.5]
 DEFAULT_MPC_N_BINS           = [2]
-DEFAULT_HORIZON_ETA          = 50.0
+DEFAULT_HORIZON_ETA          = 50
 
 AVAILABLE_BASELINES: List[str] = DEFAULT_BASELINES
 
@@ -332,23 +342,36 @@ def get_rl_policies(
     scenario,
     algos: List[str] = ("ppo", "sac", "td3"),
     mask_expected_reward: bool = True,
+    eta: Optional[int] = None,
+    model_paths: Optional[Dict[str, str]] = None,
 ) -> Dict[str, SB3PolicyWrapper]:
+    """
+    Parameters
+    ----------
+    model_paths : dict, optional
+        Explicit ``{algo: path}`` overrides (without .zip extension).
+        Keys not present fall back to the automatic eta-based resolution.
+        Example: ``{"ppo": "benchmark/models/ppo/eta100/.../best_model"}``
+    """
     raw_env   = gym.make("DynamAuction-v0", scenario=scenario)
     obs_space = raw_env.observation_space
     raw_env.close()
 
-    exclude = ["expected_reward"] if mask_expected_reward else []
+    exclude     = ["expected_reward"] if mask_expected_reward else []
+    model_paths = model_paths or {}
 
     policies: Dict[str, SB3PolicyWrapper] = {}
     for algo in algos:
-        model_path = MODELS_DIR / algo / "best_model"
-        if not Path(str(model_path) + ".zip").exists():
-            # Fall back to the pretrained weights shipped with the repo
-            model_path = DEFAULT_RL_MODEL_PATHS.get(algo)
-            if model_path is None or not Path(str(model_path) + ".zip").exists():
-                print(f"  [WARNING] No saved model for {algo.upper()} — skipping.")
+        if algo in model_paths:
+            model_path = Path(model_paths[algo])
+            print(f"  Using explicit path for {algo.upper()} ← {model_path}.zip")
+        else:
+            model_path = _find_model_path(algo, eta)
+            if model_path is None:
+                print(f"  [WARNING] No saved model for {algo.upper()} (eta={eta}) — skipping.")
                 continue
-            print(f"  Using pretrained weights for {algo.upper()} ← {model_path}.zip")
+            if eta is not None and f"eta{eta}" not in str(model_path):
+                print(f"  [INFO] No eta{eta} model for {algo.upper()}, falling back to eta50 weights.")
         obs_rms = None
         obs_rms_path = Path(str(model_path).replace("best_model", "obs_rms")).with_suffix(".pkl")
         if obs_rms_path.exists():
@@ -383,11 +406,17 @@ def run_full_benchmark(
     cfg:    EvalConfig      = EvalConfig(),
     save:   bool            = True,
     extra_policies: Optional[Dict[str, BiddingPolicy]] = None,
+    model_paths: Optional[Dict[str, str]] = None,
 ) -> pd.DataFrame:
     scenario = dac.make(cfg.scenario_id, **cfg.scenario_overrides)
 
+    eta = cfg.scenario_overrides.get("horizon_eta")
+
     policies: Dict[str, BiddingPolicy] = {}
-    policies.update(get_rl_policies(scenario, list(algos), cfg.mask_expected_reward))
+    policies.update(get_rl_policies(
+        scenario, list(algos), cfg.mask_expected_reward,
+        eta=eta, model_paths=model_paths,
+    ))
     policies.update(get_planning_policies(cfg))
     policies.update(get_simulation_policies(cfg))
     if extra_policies:
@@ -439,7 +468,7 @@ def main():
             f"Available baselines: {', '.join(AVAILABLE_BASELINES)}\n"
             "Pass --baselines none to skip baselines entirely.\n"
             "\nExamples:\n"
-            "  python -m benchmark.evaluate\n"
+            "  python -m benchmark.evaluate --horizon-eta 50\n"
             "  python -m benchmark.evaluate --algos ppo sac --baselines fipla\n"
             "  python -m benchmark.evaluate --baselines none\n"
             "  python -m benchmark.evaluate --sim-policies mpc  # needs train_mlp.py first\n"
@@ -450,51 +479,59 @@ def main():
                         help="RL algorithms to evaluate. Use 'none' to skip all.")
     parser.add_argument("--baselines",    nargs="+", default=DEFAULT_BASELINES, metavar="BASELINE",
                         help="Simple baselines to include. Use 'none' to skip all.")
-    parser.add_argument("--sim-policies", nargs="+", default=["all"],           metavar="POLICY",
+    parser.add_argument("--sim-policies", nargs="+", default=["none"],          metavar="POLICY",
                         choices=["greedy", "shading", "mpc", "mpc-oracle", "mpc-timebin", "all", "none"],
-                        help="Simulation-based planning policies. Use 'none' to skip all.")
+                        help="Simulation-based planning policies. Use 'all' to include all.")
 
     # ── Evaluation ────────────────────────────────────────────────────────────
-    parser.add_argument("--horizon-eta",           type=int,   default=DEFAULT_HORIZON_ETA,
-                        help="Exponential horizon rate η (overrides the scenario default).")
-    parser.add_argument("--n-seeds",               type=int,   default=DEFAULT_N_SEEDS)
+    parser.add_argument("--horizon-eta",             type=int,   default=DEFAULT_HORIZON_ETA,
+                        help="Exponential horizon rate η.")
+    parser.add_argument("--n-seeds",                 type=int,   default=DEFAULT_N_SEEDS)
     parser.add_argument("--no-mask-expected-reward", action="store_true",
                         help="Expose expected_reward to RL policies (disabled by default).")
-    parser.add_argument("--no-save",               action="store_true",
+    parser.add_argument("--no-save",                 action="store_true",
                         help="Skip writing the results CSV.")
 
     # ── Simple baseline parameters ────────────────────────────────────────────
-    parser.add_argument("--constant-bid",  type=float, default=DEFAULT_CONSTANT_BID,
+    parser.add_argument("--constant-bid",   type=float, default=DEFAULT_CONSTANT_BID,
                         help="Fixed bid value for ConstantPolicy.")
     parser.add_argument("--random-max-bid", type=float, default=DEFAULT_RANDOM_MAX_BID,
                         help="Upper bound for RandomPolicy bids.")
 
     # ── Simulation-based policy parameters ───────────────────────────────────
-    parser.add_argument("--policy-seed",  type=int,   default=0)
+    parser.add_argument("--policy-seed",  type=int,   default=DEFAULT_N_ROLLOUTS)
     parser.add_argument("--n-rollouts",   type=int,   default=DEFAULT_N_ROLLOUTS,
                         help="Monte Carlo rollouts per decision step.")
     parser.add_argument("--alphas",       type=float, nargs="+", default=DEFAULT_SHADING_ALPHAS,
                         help="Shading factors α (one ShadingPolicy per value).")
 
+    # ── RL model path overrides ───────────────────────────────────────────────
+    parser.add_argument("--ppo-model", type=str, default=None, metavar="PATH",
+                        help="Explicit path to PPO best_model (without .zip). "
+                             "Overrides the automatic eta-based resolution.")
+    parser.add_argument("--sac-model", type=str, default=None, metavar="PATH",
+                        help="Explicit path to SAC best_model (without .zip).")
+    parser.add_argument("--td3-model", type=str, default=None, metavar="PATH",
+                        help="Explicit path to TD3 best_model (without .zip).")
+
     # ── MPC parameters ────────────────────────────────────────────────────────
     parser.add_argument("--mpc-horizons", type=float, nargs="+", default=DEFAULT_MPC_HORIZONS,
                         help="Planning horizons H for MPC variants.")
     parser.add_argument("--mpc-models",   type=str,   nargs="+", default=[_DEFAULT_MLP],
-                        help="Paths to MLPValuationHead .pt files (default: pretrained weights in benchmark/models/).")
+                        help="Paths to MLPValuationHead .pt files.")
     args = parser.parse_args()
 
-    # Normalize 'none' → empty list uniformly for all three policy groups
-    algos     = [] if "none" in args.algos        else args.algos
-    baselines = [] if "none" in args.baselines     else args.baselines
-    sim_pols  = [] if "none" in args.sim_policies  else args.sim_policies
+    algos     = [] if "none" in args.algos     else args.algos
+    baselines = [] if "none" in args.baselines else args.baselines
+    sim_pols  = [] if "none" in args.sim_policies else args.sim_policies
 
-    scenario_overrides = {}
-    if args.horizon_eta is not None:
-        scenario_overrides["horizon_eta"] = args.horizon_eta
+    model_paths = {k: v for k, v in
+                   [("ppo", args.ppo_model), ("sac", args.sac_model), ("td3", args.td3_model)]
+                   if v is not None}
 
     cfg = EvalConfig(
         seeds=list(range(args.n_seeds)),
-        scenario_overrides=scenario_overrides,
+        scenario_overrides={"horizon_eta": args.horizon_eta},
         baselines=baselines,
         constant_bid=args.constant_bid,
         random_max_bid=args.random_max_bid,
@@ -504,14 +541,14 @@ def main():
         shading_alphas=args.alphas,
         mpc_model_paths=args.mpc_models,
         mpc_planning_horizons=args.mpc_horizons,
-        include_greedy  ="greedy"    in sim_pols or "all" in sim_pols,
-        include_shading ="shading"   in sim_pols or "all" in sim_pols,
-        include_mpc     ="mpc"       in sim_pols or "all" in sim_pols,
+        include_greedy      ="greedy"      in sim_pols or "all" in sim_pols,
+        include_shading     ="shading"     in sim_pols or "all" in sim_pols,
+        include_mpc         ="mpc"         in sim_pols or "all" in sim_pols,
         include_mpc_oracle  ="mpc-oracle"  in sim_pols or "all" in sim_pols,
         include_mpc_timebin ="mpc-timebin" in sim_pols or "all" in sim_pols,
     )
 
-    run_full_benchmark(algos=algos, cfg=cfg, save=not args.no_save)
+    run_full_benchmark(algos=algos, cfg=cfg, save=not args.no_save, model_paths=model_paths or None)
 
 
 if __name__ == "__main__":

@@ -63,7 +63,7 @@ python -m benchmark.train_rl 'algo=ppo,sac,td3' --multirun
 ```
 
 Hydra configuration lives in `benchmark/conf/train.yaml` and `benchmark/conf/algo/`.
-Models are saved to `benchmark/models/<algo>/` (best and final checkpoints). TensorBoard logs are written to `benchmark/logs/<algo>/`.
+Models are saved to `benchmark/models/<algo>/eta<η>/` (best and final checkpoints). TensorBoard logs are written to `benchmark/logs/<algo>/`.
 
 ---
 
@@ -164,7 +164,7 @@ python benchmark/tune_shading_alpha.py --horizon-eta 50 --n-alphas 20
 | Planning horizons H | 0.0, 4.0, 7.0, 10.0, 15.0, 25.0 |
 | Number of time bins K (MPCTimeBinned) | 2, 3, 5, 10 |
 
-All evaluation hyperparameters are stored in **`benchmark/conf/eval.yaml`** and loaded automatically by `run.py`.
+All evaluation hyperparameters are set via CLI flags to `benchmark/evaluate.py` (see the Evaluation Protocol section below).
 
 ### MLP Valuation Head (for MPC, MPCOracle, MPCTimeBinned)
 
@@ -262,15 +262,30 @@ python -m benchmark.train_mlp --n-episodes 500 --n-epochs 500 --hidden-dims 128 
 Expected wall-clock time: a few minutes on CPU.
 If you skip this step, the pretrained `.pt` file in `benchmark/models/mlp_valuation_head/` is used automatically.
 
-### 4. Configure and run evaluation
-
-Set `rl_models` paths in `benchmark/conf/eval.yaml` (or pass `--ppo-model` / `--sac-model` / `--td3-model` on the command line), then:
+### 4. Run evaluation
 
 ```bash
-python benchmark/full_benchmark/run.py --horizon-eta <η>
+# RL agents + simple baselines only (default), η=50
+python -m benchmark.evaluate --horizon-eta 50
+
+# Add all simulation-based planning policies (Greedy, Shading, MPC variants)
+python -m benchmark.evaluate --horizon-eta 50 --sim-policies all
+
+# Full paper benchmark: all policies, η=100
+python -m benchmark.evaluate --horizon-eta 100 --sim-policies all
 ```
 
-Results are written to `benchmark/full_benchmark/results/` (local) or `/scratch/epatard/full_benchmark/results/` (cluster).
+RL model weights are resolved automatically from `benchmark/models/<algo>/eta<η>/`.
+To use a specific checkpoint instead of the auto-resolved one, pass its path explicitly:
+
+```bash
+python -m benchmark.evaluate --horizon-eta 100 \
+    --ppo-model benchmark/models/ppo/eta100/lr=.../best_model \
+    --sac-model benchmark/models/sac/eta100/lr=.../best_model \
+    --td3-model benchmark/models/td3/eta100/lr=.../best_model
+```
+
+Results are written to `benchmark/benchmark_results/`.
 
 ### 5. Generate plots
 
@@ -289,22 +304,25 @@ All pretrained weights used to produce the paper results are **shipped directly 
 
 ```
 benchmark/models/
-├── ppo/lr=0.0003_ent=0.02_steps=512_gamma=0.95_epochs=5/
-│   ├── best_model.zip   # SB3 checkpoint (highest eval reward)
-│   └── obs_rms.pkl      # VecNormalize running-mean/variance statistics
-├── sac/lr=5e-05_bs=512_warmup=500_gamma=0.95/
-│   ├── best_model.zip
-│   └── obs_rms.pkl
-├── td3/lr=0.0001_bs=512_noise=0.1_warmup=500_gamma=0.99/
-│   ├── best_model.zip
-│   └── obs_rms.pkl
+├── ppo/
+│   └── eta50/lr=0.0003_ent=0.02_steps=512_gamma=0.95_epochs=5/
+│       ├── best_model.zip   # SB3 checkpoint (highest eval reward)
+│       └── obs_rms.pkl      # VecNormalize running-mean/variance statistics
+├── sac/
+│   └── eta50/lr=5e-05_bs=512_warmup=500_gamma=0.95/
+│       ├── best_model.zip
+│       └── obs_rms.pkl
+├── td3/
+│   └── eta50/lr=0.0001_bs=512_noise=0.1_warmup=500_gamma=0.99/
+│       ├── best_model.zip
+│       └── obs_rms.pkl
 └── mlp_valuation_head/
     └── survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt
 ```
 
 `best_model.zip` is the SB3 `EvalCallback` checkpoint saved at the timestep with the highest mean evaluation reward. `obs_rms.pkl` contains the `VecNormalize` statistics and must be loaded alongside the model to reproduce the correct observation normalisation at inference time.
 
-`evaluate.py` resolves these paths automatically — if no freshly trained model is found it falls back to the pretrained weights above. You can therefore **skip steps 2 and 3** below and go straight to evaluation.
+`evaluate.py` resolves these paths automatically — if no freshly trained model is found it falls back to the pretrained weights above. You can therefore **skip steps 2 and 3** and go straight to step 4.
 
 ---
 
