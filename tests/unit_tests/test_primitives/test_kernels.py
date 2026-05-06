@@ -1,4 +1,3 @@
-# TODO : Rajouter de meilleures tests
 import pytest
 import numpy as np
 from typing import Callable
