@@ -40,7 +40,7 @@ The raw `DynamAuction-v0` Gymnasium environment is wrapped in the following orde
 
 | Parameter | Value |
 |---|---|
-| Total timesteps | 2 000 000 |
+| Total timesteps | 5 000 000 |
 | Parallel environments (`n_envs`) | 4 |
 | Random seed | 42 |
 | Max bid (`max_bid`) | 5.0 |
