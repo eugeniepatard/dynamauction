@@ -49,3 +49,4 @@ include = ["dynamauction*"] # limits what gets installed excludes benchmark/, te
 
 [tool.pytest.ini_options]
 markers = ["slow: marks tests as slow (deselect with -m 'not slow')"]
+pythonpath = ["."]
