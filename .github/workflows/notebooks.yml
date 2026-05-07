@@ -8,8 +8,12 @@ on:
 
 jobs:
   notebooks:
-    name: Execute tutorial notebooks
-    runs-on: ubuntu-latest
+    name: Execute tutorial notebooks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - name: Checkout repository
@@ -34,7 +38,7 @@ jobs:
             --to notebook \
             --execute \
             --ExecutePreprocessor.timeout=300 \
-            --output /tmp/dynamauction_tutorial_out.ipynb \
+            --output dynamauction_tutorial_out.ipynb \
             docs/dynamauction_tutorial.ipynb
 
       - name: Execute simulator_tutorial.ipynb
@@ -43,21 +47,25 @@ jobs:
             --to notebook \
             --execute \
             --ExecutePreprocessor.timeout=600 \
-            --output /tmp/simulator_tutorial_out.ipynb \
+            --output simulator_tutorial_out.ipynb \
             docs/simulator_tutorial.ipynb
 
       # ── Upload executed notebooks as artifacts for inspection ───────────────
       - name: Upload executed notebooks
-        if: always()   # upload even if a notebook failed, so you can inspect the output
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: executed-notebooks
-          path: /tmp/*_out.ipynb
+          name: executed-notebooks-${{ matrix.os }}
+          path: "*_out.ipynb"
           retention-days: 7
 
   benchmark-smoke:
-    name: Benchmark smoke test
-    runs-on: ubuntu-latest
+    name: Benchmark smoke test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - name: Checkout repository
