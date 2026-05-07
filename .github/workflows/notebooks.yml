@@ -33,6 +33,7 @@ jobs:
 
       # ── Tutorial notebooks ──────────────────────────────────────────────────
       - name: Execute dynamauction_tutorial.ipynb
+        shell: bash
         run: |
           jupyter nbconvert \
             --to notebook \
@@ -42,6 +43,7 @@ jobs:
             docs/dynamauction_tutorial.ipynb
 
       - name: Execute simulator_tutorial.ipynb
+        shell: bash
         run: |
           jupyter nbconvert \
             --to notebook \
@@ -86,6 +88,7 @@ jobs:
 
       # ── Evaluate FiPla only: 3 seeds, no RL, no MPC, no save ───────────────
       - name: Run evaluate.py smoke test (η=50, FiPla only)
+        shell: bash
         run: |
           python -m benchmark.evaluate \
             --horizon-eta 50 \
@@ -97,6 +100,7 @@ jobs:
 
       # ── Train MLP valuation head with minimal settings ──────────────────────
       - name: Smoke-test train_mlp.py
+        shell: bash
         run: |
           python -m benchmark.train_mlp \
             --n-episodes 5 \
