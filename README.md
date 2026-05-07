@@ -185,9 +185,3 @@ If you use DynamAuction in your research, please cite:
   note    = {Under review}
 }
 ```
-
----
-
-## License
-
-This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
