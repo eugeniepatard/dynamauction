@@ -1,0 +1,97 @@
+name: Notebooks & Benchmark Smoke Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  notebooks:
+    name: Execute tutorial notebooks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install package with benchmark and notebook deps
+        run: pip install -e ".[benchmark]" nbconvert jupyter ipykernel
+
+      - name: Register kernel
+        run: python -m ipykernel install --user --name python3
+
+      # ── Tutorial notebooks ──────────────────────────────────────────────────
+      - name: Execute dynamauction_tutorial.ipynb
+        run: |
+          jupyter nbconvert \
+            --to notebook \
+            --execute \
+            --ExecutePreprocessor.timeout=300 \
+            --output /tmp/dynamauction_tutorial_out.ipynb \
+            docs/dynamauction_tutorial.ipynb
+
+      - name: Execute simulator_tutorial.ipynb
+        run: |
+          jupyter nbconvert \
+            --to notebook \
+            --execute \
+            --ExecutePreprocessor.timeout=600 \
+            --output /tmp/simulator_tutorial_out.ipynb \
+            docs/simulator_tutorial.ipynb
+
+      # ── Upload executed notebooks as artifacts for inspection ───────────────
+      - name: Upload executed notebooks
+        if: always()   # upload even if a notebook failed, so you can inspect the output
+        uses: actions/upload-artifact@v4
+        with:
+          name: executed-notebooks
+          path: /tmp/*_out.ipynb
+          retention-days: 7
+
+  benchmark-smoke:
+    name: Benchmark smoke test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install package with benchmark deps
+        run: pip install -e ".[benchmark]"
+
+      # ── Quick import and version check ──────────────────────────────────────
+      - name: Check package imports cleanly
+        run: python -c "import dynamauction as dac; print(dac.__version__); print(dac.list_scenarios())"
+
+      # ── Evaluate FiPla only: 3 seeds, no RL, no MPC, no save ───────────────
+      - name: Run evaluate.py smoke test (η=50, FiPla only)
+        run: |
+          python -m benchmark.evaluate \
+            --horizon-eta 50 \
+            --algos none \
+            --baselines fipla \
+            --sim-policies none \
+            --n-seeds 3 \
+            --no-save
+
+      # ── Train MLP valuation head with minimal settings ──────────────────────
+      - name: Smoke-test train_mlp.py
+        run: |
+          python -m benchmark.train_mlp \
+            --n-episodes 5 \
+            --n-epochs 3 \
+            --hidden-dims 16 16 \
+            --seed 0
