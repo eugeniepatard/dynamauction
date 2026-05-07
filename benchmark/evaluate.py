@@ -70,7 +70,7 @@ CLI (run from repo root)
     # Dry run (no CSV saved)
     python -m benchmark.evaluate --no-save
 
-Results → benchmark/benchmark_results/<scenario_id>_eta<η>_<timestamp>.csv
+Results -> benchmark/benchmark_results/<scenario_id>_eta<η>_<timestamp>.csv
 """
 from __future__ import annotations
 
@@ -128,7 +128,7 @@ def _find_model_path(algo: str, eta: Optional[int]) -> Optional[Path]:
         if search_dir.exists():
             hits = sorted(search_dir.glob("*/best_model.zip"))
             if hits:
-                return hits[0].with_suffix("")   # strip .zip → stem path
+                return hits[0].with_suffix("")   # strip .zip -> stem path
     return None
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
@@ -374,7 +374,7 @@ def get_rl_policies(
     for algo in algos:
         if algo in model_paths:
             model_path = Path(model_paths[algo])
-            print(f"  Using explicit path for {algo.upper()} ← {model_path}.zip")
+            print(f"  Using explicit path for {algo.upper()} <- {model_path}.zip")
         else:
             model_path = _find_model_path(algo, eta)
             if model_path is None:
@@ -391,7 +391,7 @@ def get_rl_policies(
         policies[algo.upper()] = SB3PolicyWrapper(
             model, obs_space, obs_rms=obs_rms, exclude_keys=exclude
         )
-        print(f"  Loaded {algo.upper()} ← {model_path}.zip")
+        print(f"  Loaded {algo.upper()} <- {model_path}.zip")
 
     return policies
 
@@ -406,7 +406,7 @@ def benchmark(
     scenario = dac.make(cfg.scenario_id, **cfg.scenario_overrides)
     frames: List[pd.DataFrame] = []
     for name, policy in policies.items():
-        print(f"  Evaluating {name} ({len(cfg.seeds)} seeds) …")
+        print(f"  Evaluating {name} ({len(cfg.seeds)} seeds) ...")
         frames.append(evaluate_policy(policy, scenario, cfg, name))
     return pd.concat(frames, ignore_index=True)
 
@@ -440,7 +440,7 @@ def run_full_benchmark(
         eta = cfg.scenario_overrides.get("horizon_eta", "default")
         out = RESULTS_DIR / f"{cfg.scenario_id}_eta{eta}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
         df.to_csv(out, index=False)
-        print(f"\nResults saved → {out}")
+        print(f"\nResults saved -> {out}")
 
     return df
 

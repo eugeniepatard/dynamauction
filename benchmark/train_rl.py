@@ -230,8 +230,8 @@ def train(
         print(f"  Horizon   : {'fixed=' + str(cfg.fixed_horizon) if cfg.fixed_horizon else 'exponential'}")
         print(f"  VecNorm   : {cfg.use_vec_normalize}")
         print(f"  MaskER    : {cfg.mask_expected_reward}  (expected_reward hidden from RL obs)")
-        print(f"  Models  → {model_dir}")
-        print(f"  Logs    → {log_dir}")
+        print(f"  Models  -> {model_dir}")
+        print(f"  Logs    -> {log_dir}")
         print(f"{'='*60}\n")
 
     model.learn(
@@ -249,8 +249,8 @@ def train(
     final_path = model_dir / "final_model"
     model.save(str(final_path))
     if cfg.verbose:
-        print(f"[{algo.upper()}] Final model → {final_path}.zip")
-        print(f"[{algo.upper()}] Best  model → {model_dir / 'best_model'}.zip")
+        print(f"[{algo.upper()}] Final model -> {final_path}.zip")
+        print(f"[{algo.upper()}] Best  model -> {model_dir / 'best_model'}.zip")
 
     return model
 

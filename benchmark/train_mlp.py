@@ -74,7 +74,7 @@ def _plot_loss_curves(history: dict, out: Path) -> None:
     fig.tight_layout()
     fig.savefig(out)
     plt.close(fig)
-    print(f"  Saved loss curves    → {out}")
+    print(f"  Saved loss curves    -> {out}")
 
 
 def _plot_pred_vs_actual(mlp: MLPValuationHead, X_val: np.ndarray, y_val: np.ndarray, out: Path) -> None:
@@ -94,7 +94,7 @@ def _plot_pred_vs_actual(mlp: MLPValuationHead, X_val: np.ndarray, y_val: np.nda
     fig.tight_layout()
     fig.savefig(out)
     plt.close(fig)
-    print(f"  Saved pred vs actual → {out}")
+    print(f"  Saved pred vs actual -> {out}")
 
 
 def train_mlp(
@@ -124,7 +124,7 @@ def train_mlp(
 
     scenario = dac.make(scenario_id, **(scenario_overrides or {}))
 
-    print("Collecting rollouts …")
+    print("Collecting rollouts ...")
     X, y = collect_rollouts(scenario, n_episodes=n_episodes, seed=seed)
 
     n_val = max(1, int(len(X) * val_frac))
@@ -134,7 +134,7 @@ def train_mlp(
     X_val,   y_val   = X[idx[:n_val]], y[idx[:n_val]]
     print(f"  {len(X_train)} train samples, {len(X_val)} val samples")
 
-    print("Training …")
+    print("Training ...")
     print(f"  TensorBoard: tensorboard --logdir {tb_dir}")
     mlp = MLPValuationHead(input_dim=X.shape[1], hidden_dims=hidden_dims, activation=activation)
     mlp.fit(
@@ -145,7 +145,7 @@ def train_mlp(
     )
 
     mlp.save(out_dir / f"{stem}.pt")
-    print(f"  Saved weights        → {out_dir / f'{stem}.pt'}")
+    print(f"  Saved weights        -> {out_dir / f'{stem}.pt'}")
 
     meta = {
         "scenario_id":       scenario_id,
@@ -164,7 +164,7 @@ def train_mlp(
         "trained_at":        datetime.now().isoformat(timespec="seconds"),
     }
     (out_dir / f"{stem}.json").write_text(json.dumps(meta, indent=2))
-    print(f"  Saved metadata       → {out_dir / f'{stem}.json'}")
+    print(f"  Saved metadata       -> {out_dir / f'{stem}.json'}")
 
     _plot_loss_curves(mlp.history_, out_dir / f"{stem}_loss.pdf")
     _plot_pred_vs_actual(mlp, X_val, y_val, out_dir / f"{stem}_pred.pdf")
@@ -177,9 +177,9 @@ def load_mlp(scenario_id: str = SCENARIO_ID, path: Optional[str] = None) -> MLPV
 
     If *path* is given, loads from that file directly.  Otherwise scans
     ``MLP_DIR`` for ``.pt`` files matching ``<scenario_id>_*.pt``:
-    - exactly one match → loaded automatically
-    - multiple matches  → raises, listing candidates (use --mpc-model to pick one)
-    - no match          → raises, suggesting python -m benchmark.train_mlp
+    - exactly one match -> loaded automatically
+    - multiple matches  -> raises, listing candidates (use --mpc-model to pick one)
+    - no match          -> raises, suggesting python -m benchmark.train_mlp
     """
     if path is not None:
         p = Path(path)
@@ -201,7 +201,7 @@ def load_mlp(scenario_id: str = SCENARIO_ID, path: Optional[str] = None) -> MLPV
         p = candidates[0]
 
     mlp = MLPValuationHead.load(p)
-    print(f"  Loaded MLPValuationHead ← {p}  (hidden_dims={mlp.hidden_dims}, input_dim={mlp.input_dim})")
+    print(f"  Loaded MLPValuationHead <- {p}  (hidden_dims={mlp.hidden_dims}, input_dim={mlp.input_dim})")
     return mlp
 
 
@@ -212,7 +212,7 @@ def _start_tensorboard(log_dir: Path, port: int) -> subprocess.Popen:
         stderr=subprocess.DEVNULL,
     )
     time.sleep(2)
-    print(f"\n  TensorBoard running → http://localhost:{port}")
+    print(f"\n  TensorBoard running -> http://localhost:{port}")
     print(  "  (open in your browser; updates every ~30 s during training)\n")
     return proc
 
@@ -243,7 +243,7 @@ def main() -> None:
 
     def _cleanup(sig=None, frame=None):
         if tb_proc is not None and tb_proc.poll() is None:
-            print("\nStopping TensorBoard …")
+            print("\nStopping TensorBoard ...")
             tb_proc.terminate()
         sys.exit(0)
 

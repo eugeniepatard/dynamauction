@@ -61,7 +61,7 @@ def tune_constant_bid(
     ts  = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     csv = out / f"{SCENARIO_ID}_eta{horizon_eta}_constant_bid_sweep_{ts}.csv"
     results.to_csv(csv, index=False)
-    print(f"\nResults saved → {csv}")
+    print(f"\nResults saved -> {csv}")
 
     # Summary: mean episodic reward per bid value
     summary = (

@@ -121,9 +121,9 @@ def _make_palette(names: Sequence[str]) -> Dict[str, Any]:
     Build a ``{policy_name: color}`` dict.
 
     * Known single-family policies (PPO, SAC, …) get their fixed PALETTE color.
-    * Multiple Shading variants → sequential blue gradient.
-    * Multiple MPC variants    → sequential amber gradient.
-    * Unknown policies         → husl fallback.
+    * Multiple Shading variants -> sequential blue gradient.
+    * Multiple MPC variants    -> sequential amber gradient.
+    * Unknown policies         -> husl fallback.
 
     Within each multi-variant family the gradient is assigned in numeric order
     (by H, K, α …) so the mapping is stable regardless of DataFrame row order.
@@ -199,7 +199,7 @@ def _make_linestyles(names: Sequence[str]) -> Dict[str, str]:
 def _save(fig: plt.Figure, filename: str) -> None:
     path = PLOTS_DIR / filename
     fig.savefig(path, bbox_inches="tight")
-    print(f"  Saved → {path}")
+    print(f"  Saved -> {path}")
 
 
 def _bootstrap_ci(
