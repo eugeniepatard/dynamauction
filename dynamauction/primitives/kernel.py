@@ -244,17 +244,36 @@ class SurvivalKernel(RewardKernel):
     h(s) = alpha (Exponential baseline hazard) : s ~ Exp(1 / alpha)
     """
 
-    def __init__(self, w_u: np.ndarray, w_x: np.ndarray, alpha: float = 1.0):
+    def __init__(
+        self,
+        w_u: np.ndarray,
+        w_x: np.ndarray,
+        alpha: float = 1.0,
+        squashing: str = "clip",
+    ):
+        """
+        Parameters
+        ----------
+        squashing : 'clip' (default) or 'sigmoid'
+            How to map ctx * g_u * g_x into [0, 1].
+            'clip'    — identity on [0,1], hard boundary (original behaviour).
+            'sigmoid' — σ(ctx * g_u * g_x), smooth but remaps the scale.
+        """
+        if squashing not in ("clip", "sigmoid"):
+            raise ValueError(f"squashing must be 'clip' or 'sigmoid', got {squashing!r}")
         self.w_u = np.asarray(w_u, dtype=float)
         self.w_x = np.asarray(w_x, dtype=float)
         self.alpha = alpha
+        self.squashing = squashing
 
     def conversion_probability(self, u: np.ndarray, x: np.ndarray, ctx: float) -> float:
-        """Compute conversion scaling factor f(x, u, history) and clip to [0, 1]."""
+        """Compute conversion scaling factor f(x, u, history) squashed to [0, 1]."""
         g_u = np.dot(u, self.w_u)
         g_x = np.dot(x, self.w_x)
-        # ctx corresponds to gamma(history) factor which inherently models recency/saturation
         prob = ctx * g_u * g_x
+        if self.squashing == "sigmoid":
+            from scipy.special import expit
+            return float(expit(prob))
         return float(np.clip(prob, 0.0, 1.0))
 
     def kappa(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float) -> float:

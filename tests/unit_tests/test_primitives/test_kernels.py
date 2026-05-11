@@ -112,17 +112,80 @@ class TestSurvivalKernel:
         kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]), alpha=1.0)
         prob = kernel.conversion_probability(user_vec, x_vec, ctx=0.5)
         assert pytest.approx(prob) == 0.75
-        
+
         prob_clip = kernel.conversion_probability(user_vec, x_vec, ctx=2.0)
         assert prob_clip == 1.0
-        
+
     @staticmethod
     def test_expected_reward(user_vec, x_vec, constant_y):
         kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]), alpha=1.0)
-        
+
         expected = 0.75 * (1.0 - np.exp(-100.0))
         actual = kernel.expected_reward(user_vec, x_vec, ctx=0.5, y_func=constant_y, t=0.0, horizon=100.0)
         assert pytest.approx(actual, rel=1e-3) == expected
+
+    # ── squashing tests ────────────────────────────────────────────────────────
+
+    @staticmethod
+    def test_clip_is_default():
+        kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]))
+        assert kernel.squashing == "clip"
+
+    @staticmethod
+    def test_invalid_squashing_raises():
+        with pytest.raises(ValueError, match="squashing"):
+            SurvivalKernel(w_u=np.array([1.0]), w_x=np.array([1.0]), squashing="relu")
+
+    @staticmethod
+    def test_sigmoid_output_in_unit_interval(user_vec, x_vec):
+        kernel = SurvivalKernel(
+            w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]),
+            squashing="sigmoid",
+        )
+        for ctx in [-5.0, 0.0, 0.5, 1.0, 10.0]:
+            p = kernel.conversion_probability(user_vec, x_vec, ctx=ctx)
+            assert 0.0 < p < 1.0, f"sigmoid output {p} not in (0,1) for ctx={ctx}"
+
+    @staticmethod
+    def test_clip_output_in_unit_interval(user_vec, x_vec):
+        kernel = SurvivalKernel(
+            w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]),
+            squashing="clip",
+        )
+        for ctx in [-5.0, 0.0, 0.5, 1.0, 10.0]:
+            p = kernel.conversion_probability(user_vec, x_vec, ctx=ctx)
+            assert 0.0 <= p <= 1.0, f"clip output {p} not in [0,1] for ctx={ctx}"
+
+    @staticmethod
+    def test_sigmoid_never_exactly_zero_or_one(user_vec, x_vec):
+        # Use moderate ctx values to avoid float64 underflow/overflow
+        kernel = SurvivalKernel(
+            w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]),
+            squashing="sigmoid",
+        )
+        for ctx in [-5.0, 0.0, 5.0]:
+            p = kernel.conversion_probability(user_vec, x_vec, ctx=ctx)
+            assert p > 0.0 and p < 1.0
+
+    @staticmethod
+    def test_clip_saturates_at_boundaries(user_vec, x_vec):
+        kernel = SurvivalKernel(
+            w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]),
+            squashing="clip",
+        )
+        assert kernel.conversion_probability(user_vec, x_vec, ctx=100.0) == 1.0
+        assert kernel.conversion_probability(user_vec, x_vec, ctx=-1.0) == 0.0
+
+    @staticmethod
+    def test_sigmoid_monotone_in_ctx(user_vec, x_vec):
+        """sigmoid output must increase as ctx increases (g_u, g_x > 0)."""
+        kernel = SurvivalKernel(
+            w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]),
+            squashing="sigmoid",
+        )
+        ctxs = [-2.0, -1.0, 0.0, 0.5, 1.0, 2.0]
+        probs = [kernel.conversion_probability(user_vec, x_vec, ctx=c) for c in ctxs]
+        assert all(p1 < p2 for p1, p2 in zip(probs, probs[1:]))
 
 # --- General Statistical Property Test ---
 
