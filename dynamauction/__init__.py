@@ -13,7 +13,7 @@ The package also exposes all primitives (kernels, gamma models, auction rules,
 baseline policies (FiPla, GreedyMyopic, Shading, MPC, …) and Gymnasium
 wrappers for RL training.
 """
-from importlib.metadata import version
+from importlib.metadata import version, PackageNotFoundError
 
 from dynamauction.scenarios import (
     make,
@@ -62,7 +62,10 @@ from dynamauction.primitives import (
     UniformUser,
 )
 
-__version__ = version("dynamauction")
+try:
+    __version__ = version("dynamauction")
+except PackageNotFoundError:
+    __version__ = "0.0.0+uninstalled"
 
 __all__ = [
     # Checker

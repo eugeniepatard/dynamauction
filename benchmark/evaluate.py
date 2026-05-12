@@ -116,17 +116,27 @@ RESULTS_DIR = Path(__file__).parent / "benchmark_results"
 _DEFAULT_MLP = MODELS_DIR / "mlp_valuation_head" / "survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt"
 
 
-def _find_model_path(algo: str, eta: Optional[int]) -> Optional[Path]:
-    """Return the best_model stem path (without .zip) for *algo* and horizon *eta*.
+def _find_model_path(algo: str, eta: Optional[int], squashing: str = "clip") -> Optional[Path]:
+    """Return the best_model stem path (without .zip) for *algo*, horizon *eta*, and *squashing*.
 
     Search order:
     1. ``MODELS_DIR/<algo>/eta<eta>/*/best_model.zip``  (shipped or freshly trained)
     2. ``MODELS_DIR/<algo>/eta50/*/best_model.zip``     (fallback to eta=50 weights)
+
+    Folder filtering:
+    - ``squashing='sigmoid'``: only folders whose name contains ``squashing=sigmoid``
+      (written by retrain_best.py as ``best_<algo>_squashing=sigmoid_eta<η>``).
+    - ``squashing='clip'``: only folders whose name does NOT contain ``squashing=sigmoid``
+      (i.e. the default hyperparameter sweep folders such as ``lr=…``).
     """
     for search_eta in ([eta, 50] if eta is not None and eta != 50 else [50]):
         search_dir = MODELS_DIR / algo / f"eta{search_eta}"
         if search_dir.exists():
             hits = sorted(search_dir.glob("*/best_model.zip"))
+            if squashing == "sigmoid":
+                hits = [h for h in hits if "squashing=sigmoid" in h.parent.name]
+            else:
+                hits = [h for h in hits if "squashing=sigmoid" not in h.parent.name]
             if hits:
                 return hits[0].with_suffix("")   # strip .zip -> stem path
     return None
@@ -353,14 +363,19 @@ def get_rl_policies(
     algos: List[str] = ("ppo", "sac", "td3"),
     mask_expected_reward: bool = True,
     eta: Optional[int] = None,
+    squashing: str = "clip",
     model_paths: Optional[Dict[str, str]] = None,
 ) -> Dict[str, SB3PolicyWrapper]:
     """
     Parameters
     ----------
+    squashing : 'clip' or 'sigmoid'
+        Selects which trained weights to load. 'clip' loads default sweep models
+        (folders like ``lr=…``); 'sigmoid' loads models trained with sigmoid
+        squashing (folders like ``best_<algo>_squashing=sigmoid_eta<η>``).
     model_paths : dict, optional
         Explicit ``{algo: path}`` overrides (without .zip extension).
-        Keys not present fall back to the automatic eta-based resolution.
+        Keys not present fall back to the automatic eta/squashing-based resolution.
         Example: ``{"ppo": "benchmark/models/ppo/eta100/.../best_model"}``
     """
     raw_env   = gym.make("DynamAuction-v0", scenario=scenario)
@@ -376,9 +391,10 @@ def get_rl_policies(
             model_path = Path(model_paths[algo])
             print(f"  Using explicit path for {algo.upper()} <- {model_path}.zip")
         else:
-            model_path = _find_model_path(algo, eta)
+            model_path = _find_model_path(algo, eta, squashing=squashing)
             if model_path is None:
-                print(f"  [WARNING] No saved model for {algo.upper()} (eta={eta}) — skipping.")
+                print(f"  [WARNING] No saved model for {algo.upper()} "
+                      f"(eta={eta}, squashing={squashing}) — skipping.")
                 continue
             if eta is not None and f"eta{eta}" not in str(model_path):
                 print(f"  [INFO] No eta{eta} model for {algo.upper()}, falling back to eta50 weights.")
@@ -415,6 +431,7 @@ def run_full_benchmark(
     algos:  List[str]       = ("ppo", "sac", "td3"),
     cfg:    EvalConfig      = EvalConfig(),
     save:   bool            = True,
+    squashing: str          = "clip",
     extra_policies: Optional[Dict[str, BiddingPolicy]] = None,
     model_paths: Optional[Dict[str, str]] = None,
 ) -> pd.DataFrame:
@@ -425,7 +442,7 @@ def run_full_benchmark(
     policies: Dict[str, BiddingPolicy] = {}
     policies.update(get_rl_policies(
         scenario, list(algos), cfg.mask_expected_reward,
-        eta=eta, model_paths=model_paths,
+        eta=eta, squashing=squashing, model_paths=model_paths,
     ))
     policies.update(get_planning_policies(cfg))
     policies.update(get_simulation_policies(cfg))
@@ -515,6 +532,12 @@ def main():
     parser.add_argument("--alphas",       type=float, nargs="+", default=DEFAULT_SHADING_ALPHAS,
                         help="Shading factors α (one ShadingPolicy per value).")
 
+    # ── Kernel squashing (affects model resolution and scenario) ─────────────
+    parser.add_argument("--squashing", choices=["clip", "sigmoid"], default="clip",
+                        help="SurvivalKernel probability squashing. 'clip' loads default "
+                             "sweep models; 'sigmoid' loads retrained models from "
+                             "folders named 'best_<algo>_squashing=sigmoid_eta<η>'.")
+
     # ── RL model path overrides ───────────────────────────────────────────────
     parser.add_argument("--ppo-model", type=str, default=None, metavar="PATH",
                         help="Explicit path to PPO best_model (without .zip). "
@@ -541,7 +564,7 @@ def main():
 
     cfg = EvalConfig(
         seeds=list(range(args.n_seeds)),
-        scenario_overrides={"horizon_eta": args.horizon_eta},
+        scenario_overrides={"horizon_eta": args.horizon_eta, "kernel_squashing": args.squashing},
         baselines=baselines,
         constant_bid=args.constant_bid,
         random_max_bid=args.random_max_bid,
@@ -558,7 +581,8 @@ def main():
         include_mpc_timebin ="mpc-timebin" in sim_pols or "all" in sim_pols,
     )
 
-    run_full_benchmark(algos=algos, cfg=cfg, save=not args.no_save, model_paths=model_paths or None)
+    run_full_benchmark(algos=algos, cfg=cfg, save=not args.no_save,
+                       squashing=args.squashing, model_paths=model_paths or None)
 
 
 if __name__ == "__main__":
