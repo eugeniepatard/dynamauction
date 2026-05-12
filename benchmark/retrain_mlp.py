@@ -190,6 +190,9 @@ def main() -> None:
                         help="Write TensorBoard logs (one subdirectory per run).")
 
     # ── Execution mode ────────────────────────────────────────────────────────
+    parser.add_argument("--max-jobs", type=int, default=3,
+                        help="Maximum number of SLURM jobs running concurrently "
+                             "(default: 3). Ignored with --local.")
     parser.add_argument("--local", action="store_true",
                         help="Run locally (no SLURM). When sweeping, jobs run "
                              "sequentially. Intended for single-combination runs.")
@@ -240,21 +243,23 @@ def main() -> None:
                      n_episodes=n_episodes, **shared)
         return
 
-    # ── SLURM sweep (one job per combination) ─────────────────────────────────
+    # ── SLURM array (max 3 jobs running concurrently) ────────────────────────
     executor = submitit.AutoExecutor(folder=args.log_folder)
-    executor.update_parameters(**SLURM_PARAMS)
+    executor.update_parameters(**SLURM_PARAMS, slurm_array_parallelism=args.max_jobs)
 
-    print(f"\nSubmitting {len(combinations)} job(s)  "
+    # map_array requires a single-argument callable; wrap shared kwargs in closure
+    def _run(combo):
+        hidden_dims, activation, n_episodes = combo
+        _mlp_job(hidden_dims=hidden_dims, activation=activation,
+                 n_episodes=n_episodes, **shared)
+
+    jobs = executor.map_array(_run, combinations)
+
+    print(f"\nSubmitted {len(jobs)} job(s) as array  "
+          f"(max {args.max_jobs} concurrent)  "
           f"squashing={args.squashing}  eta={args.horizon_eta}")
-    for hidden_dims, activation, n_episodes in combinations:
+    for job, (hidden_dims, activation, n_episodes) in zip(jobs, combinations):
         dims_str = "-".join(str(d) for d in hidden_dims)
-        job = executor.submit(
-            _mlp_job,
-            hidden_dims = hidden_dims,
-            activation  = activation,
-            n_episodes  = n_episodes,
-            **shared,
-        )
         print(f"  [{job.job_id}]  h={dims_str}  act={activation}  ep={n_episodes}")
 
     print(f"\n  Models -> {save_dir}")
