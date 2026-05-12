@@ -278,7 +278,7 @@ def _mpc_label(path: Optional[str], horizon: float, n_models: int, n_horizons: i
     return prefix + (f"({','.join(parts)})" if parts else "")
 
 
-def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
+def get_simulation_policies(cfg: EvalConfig, squashing: str = "clip") -> Dict[str, BiddingPolicy]:
     policies: Dict[str, BiddingPolicy] = {}
 
     if cfg.include_greedy:
@@ -306,7 +306,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
         n_models   = len(cfg.mpc_model_paths)
         n_horizons = len(cfg.mpc_planning_horizons)
         for path in cfg.mpc_model_paths:
-            mlp = load_mlp(cfg.scenario_id, path)
+            mlp = load_mlp(cfg.scenario_id, path, squashing=squashing)
             for horizon in cfg.mpc_planning_horizons:
                 label = _mpc_label(path, horizon, n_models, n_horizons)
                 policies[label] = MPCPolicy(
@@ -322,7 +322,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
         n_models   = len(cfg.mpc_model_paths)
         n_horizons = len(cfg.mpc_planning_horizons)
         for path in cfg.mpc_model_paths:
-            mlp = load_mlp(cfg.scenario_id, path)
+            mlp = load_mlp(cfg.scenario_id, path, squashing=squashing)
             for horizon in cfg.mpc_planning_horizons:
                 label = _mpc_label(path, horizon, n_models, n_horizons, prefix="MPCOracle")
                 policies[label] = MPCOraclePolicy(
@@ -338,7 +338,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
         n_models   = len(cfg.mpc_model_paths)
         n_horizons = len(cfg.mpc_planning_horizons)
         for path in cfg.mpc_model_paths:
-            mlp = load_mlp(cfg.scenario_id, path)
+            mlp = load_mlp(cfg.scenario_id, path, squashing=squashing)
             for horizon in cfg.mpc_planning_horizons:
                 for k in cfg.mpc_n_bins:
                     parts = [f"H={horizon:g}", f"K={k}"]
@@ -445,7 +445,7 @@ def run_full_benchmark(
         eta=eta, squashing=squashing, model_paths=model_paths,
     ))
     policies.update(get_planning_policies(cfg))
-    policies.update(get_simulation_policies(cfg))
+    policies.update(get_simulation_policies(cfg, squashing=squashing))
     if extra_policies:
         policies.update(extra_policies)
 

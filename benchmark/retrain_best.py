@@ -119,6 +119,11 @@ def main() -> None:
         help="Training timesteps per job (default: 5M).",
     )
     parser.add_argument(
+        "--local", action="store_true",
+        help="Run directly in-process instead of submitting to SLURM "
+             "(use this on a machine without SLURM).",
+    )
+    parser.add_argument(
         "--dry-run", action="store_true",
         help="Print job configs without submitting.",
     )
@@ -140,6 +145,12 @@ def main() -> None:
             for k, v in _BEST_CONFIGS[algo].items():
                 print(f"         {k}={v}")
         print("\n(dry run — nothing submitted)")
+        return
+
+    if args.local:
+        for algo, cfg in configs.items():
+            print(f"[{algo.upper()}] Running locally ({cfg.run_name})")
+            _train_job(algo, cfg, args.squashing, args.horizon_eta)
         return
 
     executor = submitit.AutoExecutor(folder=args.log_folder)
