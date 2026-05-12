@@ -172,25 +172,49 @@ def train_mlp(
     return mlp
 
 
-def load_mlp(scenario_id: str = SCENARIO_ID, path: Optional[str] = None) -> MLPValuationHead:
+def mlp_save_dir(squashing: str = "clip") -> Path:
+    """Return the directory where MLP models for the given squashing are stored.
+
+    clip    -> benchmark/models/mlp_valuation_head/
+    sigmoid -> benchmark/models/mlp_valuation_head/squashing=sigmoid/
+    """
+    if squashing == "sigmoid":
+        return MLP_DIR / "squashing=sigmoid"
+    return MLP_DIR
+
+
+def load_mlp(
+    scenario_id: str = SCENARIO_ID,
+    path: Optional[str] = None,
+    squashing: str = "clip",
+) -> MLPValuationHead:
     """Load a saved MLPValuationHead.
 
     If *path* is given, loads from that file directly.  Otherwise scans
-    ``MLP_DIR`` for ``.pt`` files matching ``<scenario_id>_*.pt``:
+    the squashing-specific directory for ``.pt`` files matching
+    ``<scenario_id>_*.pt``:
     - exactly one match -> loaded automatically
     - multiple matches  -> raises, listing candidates (use --mpc-model to pick one)
     - no match          -> raises, suggesting python -m benchmark.train_mlp
+
+    Parameters
+    ----------
+    squashing : 'clip' (default) or 'sigmoid'
+        Selects which saved MLP to load. Must match the squashing used
+        when training the RL agents being evaluated.
     """
     if path is not None:
         p = Path(path)
         if not p.exists():
             raise FileNotFoundError(f"No MLPValuationHead at {p}.")
     else:
-        candidates = sorted(MLP_DIR.glob(f"{scenario_id}_*.pt"))
+        search_dir = mlp_save_dir(squashing)
+        candidates = sorted(search_dir.glob(f"{scenario_id}_*.pt"))
         if not candidates:
             raise FileNotFoundError(
-                f"No MLPValuationHead found for scenario '{scenario_id}' in {MLP_DIR}.\n"
-                "Train one first:  python -m benchmark.train_mlp"
+                f"No MLPValuationHead found for scenario '{scenario_id}' "
+                f"(squashing={squashing}) in {search_dir}.\n"
+                f"Train one first:  python -m benchmark.retrain_mlp --squashing {squashing}"
             )
         if len(candidates) > 1:
             listing = "\n  ".join(str(c) for c in candidates)
