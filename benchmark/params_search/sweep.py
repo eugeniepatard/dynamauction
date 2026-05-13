@@ -149,7 +149,13 @@ def study_name(algo: str, horizon_eta: float, prob_fn: str) -> str:
 
 
 def study_storage_path(algo: str, horizon_eta: float, prob_fn: str) -> Path:
-    return SCRATCH_DIR / "optuna" / f"{study_name(algo, horizon_eta, prob_fn)}.log"
+    return SCRATCH_DIR / "optuna" / f"{study_name(algo, horizon_eta, prob_fn)}.db"
+
+
+def _make_storage(path: Path) -> str:
+    """SQLite storage URL — works across all Optuna versions."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return f"sqlite:///{path}"
 
 
 # ── Grid job ──────────────────────────────────────────────────────────────────
@@ -187,10 +193,7 @@ def _bayesian_train_job(
     import optuna
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    storage = optuna.storages.JournalStorage(
-        optuna.storages.JournalFileBackend(storage_path)
-    )
-    study = optuna.load_study(study_name=sname, storage=storage)
+    study = optuna.load_study(study_name=sname, storage=f"sqlite:///{storage_path}")
     trial = study.ask()
 
     try:
@@ -329,16 +332,12 @@ def _run_bayesian(args: Any, scenario_overrides: dict) -> None:
     for algo in args.algo:
         sname   = study_name(algo, args.horizon_eta, args.prob_fn)
         storage_path = study_storage_path(algo, args.horizon_eta, args.prob_fn)
-        storage_path.parent.mkdir(parents=True, exist_ok=True)
-
-        storage = optuna.storages.JournalStorage(
-            optuna.storages.JournalFileBackend(str(storage_path))
-        )
+        storage = _make_storage(storage_path)
         optuna.create_study(
             study_name=sname,
             storage=storage,
             direction="maximize",
-            load_if_exists=True,         # resume if already exists
+            load_if_exists=True,
         )
 
         n     = args.n_trials

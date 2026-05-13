@@ -122,20 +122,17 @@ def compare_algo_bayesian(
     _scratch = Path("/scratch/epatard")
 
     if optuna_dir is not None:
-        storage_path = optuna_dir / f"{_sname}.log"
+        storage_path = optuna_dir / f"{_sname}.db"
     else:
-        storage_path = _scratch / "optuna" / f"{_sname}.log"
+        storage_path = _scratch / "optuna" / f"{_sname}.db"
 
     if not storage_path.exists():
         print(f"[{algo.upper()}] Optuna study not found at {storage_path}")
         return None
 
-    storage = optuna.storages.JournalStorage(
-        optuna.storages.JournalFileBackend(str(storage_path))
-    )
     sname = _sname
     try:
-        study = optuna.load_study(study_name=sname, storage=storage)
+        study = optuna.load_study(study_name=sname, storage=f"sqlite:///{storage_path}")
     except Exception as exc:
         print(f"[{algo.upper()}] Could not load Optuna study: {exc}")
         return None
