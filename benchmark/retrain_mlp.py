@@ -48,7 +48,7 @@ from typing import Any, List, Optional
 import submitit
 
 from benchmark.train_rl import SCENARIO_ID, LOGS_DIR
-from benchmark.train_mlp import train_mlp, mlp_save_dir
+from benchmark.train_mlp import train_mlp
 
 # ── Cluster paths ─────────────────────────────────────────────────────────────
 
@@ -99,17 +99,18 @@ def _build_combinations(args: argparse.Namespace):
 
 
 def _mlp_job(
-    squashing:   str,
-    horizon_eta: int,
-    hidden_dims: List[int],
-    activation:  str,
-    n_episodes:  int,
-    val_frac:    float,
-    n_epochs:    int,
-    lr:          float,
-    batch_size:  int,
-    seed:        int,
-    tensorboard: bool,
+    squashing:    str,
+    horizon_eta:  int,
+    hidden_dims:  List[int],
+    activation:   str,
+    n_episodes:   int,
+    val_frac:     float,
+    n_epochs:     int,
+    lr:           float,
+    batch_size:   int,
+    seed:         int,
+    tensorboard:  bool,
+    scratch_dir:  Path,
 ) -> None:
     """Callable submitted to SLURM (or run locally)."""
     scenario_overrides = {
@@ -117,7 +118,9 @@ def _mlp_job(
         "kernel_squashing": squashing,
     }
 
-    save_dir = mlp_save_dir(squashing)
+    squash_suffix = f"squashing={squashing}" if squashing == "sigmoid" else ""
+    save_dir = scratch_dir / "mlp_valuation_head" / squash_suffix if squash_suffix \
+               else scratch_dir / "mlp_valuation_head"
     save_dir.mkdir(parents=True, exist_ok=True)
 
     log_dir: Optional[Path] = None
@@ -130,7 +133,8 @@ def _mlp_job(
             f"_ep{n_episodes}_e{n_epochs}_lr{lr:g}_s{seed}"
             f"_{timestamp}"
         )
-        log_dir = LOGS_DIR / "mlp_valuation_head" / run_name
+        log_dir = scratch_dir / "logs" / "mlp_valuation_head" / run_name
+        log_dir.mkdir(parents=True, exist_ok=True)
 
     train_mlp(
         scenario_id        = SCENARIO_ID,
@@ -189,6 +193,12 @@ def main() -> None:
     parser.add_argument("--tensorboard", action="store_true",
                         help="Write TensorBoard logs (one subdirectory per run).")
 
+    # ── Paths ────────────────────────────────────────────────────────────────
+    parser.add_argument("--scratch-dir", type=Path, default=SCRATCH_DIR,
+                        help=f"Root directory for models and logs (default: {SCRATCH_DIR}). "
+                             "Models -> <scratch>/mlp_valuation_head/[squashing=sigmoid/], "
+                             "Logs   -> <scratch>/logs/mlp_valuation_head/<run>/")
+
     # ── Execution mode ────────────────────────────────────────────────────────
     parser.add_argument("--max-jobs", type=int, default=3,
                         help="Maximum number of SLURM jobs running concurrently "
@@ -204,7 +214,10 @@ def main() -> None:
     args = parser.parse_args()
 
     combinations = _build_combinations(args)
-    save_dir     = mlp_save_dir(args.squashing)
+    scratch_dir  = args.scratch_dir
+    squash_suffix = f"squashing={args.squashing}" if args.squashing == "sigmoid" else ""
+    save_dir = scratch_dir / "mlp_valuation_head" / squash_suffix if squash_suffix \
+               else scratch_dir / "mlp_valuation_head"
 
     # ── Shared kwargs (constant across sweep) ─────────────────────────────────
     shared = dict(
@@ -216,6 +229,7 @@ def main() -> None:
         batch_size  = args.batch_size,
         seed        = args.seed,
         tensorboard = args.tensorboard,
+        scratch_dir = scratch_dir,
     )
 
     # ── Dry run ───────────────────────────────────────────────────────────────
