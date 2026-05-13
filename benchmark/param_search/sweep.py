@@ -36,14 +36,11 @@ Usage (from repo root, on the cluster):
 """
 from __future__ import annotations
 
-import sys
 import argparse
 import itertools
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 import numpy as np
 import submitit
@@ -258,8 +255,8 @@ def main() -> None:
     args = parser.parse_args()
 
     scenario_overrides = {
-        "horizon_eta": args.horizon_eta,
-        "kernel_prob_fn": args.prob_fn,
+        "horizon_eta":      args.horizon_eta,
+        "kernel_squashing": args.prob_fn,
     }
 
     if args.search == "grid":

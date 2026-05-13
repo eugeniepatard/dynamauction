@@ -32,8 +32,8 @@ from typing import Any, Dict, Optional, Union
 import numpy as np
 import pandas as pd
 
-BENCHMARK_DIR = Path(__file__).parent
-LOGS_DIR      = BENCHMARK_DIR / "logs"
+SCRATCH_DIR = Path("/scratch/epatard")
+LOGS_DIR    = SCRATCH_DIR / "logs"
 
 # ── Grid: result loading ──────────────────────────────────────────────────────
 
