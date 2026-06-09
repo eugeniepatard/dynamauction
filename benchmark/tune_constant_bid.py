@@ -36,16 +36,18 @@ def tune_constant_bid(
     horizon_eta: int,
     bids: list[float],
     n_seeds: int = 30,
+    squashing: str = "clip",
     out_dir: Optional[Path] = None,
 ) -> pd.DataFrame:
     out = Path(out_dir) if out_dir else _RESULTS_DIR
     out.mkdir(parents=True, exist_ok=True)
 
-    scenario = dac.make(SCENARIO_ID, horizon_eta=horizon_eta)
+    scenario_overrides = {"horizon_eta": horizon_eta, "kernel_squashing": squashing}
+    scenario = dac.make(SCENARIO_ID, **scenario_overrides)
     cfg = EvalConfig(
         seeds=list(range(n_seeds)),
         scenario_id=SCENARIO_ID,
-        scenario_overrides={"horizon_eta": horizon_eta},
+        scenario_overrides=scenario_overrides,
     )
 
     frames = []
@@ -59,7 +61,7 @@ def tune_constant_bid(
     results = pd.concat(frames, ignore_index=True)
 
     ts  = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    csv = out / f"{SCENARIO_ID}_eta{horizon_eta}_constant_bid_sweep_{ts}.csv"
+    csv = out / f"{SCENARIO_ID}_eta{horizon_eta}_sq{squashing}_constant_bid_sweep_{ts}.csv"
     results.to_csv(csv, index=False)
     print(f"\nResults saved -> {csv}")
 
@@ -96,6 +98,8 @@ def main() -> None:
     parser.add_argument("--n-seeds",     type=int,   default=30)
     parser.add_argument("--out-dir",     type=Path,  default=None,
                         help="Directory for CSV output (default: benchmark/benchmark_results/).")
+    parser.add_argument("--squashing",   choices=["clip", "sigmoid"], default="clip",
+                        help="SurvivalKernel probability squashing (default: clip).")
     args = parser.parse_args()
 
     bids = list(np.linspace(args.bid_min, args.bid_max, args.n_bids))
@@ -103,6 +107,7 @@ def main() -> None:
         horizon_eta=args.horizon_eta,
         bids=bids,
         n_seeds=args.n_seeds,
+        squashing=args.squashing,
         out_dir=args.out_dir,
     )
 

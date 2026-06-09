@@ -38,7 +38,8 @@ SCRATCH_DIR = Path("/scratch/epatard")
 
 # ── Best hyperparameters (from sweep, see Table tab:rl_hyperparams) ───────────
 
-_BEST_CONFIGS: dict[str, dict[str, Any]] = {
+# Clip best configs (grid sweep, η=50)
+_BEST_CLIP_CONFIGS: dict[str, dict[str, Any]] = {
     "ppo": dict(
         learning_rate=3e-4,
         ppo_ent_coef=0.02,
@@ -61,6 +62,35 @@ _BEST_CONFIGS: dict[str, dict[str, Any]] = {
     ),
 }
 
+# Sigmoid best configs (Bayesian sweep, η=50)
+_BEST_SIGMOID_CONFIGS: dict[str, dict[str, Any]] = {
+    "ppo": dict(
+        learning_rate=3.083e-4,
+        ppo_ent_coef=0.02038,
+        ppo_n_steps=1024,
+        gamma=0.99,
+        ppo_n_epochs=2,
+    ),
+    "sac": dict(
+        learning_rate=8.844e-4,
+        off_policy_batch_size=256,
+        off_policy_learning_starts=1500,
+        gamma=0.99,
+    ),
+    "td3": dict(
+        learning_rate=1.223e-4,
+        off_policy_batch_size=256,
+        td3_action_noise_sigma=0.07322,
+        off_policy_learning_starts=500,
+        gamma=0.99,
+    ),
+}
+
+_BEST_CONFIGS_BY_SQUASHING: dict[str, dict[str, dict[str, Any]]] = {
+    "clip":    _BEST_CLIP_CONFIGS,
+    "sigmoid": _BEST_SIGMOID_CONFIGS,
+}
+
 # ── Margaret SLURM parameters ─────────────────────────────────────────────────
 
 SLURM_PARAMS: dict[str, Any] = {
@@ -78,12 +108,13 @@ SLURM_PARAMS: dict[str, Any] = {
 
 def _build_config(algo: str, squashing: str, timesteps: int, horizon_eta: int) -> TrainingConfig:
     run_name = f"best_{algo}_squashing={squashing}_eta{horizon_eta}"
+    best_configs = _BEST_CONFIGS_BY_SQUASHING[squashing]
     return TrainingConfig(
         total_timesteps=timesteps,
         scratch_dir=SCRATCH_DIR,
         verbose=False,
         run_name=run_name,
-        **_BEST_CONFIGS[algo],
+        **best_configs[algo],
     )
 
 
@@ -142,7 +173,7 @@ def main() -> None:
         print(f"\nsquashing={args.squashing}  horizon_eta={args.horizon_eta}  timesteps={args.timesteps:,}\n")
         for algo, cfg in configs.items():
             print(f"  {algo.upper():4s}  run_name={cfg.run_name}")
-            for k, v in _BEST_CONFIGS[algo].items():
+            for k, v in _BEST_CONFIGS_BY_SQUASHING[args.squashing][algo].items():
                 print(f"         {k}={v}")
         print("\n(dry run — nothing submitted)")
         return

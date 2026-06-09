@@ -8,7 +8,7 @@ Results are saved to a CSV (one row per policy × seed × step).
 Usage (from repo root)
 ----------------------
     python benchmark/tune_shading_alpha.py --horizon-eta 50
-    python benchmark/tune_shading_alpha.py --horizon-eta 50 --n-alphas 20 --n-seeds 30
+    python benchmark/tune_shading_alpha.py --horizon-eta 50 --n-alphas 20 --n-seeds 30 --squashing sigmoid
     python benchmark/tune_shading_alpha.py --horizon-eta 50 --alpha-min 0.0 --alpha-max 1.5
 """
 from __future__ import annotations
@@ -39,16 +39,18 @@ def tune_shading_alpha(
     n_seeds: int = 30,
     n_rollouts: int = 10,
     policy_seed: int = 0,
+    squashing: str = "clip",
     out_dir: Optional[Path] = None,
 ) -> pd.DataFrame:
     out = Path(out_dir) if out_dir else _RESULTS_DIR
     out.mkdir(parents=True, exist_ok=True)
 
-    scenario = dac.make(SCENARIO_ID, horizon_eta=horizon_eta)
+    scenario_overrides = {"horizon_eta": horizon_eta, "kernel_squashing": squashing}
+    scenario = dac.make(SCENARIO_ID, **scenario_overrides)
     cfg = EvalConfig(
         seeds=list(range(n_seeds)),
         scenario_id=SCENARIO_ID,
-        scenario_overrides={"horizon_eta": horizon_eta},
+        scenario_overrides=scenario_overrides,
     )
 
     frames = []
@@ -69,7 +71,7 @@ def tune_shading_alpha(
     results = pd.concat(frames, ignore_index=True)
 
     ts  = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    csv = out / f"{SCENARIO_ID}_eta{horizon_eta}_shading_alpha_sweep_{ts}.csv"
+    csv = out / f"{SCENARIO_ID}_eta{horizon_eta}_sq{squashing}_shading_alpha_sweep_{ts}.csv"
     results.to_csv(csv, index=False)
     print(f"\nResults saved -> {csv}")
 
@@ -109,6 +111,8 @@ def main() -> None:
     parser.add_argument("--policy-seed",  type=int,   default=0)
     parser.add_argument("--out-dir",      type=Path,  default=None,
                         help="Directory for CSV output (default: benchmark/shading_alpha_results/).")
+    parser.add_argument("--squashing",    choices=["clip", "sigmoid"], default="clip",
+                        help="SurvivalKernel probability squashing (default: clip).")
     args = parser.parse_args()
 
     alphas = list(np.linspace(args.alpha_min, args.alpha_max, args.n_alphas))
@@ -118,6 +122,7 @@ def main() -> None:
         n_seeds=args.n_seeds,
         n_rollouts=args.n_rollouts,
         policy_seed=args.policy_seed,
+        squashing=args.squashing,
         out_dir=args.out_dir,
     )
 
