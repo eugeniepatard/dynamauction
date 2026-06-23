@@ -113,7 +113,8 @@ RESULTS_DIR = Path(__file__).parent / "benchmark_results"
 # _find_model_path() globs for best_model.zip inside the eta-specific directory so
 # the exact hyperparameter folder name does not need to be hardcoded here.
 # MLP valuation head : produced by train_mlp.py. Required for MPC, MPCOracle, MPCTimeBinned.
-_DEFAULT_MLP = MODELS_DIR / "mlp_valuation_head" / "survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt"
+# If --mpc-models is omitted, load_mlp() auto-detects the model in the
+# squashing-specific directory (see train_mlp.mlp_save_dir).
 
 
 def _find_model_path(algo: str, eta: Optional[int], squashing: str = "clip") -> Optional[Path]:
@@ -550,8 +551,16 @@ def main():
     # ── MPC parameters ────────────────────────────────────────────────────────
     parser.add_argument("--mpc-horizons", type=float, nargs="+", default=DEFAULT_MPC_HORIZONS,
                         help="Planning horizons H for MPC variants.")
-    parser.add_argument("--mpc-models",   type=str,   nargs="+", default=[_DEFAULT_MLP],
-                        help="Paths to MLPValuationHead .pt files.")
+    parser.add_argument("--mpc-models",   type=str,   nargs="+", default=[None],
+                        help="Paths to MLPValuationHead .pt files. If omitted, "
+                             "auto-detects the single model in the squashing-specific "
+                             "directory (benchmark/models/mlp_valuation_head/ for "
+                             "'clip', .../squashing=sigmoid/ for 'sigmoid').")
+    parser.add_argument("--mpc-n-bins",   type=int,   nargs="+", default=DEFAULT_MPC_N_BINS,
+                        help="Number of time bins K for MPCTimeBinned (one policy per value).")
+    parser.add_argument("--mpc-alpha-candidates", type=float, nargs="+", default=DEFAULT_MPC_ALPHA_CANDIDATES,
+                        help="Discrete grid A0 of first-step shading multipliers searched by "
+                             "MPC/MPCOracle/MPCTimeBinned. Must match across scenarios being compared.")
     args = parser.parse_args()
 
     algos     = [] if "none" in args.algos     else args.algos
@@ -574,6 +583,8 @@ def main():
         shading_alphas=args.alphas,
         mpc_model_paths=args.mpc_models,
         mpc_planning_horizons=args.mpc_horizons,
+        mpc_n_bins=args.mpc_n_bins,
+        mpc_alpha_candidates=args.mpc_alpha_candidates,
         include_greedy      ="greedy"      in sim_pols or "all" in sim_pols,
         include_shading     ="shading"     in sim_pols or "all" in sim_pols,
         include_mpc         ="mpc"         in sim_pols or "all" in sim_pols,
