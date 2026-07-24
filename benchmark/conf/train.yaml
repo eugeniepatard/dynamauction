@@ -15,6 +15,7 @@ training:
   eval_freq: 100_000
   n_eval_episodes: 50
   verbose: true
+  scratch_dir: null            # if set, models/logs go here instead of benchmark/models|logs
 
 hydra:
   run:
