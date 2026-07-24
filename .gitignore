@@ -34,3 +34,7 @@ Pseudo-code.md
 benchmark/benchmark_results
 benchmark/plots
 A_kernel_causal_model_for_repeated_auctions_with_dynamic_values.pdf
+benchmark/run_evaluate_part.sh
+benchmark/run_evaluate_sigmoid.sh
+figures/
+overleaf/

@@ -506,6 +506,103 @@ def plot_training_curves(
     return fig
 
 
+def plot_training_curves_per_algo(
+    algos:    List[str]      = ("ppo", "sac", "td3"),
+    logs_dir: Optional[Path] = None,
+    smooth:   int            = 5,
+    title:    str            = "Training Curves",
+    save:     bool           = True,
+    filename: str            = "training_curves_per_algo.pdf",
+) -> Optional[plt.Figure]:
+    """
+    Like ``plot_training_curves`` but one subplot per algorithm with an
+    independent y-axis, so a large early-training dip in one algo does not
+    compress the y-scale of the others.
+    """
+    if logs_dir is None:
+        logs_dir = Path(__file__).parent / "logs"
+
+    try:
+        from tensorboard.backend.event_processing.event_accumulator import (
+            EventAccumulator,
+        )
+    except ImportError:
+        print("[WARNING] tensorboard not installed — skipping training curves.")
+        return None
+
+    algo_names = [a.upper() for a in algos]
+    palette    = _make_palette(algo_names)
+
+    # Collect data first so we can skip missing algos
+    data = {}
+    for algo in algos:
+        algo_dir = logs_dir / algo
+        if not algo_dir.exists():
+            print(f"  [WARNING] No log dir for {algo.upper()}")
+            continue
+        event_files = sorted(algo_dir.rglob("events.out.tfevents.*"))
+        if not event_files:
+            print(f"  [WARNING] No event files for {algo.upper()}")
+            continue
+        ea = EventAccumulator(str(event_files[-1].parent))
+        ea.Reload()
+        tag = "eval/mean_reward"
+        if tag not in ea.Tags().get("scalars", []):
+            print(f"  [WARNING] Tag '{tag}' not found for {algo.upper()}")
+            continue
+        events  = ea.Scalars(tag)
+        steps   = np.array([e.step  for e in events])
+        rewards = np.array([e.value for e in events])
+        if smooth > 1 and len(rewards) >= smooth:
+            kernel  = np.ones(smooth) / smooth
+            rewards = np.convolve(rewards, kernel, mode="valid")
+            steps   = steps[smooth - 1:]
+        data[algo] = (steps, rewards)
+
+    if not data:
+        print("[INFO] No training data to plot.")
+        return None
+
+    _style()
+    n = len(data)
+    fig, axes = plt.subplots(1, n, figsize=(5 * n, 5), sharey=False)
+    if n == 1:
+        axes = [axes]
+
+    fig.suptitle(title, fontweight="bold", fontsize=13)
+
+    tail_frac = 0.2
+    for ax, algo in zip(axes, data):
+        steps, rewards = data[algo]
+        color = palette[algo.upper()]
+        ax.plot(steps, rewards, color=color, lw=2)
+
+        # slope over last tail_frac of training
+        n_tail = max(10, int(len(steps) * tail_frac))
+        s_tail, r_tail = steps[-n_tail:], rewards[-n_tail:]
+        slope_per_100k = np.polyfit(s_tail, r_tail, 1)[0] * 1e5
+        sign = "+" if slope_per_100k >= 0 else ""
+        ax.text(
+            0.97, 0.05,
+            f"slope (last 20%): {sign}{slope_per_100k:.3f} / 100K steps",
+            transform=ax.transAxes, ha="right", va="bottom", fontsize=8,
+            color="dimgray",
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.7, ec="none"),
+        )
+
+        ax.set_title(algo.upper(), fontweight="bold")
+        ax.set_xlabel("Environment steps")
+        ax.set_ylabel("Mean episode reward (eval)")
+        ax.xaxis.set_major_formatter(
+            mticker.FuncFormatter(lambda x, _: f"{x / 1_000:.0f}K")
+        )
+
+    fig.tight_layout()
+    if save:
+        _save(fig, filename)
+    return fig
+
+
 def plot_context_dynamics(
     df:         pd.DataFrame,
     policies:   Optional[List[str]] = None,
