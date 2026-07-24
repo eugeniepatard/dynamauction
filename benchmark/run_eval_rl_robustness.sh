@@ -25,9 +25,15 @@ source /scratch/epatard/miniconda3/etc/profile.d/conda.sh
 conda activate dynamicauc
 cd ~/projects/dynamicauc
 
-MODEL=benchmark/models/${ALGO}/${SCENARIO_ID}/best_model
-if [ ! -f "${MODEL}.zip" ]; then
-    echo "ERROR: model not found at ${MODEL}.zip"
+# Models saved by run_train_rl_robustness.sh go to scratch; fall back to home for legacy runs
+SCRATCH_MODEL=/scratch/epatard/dynamicauc/models/${ALGO}/${SCENARIO_ID}/best_model
+HOME_MODEL=benchmark/models/${ALGO}/${SCENARIO_ID}/best_model
+if [ -f "${SCRATCH_MODEL}.zip" ]; then
+    MODEL="${SCRATCH_MODEL}"
+elif [ -f "${HOME_MODEL}.zip" ]; then
+    MODEL="${HOME_MODEL}"
+else
+    echo "ERROR: model not found at ${SCRATCH_MODEL}.zip or ${HOME_MODEL}.zip"
     exit 1
 fi
 echo "Using model: ${MODEL}"
