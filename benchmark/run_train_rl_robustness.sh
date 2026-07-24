@@ -1,16 +1,14 @@
 #!/bin/bash
 #SBATCH --partition=normal-best
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=32G
-#SBATCH --time=24:00:00
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=16G
+#SBATCH --time=1-02:00:00
 #SBATCH --output=/scratch/epatard/submitit_logs/%x_%j.out
 #SBATCH --error=/scratch/epatard/submitit_logs/%x_%j.err
 
 # Usage: ALGO=ppo SCENARIO_ID=survival-second-price-exponential-immediate \
 #          sbatch --job-name=rl_ppo_immediate benchmark/run_train_rl_robustness.sh
 # ALGO must be one of: ppo, sac, td3
-# Trains for 10M timesteps (robustness budget). Use training.total_timesteps=30000000
-# to match the main survival experiment budget.
 
 set -e
 
@@ -33,4 +31,5 @@ python -m benchmark.train_rl \
     algo="${ALGO}" \
     scenario_id="${SCENARIO_ID}" \
     training.total_timesteps=10000000 \
-    training.scratch_dir=/scratch/epatard/dynamicauc
+    training.scratch_dir=/scratch/epatard/dynamicauc \
+    ${EXTRA_ARGS:-}
