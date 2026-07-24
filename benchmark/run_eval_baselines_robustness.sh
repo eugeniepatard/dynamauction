@@ -24,4 +24,4 @@ python -m benchmark.evaluate \
     --algos none \
     --baselines fipla \
     --sim-policies greedy \
-    --n-seeds 500
+    --n-seeds 1000

@@ -32,4 +32,4 @@ python -m benchmark.evaluate \
     --baselines none \
     --sim-policies shading \
     --alphas "${BEST_ALPHA}" \
-    --n-seeds 500
+    --n-seeds 1000

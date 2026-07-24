@@ -40,4 +40,4 @@ python -m benchmark.evaluate \
     --mpc-n-bins 2 \
     --mpc-alpha-candidates 0.6 0.8 1.0 1.2 1.5 \
     --mpc-models "${MLP}" \
-    --n-seeds 500
+    --n-seeds 1000
