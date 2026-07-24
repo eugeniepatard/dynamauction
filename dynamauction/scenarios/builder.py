@@ -66,6 +66,7 @@ from dynamauction.primitives import (
     CompetitorExtinctionKernel,
     MixedKernel,
     SurvivalKernel,
+    ImmediateSurvivalKernel,
     # Gammas
     Gamma,
     AdditiveGamma,
@@ -83,6 +84,7 @@ from dynamauction.primitives import (
     ConversionProbe,
     PoissonProbe,
     SurvivalProbe,
+    NullProbe,
     # Delay samplers
     DelaySampler,
     SingleConversionSampler,
@@ -115,6 +117,8 @@ def create_kernel(name: str, **kwargs) -> RewardKernel:
         return CompetitorExtinctionKernel(**kwargs)
     elif name == "survival":
         return SurvivalKernel(**kwargs)
+    elif name == "immediate-survival":
+        return ImmediateSurvivalKernel(**kwargs)
     elif name == "mixed":
         base_kernel_cfg = kwargs.pop("base_kernel")
         base_kernel = create_kernel(base_kernel_cfg["name"], **base_kernel_cfg.get("params", {}))
@@ -217,6 +221,8 @@ def create_probe(name: str, kernel: RewardKernel, **kwargs) -> ConversionProbe:
         return PoissonProbe(kernel=kernel, **kwargs)
     elif name == "survival":
         return SurvivalProbe(kernel=kernel, **kwargs)
+    elif name == "null":
+        return NullProbe(kernel=kernel, **kwargs)
     else:
         raise ValueError(f"Unknown probe: {name!r}")
 

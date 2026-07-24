@@ -114,3 +114,13 @@ class SurvivalProbe(ConversionProbe):
 
     def sample_all(self, u, x, ctx, y_func, t, horizon, rng) -> List[float]:
         return self._draw(u, x, ctx, t, horizon, rng)  # same — survival is always 0/1
+
+
+class NullProbe(ConversionProbe):
+    """Probe that produces no delayed conversions. Use with immediate-reward kernels."""
+
+    def sample_one(self, u, x, ctx, y_func, t, horizon, rng) -> List[float]:
+        return []
+
+    def sample_all(self, u, x, ctx, y_func, t, horizon, rng) -> List[float]:
+        return []

@@ -107,6 +107,27 @@ SCENARIO_PRESETS = {
         "delay_sampler": {"name": "multi"},
     },
 
+    # ── Immediate-reward variant of the main survival scenario ───────────────────
+    # Same conversion probability as survival-second-price-exponential but reward
+    # is realized at bid time (kappa=f, lambda_=0).  Used to isolate whether
+    # delayed credit assignment is the bottleneck for RL agents.
+
+    "survival-second-price-exponential-immediate": {
+        "description": "Immediate-reward survival kernel — same conversion prob but reward at bid time, no delay",
+        "kernel": {"name": "immediate-survival", "params": {"w_u": [1.0, 1.0, 1.0], "w_x": [1.0, 1.0, 1.0], "alpha": 1.0}},
+        "auction": {"name": "second-price"},
+        "competition": {"name": "lognormal", "params": {"mu": 0.0, "sigma": 1.0}},
+        "arrival": {"name": "cstpoisson", "params": {"rate": 1.0}},
+        "display": {"name": "normal", "params": {"dim": 3, "mu": 0.0, "sigma": 1.0}},
+        "exogenous": {"name": "trivial"},
+        "horizon": {"name": "exponential", "params": {"eta": 50.0}},
+        "user": {"name": "normal", "params": {"full_dim": 3, "observable_dim": 3, "mu": 0.0, "sigma": 1.0}},
+        "gamma": {"name": "multiplicative", "params": {"c": 0.9, "initial_value": 1.0}},
+        "max_history": 1,
+        "probe": {"name": "null"},
+        "delay_sampler": {"name": "single"},
+    },
+
     "mixed-second-price-exponential-eta50": {
         "description": "Mixed kernel, second-price, exponential competition, exponential horizon eta=50",
         "kernel": {
