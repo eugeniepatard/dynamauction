@@ -525,10 +525,18 @@ def main():
                         help="Explicit path to TD3 best_model (without .zip).")
 
     # ── MPC parameters ────────────────────────────────────────────────────────
-    parser.add_argument("--mpc-horizons", type=float, nargs="+", default=DEFAULT_MPC_HORIZONS,
+    parser.add_argument("--mpc-horizons",          type=float, nargs="+", default=DEFAULT_MPC_HORIZONS,
                         help="Planning horizons H for MPC variants.")
-    parser.add_argument("--mpc-models",   type=str,   nargs="+", default=[_DEFAULT_MLP],
+    parser.add_argument("--mpc-models",            type=str,   nargs="+", default=[_DEFAULT_MLP],
                         help="Paths to MLPValuationHead .pt files.")
+    parser.add_argument("--mpc-n-bins",            type=int,   nargs="+", default=DEFAULT_MPC_N_BINS,
+                        help="Number of time bins K for MPCTimeBinned variants.")
+    parser.add_argument("--mpc-alpha-candidates",  type=float, nargs="+", default=DEFAULT_MPC_ALPHA_CANDIDATES,
+                        help="Alpha candidates for MPC inner optimisation.")
+
+    # ── Scenario selection ────────────────────────────────────────────────────
+    parser.add_argument("--scenario-id",           type=str,   default=SCENARIO_ID,
+                        help="Scenario preset ID (default: survival-second-price-exponential).")
     args = parser.parse_args()
 
     algos     = [] if "none" in args.algos     else args.algos
@@ -539,9 +547,16 @@ def main():
                    [("ppo", args.ppo_model), ("sac", args.sac_model), ("td3", args.td3_model)]
                    if v is not None}
 
+    # horizon_eta and kernel_squashing only apply to the survival (exponential-horizon) scenario
+    if args.scenario_id == SCENARIO_ID:
+        scenario_overrides = {"horizon_eta": args.horizon_eta}
+    else:
+        scenario_overrides = {}
+
     cfg = EvalConfig(
         seeds=list(range(args.n_seeds)),
-        scenario_overrides={"horizon_eta": args.horizon_eta},
+        scenario_id=args.scenario_id,
+        scenario_overrides=scenario_overrides,
         baselines=baselines,
         constant_bid=args.constant_bid,
         random_max_bid=args.random_max_bid,
@@ -551,6 +566,8 @@ def main():
         shading_alphas=args.alphas,
         mpc_model_paths=args.mpc_models,
         mpc_planning_horizons=args.mpc_horizons,
+        mpc_n_bins=args.mpc_n_bins,
+        mpc_alpha_candidates=args.mpc_alpha_candidates,
         include_greedy      ="greedy"      in sim_pols or "all" in sim_pols,
         include_shading     ="shading"     in sim_pols or "all" in sim_pols,
         include_mpc         ="mpc"         in sim_pols or "all" in sim_pols,
