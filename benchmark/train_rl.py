@@ -297,6 +297,7 @@ def _cfg_to_training_config(cfg: DictConfig) -> TrainingConfig:
         eval_freq=t.eval_freq,
         n_eval_episodes=t.n_eval_episodes,
         verbose=t.verbose,
+        scratch_dir=t.get("scratch_dir") or None,
         learning_rate=a.learning_rate,
         gamma=a.gamma,
     )

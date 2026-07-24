@@ -32,4 +32,5 @@ echo "Training ${ALGO} on ${SCENARIO_ID} for 10M timesteps"
 python -m benchmark.train_rl \
     algo="${ALGO}" \
     scenario_id="${SCENARIO_ID}" \
-    training.total_timesteps=10000000
+    training.total_timesteps=10000000 \
+    training.scratch_dir=/scratch/epatard/dynamicauc
