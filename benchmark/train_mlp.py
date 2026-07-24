@@ -219,6 +219,7 @@ def _start_tensorboard(log_dir: Path, port: int) -> subprocess.Popen:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train MLPValuationHead for MPCPolicy.")
+    parser.add_argument("--scenario-id",  type=str,   default=SCENARIO_ID, help="Scenario preset ID (default: survival-second-price-exponential).")
     parser.add_argument("--n-episodes",  type=int,   default=500,         help="Rollout episodes for data collection (default: 500).")
     parser.add_argument("--val-frac",    type=float, default=0.2,         help="Fraction of samples held out for validation (default: 0.15).")
     parser.add_argument("--hidden-dims", type=int,   nargs="+", default=[64, 64], help="Hidden layer widths (default: 64 64).")
@@ -253,6 +254,7 @@ def main() -> None:
 
     try:
         train_mlp(
+            scenario_id=args.scenario_id,
             n_episodes=args.n_episodes,
             val_frac=args.val_frac,
             hidden_dims=args.hidden_dims,
