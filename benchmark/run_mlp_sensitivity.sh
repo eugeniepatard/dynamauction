@@ -2,7 +2,7 @@
 #SBATCH --partition=normal-best
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
-#SBATCH --time=10:00:00
+#SBATCH --time=2-00:00:00
 #SBATCH --output=/scratch/epatard/submitit_logs/%x_%j.out
 #SBATCH --error=/scratch/epatard/submitit_logs/%x_%j.err
 
