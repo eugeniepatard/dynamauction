@@ -41,14 +41,19 @@ MODEL="${MODEL_ZIP%.zip}"
 SCENARIO=$(basename "$(dirname "${MODEL_ZIP}")")
 echo "Using model: ${MODEL}  (scenario: ${SCENARIO})"
 
-python -m benchmark.evaluate \
+# Capture the exact output CSV path from evaluate.py stdout to avoid race conditions
+CSV_PATH=$(python -m benchmark.evaluate \
     --scenario-id "${SCENARIO}" \
     --algos "${ALGO}" \
     --${ALGO}-model "${MODEL}" \
     --baselines none \
     --sim-policies none \
-    --n-seeds "${N_SEEDS}"
+    --n-seeds "${N_SEEDS}" 2>/dev/null \
+  | grep "Results saved ->" | tail -1 | awk '{print $NF}')
 
-LATEST=$(ls -t benchmark/benchmark_results/${SCENARIO}_*.csv 2>/dev/null | head -1)
-mv "${LATEST}" "${OUT_DIR}/timing_${ALGO}.csv"
+if [ -z "${CSV_PATH}" ] || [ ! -f "${CSV_PATH}" ]; then
+    echo "ERROR: could not determine output CSV path"
+    exit 1
+fi
+mv "${CSV_PATH}" "${OUT_DIR}/timing_${ALGO}.csv"
 echo "Saved -> ${OUT_DIR}/timing_${ALGO}.csv"
