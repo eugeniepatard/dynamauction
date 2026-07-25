@@ -24,8 +24,8 @@ python -m benchmark.evaluate \
     --scenario-id "${SCENARIO}" \
     --horizon-eta 50 \
     --algos none \
-    --baselines fipla greedy \
-    --sim-policies none \
+    --baselines fipla \
+    --sim-policies greedy \
     --n-seeds "${N_SEEDS}"
 
 LATEST=$(ls -t benchmark/benchmark_results/${SCENARIO}_*.csv 2>/dev/null | head -1)
