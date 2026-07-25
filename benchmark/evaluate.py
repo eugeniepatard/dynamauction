@@ -3,7 +3,7 @@ Evaluation and benchmarking for RL and planning policies (sequential, single pro
 
 Output: per-step DataFrame with columns
     policy, seed, step, t, reward, cum_reward, won, bid, payment,
-    ctx, expected_reward, competing_bid, alpha_chosen
+    ctx, expected_reward, competing_bid, alpha_chosen, bid_time_s
 
 Python API
 ----------
@@ -78,6 +78,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import pickle
 from pathlib import Path
+import time
 from typing import Dict, List, Optional
 from tqdm import tqdm
 
@@ -204,7 +205,9 @@ def _run_episode(
     rows: List[dict] = []
 
     while not done:
+        _t0    = time.perf_counter()
         bid    = policy.bid(obs)
+        _bid_time_s = time.perf_counter() - _t0
         action = np.array([bid], dtype=np.float32)
         obs, reward, done, _truncated, info = env.step(action)
         cum_reward += float(reward)
@@ -230,6 +233,7 @@ def _run_episode(
             "expected_reward": float(obs["expected_reward"].ravel()[0]),
             "competing_bid":   float(info["auction"]["competing_bid"]),
             "alpha_chosen":    alpha_chosen,
+            "bid_time_s":      _bid_time_s,
         })
 
     return pd.DataFrame(rows)
