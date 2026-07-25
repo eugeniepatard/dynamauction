@@ -21,6 +21,7 @@ for SCENARIO in "${SCENARIOS[@]}"; do
         echo "Submitting: ${JOB_NAME}"
         SCENARIO_ID="${SCENARIO}" ALGO="${ALGO}" \
             sbatch --job-name="${JOB_NAME}" benchmark/run_eval_rl_robustness.sh
+        sleep 5  # stagger submissions so evaluate.py timestamps don't collide
     done
 done
 
