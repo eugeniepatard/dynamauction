@@ -16,6 +16,7 @@ training:
   n_eval_episodes: 50
   verbose: true
   scratch_dir: null            # if set, models/logs go here instead of benchmark/models|logs
+  run_name: ""                 # optional subdir name; defaults to scenario_id when empty
 
 hydra:
   run:

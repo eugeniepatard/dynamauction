@@ -26,8 +26,11 @@ conda activate dynamicauc
 cd ~/projects/dynamicauc
 
 # Models saved by run_train_rl_robustness.sh go to scratch; fall back to home for legacy runs
-SCRATCH_MODEL=/scratch/epatard/dynamicauc/models/${ALGO}/${SCENARIO_ID}/best_model
-HOME_MODEL=benchmark/models/${ALGO}/${SCENARIO_ID}/best_model
+# RUN_NAME overrides the model subdirectory (default: SCENARIO_ID). Use when retraining with a
+# different run_name (e.g. saturation-second-price-uniform-eta50-v2).
+RUN_SUBDIR="${RUN_NAME:-${SCENARIO_ID}}"
+SCRATCH_MODEL=/scratch/epatard/dynamicauc/models/${ALGO}/${RUN_SUBDIR}/best_model
+HOME_MODEL=benchmark/models/${ALGO}/${RUN_SUBDIR}/best_model
 if [ -f "${SCRATCH_MODEL}.zip" ]; then
     MODEL="${SCRATCH_MODEL}"
 elif [ -f "${HOME_MODEL}.zip" ]; then
