@@ -8,6 +8,7 @@ scenario_overrides: {}           # e.g. {horizon_eta: 30.0}
 training:
   total_timesteps: 30_000_000
   use_vec_normalize: true
+  norm_reward: true            # normalize reward via VecNormalize running std (set false for sparse/near-zero-reward scenarios, see saturation-eta50 retrain)
   mask_expected_reward: true   # hide oracle value from RL agents
   n_envs: 4
   seed: 42

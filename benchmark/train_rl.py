@@ -62,6 +62,7 @@ SCENARIO_ID   = "survival-second-price-exponential"
 class TrainingConfig:
     total_timesteps: int   = 500_000
     use_vec_normalize: bool = True
+    norm_reward: bool = True   # VecNormalize reward normalization; disable for scenarios where reward collapses near 0
     fixed_horizon: Optional[float] = None   # set via Python API; Hydra users control horizon via scenario_overrides
     run_name:   str            = ""    # optional subdirectory suffix used by sweep jobs to avoid output collisions
     scratch_dir: Optional[Path] = None  # if set, models/logs go here instead of benchmark/models|logs
@@ -203,7 +204,7 @@ def train(
     )
 
     if cfg.use_vec_normalize:
-        train_env = VecNormalize(train_env, norm_obs=True, norm_reward=True)
+        train_env = VecNormalize(train_env, norm_obs=True, norm_reward=cfg.norm_reward)
         eval_env  = VecNormalize(eval_env,  norm_obs=True, norm_reward=False, training=False)
 
     model = _build_model(algo, train_env, cfg, log_dir)
@@ -229,7 +230,7 @@ def train(
         print(f"  Timesteps : {cfg.total_timesteps:,}")
         print(f"  Scenario  : {scenario_id}")
         print(f"  Horizon   : {'fixed=' + str(cfg.fixed_horizon) if cfg.fixed_horizon else 'exponential'}")
-        print(f"  VecNorm   : {cfg.use_vec_normalize}")
+        print(f"  VecNorm   : {cfg.use_vec_normalize} (norm_reward={cfg.norm_reward})")
         print(f"  MaskER    : {cfg.mask_expected_reward}  (expected_reward hidden from RL obs)")
         print(f"  Models  -> {model_dir}")
         print(f"  Logs    -> {log_dir}")
@@ -290,6 +291,7 @@ def _cfg_to_training_config(cfg: DictConfig) -> TrainingConfig:
     kw  = dict(
         total_timesteps=t.total_timesteps,
         use_vec_normalize=t.use_vec_normalize,
+        norm_reward=t.get("norm_reward", True),
         mask_expected_reward=t.mask_expected_reward,
         n_envs=t.n_envs,
         seed=t.seed,
