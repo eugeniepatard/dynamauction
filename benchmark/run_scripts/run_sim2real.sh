@@ -9,7 +9,7 @@
 
 # Sim-to-real sensitivity for MPC — 15 mismatch configurations:
 #
-# MPC's sim is FIXED at LogNormal(mu=0, sigma=0.5) / Exp(eta=50).
+# MPC's sim is FIXED at LogNormal(mu=0, sigma=1.0) / Exp(eta=50).
 # The REAL evaluation environment VARIES:
 #
 #   trials 0-7  : competition mismatch  (sim LN(mu=0), real LN(mu=X))

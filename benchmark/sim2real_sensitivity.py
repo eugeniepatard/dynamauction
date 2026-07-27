@@ -68,8 +68,8 @@ from dynamauction.baseline.policies import FiPlaPolicy, ConstantPolicy, BiddingP
 # ── Experiment grid ──────────────────────────────────────────────────────────
 
 # MPC's sim world is fixed at the nominal scenario defaults:
-SIM_COMPETITION_MU    = 0.0    # MPC always assumes LogNormal(mu=0, sigma=0.5)
-SIM_COMPETITION_SIGMA = 0.5
+SIM_COMPETITION_MU    = 0.0    # MPC always assumes LogNormal(mu=0, sigma=1.0)
+SIM_COMPETITION_SIGMA = 1.0    # canonical scenario default — matches V₀ training distribution
 SIM_HORIZON_ETA       = 50     # MPC always assumes Exp(50)
 
 SCENARIO_ID = "survival-second-price-exponential"
@@ -221,7 +221,8 @@ def run_config(trial_id: int, scratch_dir: Optional[Path] = None) -> Path:
     # ── Load MLP and build policies ───────────────────────────────────────────
     mlp = load_mlp(SCENARIO_ID, str(_DEFAULT_MLP))
 
-    mpc_binned_policy = MismatchedMPCTimeBinnedPolicy(
+    # Mismatched: sim always uses the fixed nominal scenario regardless of real env
+    mpc_binned_mismatch = MismatchedMPCTimeBinnedPolicy(
         v0=mlp,
         sim_scenario=sim_scenario,
         alpha_candidates=ALPHA_CANDIDATES,
@@ -229,10 +230,28 @@ def run_config(trial_id: int, scratch_dir: Optional[Path] = None) -> Path:
         planning_horizon=PLANNING_HORIZON,
         n_bins=N_BINS,
     )
-    # K=1 is equivalent to standard MPC (single alpha for the full horizon)
-    mpc_policy = MismatchedMPCTimeBinnedPolicy(
+    mpc_mismatch = MismatchedMPCTimeBinnedPolicy(
         v0=mlp,
         sim_scenario=sim_scenario,
+        alpha_candidates=ALPHA_CANDIDATES,
+        n_rollouts=N_ROLLOUTS,
+        planning_horizon=PLANNING_HORIZON,
+        n_bins=1,
+    )
+
+    # Matched: sim uses the same scenario as the real env (rollout dynamics are correct)
+    # V₀ is still from nominal training (σ=1.0); only rollout dynamics are matched here.
+    mpc_binned_matched = MismatchedMPCTimeBinnedPolicy(
+        v0=mlp,
+        sim_scenario=real_scenario,
+        alpha_candidates=ALPHA_CANDIDATES,
+        n_rollouts=N_ROLLOUTS,
+        planning_horizon=PLANNING_HORIZON,
+        n_bins=N_BINS,
+    )
+    mpc_matched = MismatchedMPCTimeBinnedPolicy(
+        v0=mlp,
+        sim_scenario=real_scenario,
         alpha_candidates=ALPHA_CANDIDATES,
         n_rollouts=N_ROLLOUTS,
         planning_horizon=PLANNING_HORIZON,
@@ -249,8 +268,10 @@ def run_config(trial_id: int, scratch_dir: Optional[Path] = None) -> Path:
     )
 
     policies = {
-        f"MPCTimeBinned(H={int(PLANNING_HORIZON)},K={N_BINS})[mismatch]": mpc_binned_policy,
-        f"MPC(H={int(PLANNING_HORIZON)})[mismatch]":                       mpc_policy,
+        f"MPCTimeBinned(H={int(PLANNING_HORIZON)},K={N_BINS})[mismatch]": mpc_binned_mismatch,
+        f"MPC(H={int(PLANNING_HORIZON)})[mismatch]":                       mpc_mismatch,
+        f"MPCTimeBinned(H={int(PLANNING_HORIZON)},K={N_BINS})[matched]":   mpc_binned_matched,
+        f"MPC(H={int(PLANNING_HORIZON)})[matched]":                         mpc_matched,
         "FiPla":           fipla_policy,
         "Shading(α=0.7)":  shading_policy,
     }
@@ -289,7 +310,8 @@ def run_config(trial_id: int, scratch_dir: Optional[Path] = None) -> Path:
             all_rows.extend(rows)
 
     # ── Save ─────────────────────────────────────────────────────────────────
-    out_dir = Path(scratch_dir) / "sim2real" if scratch_dir else OUT_DIR
+    _subdir = "sim2real_matched" if os.environ.get("SIM2REAL_MATCHED") else "sim2real"
+    out_dir = Path(scratch_dir) / _subdir if scratch_dir else OUT_DIR / "../sim2real_matched"
     out_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     out_file = out_dir / f"sim2real_{mtype}_{mvalue}_{ts}.csv"
