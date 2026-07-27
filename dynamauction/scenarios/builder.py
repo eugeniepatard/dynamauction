@@ -264,6 +264,7 @@ class ScenarioBuilder:
         self._user_feature_generator: Optional[UserFeatureGenerator] = None
         self._gamma: Optional[Gamma] = None
         self._max_history: int = 10
+        self._kappa_distribution: str = 'poisson'
         # Deferred: resolved in build() so call order never matters
         self._probe_cfg: Optional[Tuple[str, dict]] = None
         self._delay_sampler_cfg: Optional[Tuple[str, dict]] = None
@@ -318,6 +319,13 @@ class ScenarioBuilder:
     def with_max_history(self, max_history: int) -> ScenarioBuilder:
         """Set the maximum conversion history capacity for observations."""
         self._max_history = max_history
+        return self
+
+    def with_kappa_distribution(self, distribution: str) -> ScenarioBuilder:
+        """Set how immediate conversions (kappa) are sampled: 'poisson' or 'bernoulli'."""
+        if distribution not in ('poisson', 'bernoulli'):
+            raise ValueError(f"kappa_distribution must be 'poisson' or 'bernoulli', got {distribution!r}")
+        self._kappa_distribution = distribution
         return self
 
     def with_probe(self, name: str, **params) -> ScenarioBuilder:
@@ -391,6 +399,7 @@ class ScenarioBuilder:
             max_history=self._max_history,
             probe=probe,
             delay_sampler=delay_sampler,
+            kappa_distribution=self._kappa_distribution,
         )
 
 
@@ -479,6 +488,9 @@ def make(scenario_id: str, **overrides) -> Scenario:
     if "max_history" in overrides:
         preset["max_history"] = overrides.pop("max_history")
 
+    if "kappa_distribution" in overrides:
+        preset["kappa_distribution"] = overrides.pop("kappa_distribution")
+
     # ── Assemble via builder ───────────────────────────────────────────────────
 
     builder = ScenarioBuilder()
@@ -511,6 +523,7 @@ def make(scenario_id: str, **overrides) -> Scenario:
     builder.with_horizon(h_cfg["name"], **h_cfg.get("params", {}))
 
     builder.with_max_history(preset.get("max_history", 10))
+    builder.with_kappa_distribution(preset.get("kappa_distribution", "poisson"))
 
     # Probe and delay sampler are optional in presets
     if "probe" in preset:

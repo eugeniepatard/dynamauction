@@ -39,6 +39,7 @@ class Scenario:
     probe: ConversionProbe = None
     delay_sampler: DelaySampler = None
     conversion_value: float = 1.0
+    kappa_distribution: str = 'poisson'  # 'poisson' (MixedKernel) or 'bernoulli' (ImmediateSurvivalKernel)
 
 @dataclass
 class AuctionState:

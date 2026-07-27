@@ -126,6 +126,7 @@ SCENARIO_PRESETS = {
         "max_history": 1,
         "probe": {"name": "null"},
         "delay_sampler": {"name": "single"},
+        "kappa_distribution": "bernoulli",
     },
 
     "mixed-second-price-exponential-eta50": {
