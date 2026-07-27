@@ -3,6 +3,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
 #SBATCH --time=3:00:00
+#SBATCH --array=0-134%70
 #SBATCH --output=/scratch/epatard/submitit_logs/%x_%A_%a.out
 #SBATCH --error=/scratch/epatard/submitit_logs/%x_%A_%a.err
 
@@ -18,7 +19,7 @@
 # the zero-bid degenerate optimum (mean_bid, frac_nonzero, mean_reward).
 #
 # Submit (from ~/projects/dynamicauc on Margaret):
-#   sbatch --array=0-134 benchmark/run_scripts/run_ppo_hparam_search.sh
+#   sbatch benchmark/run_scripts/run_ppo_hparam_search.sh
 #
 # After all jobs finish, download results:
 #   rsync -e ssh -av margaret02:/scratch/epatard/dynamicauc/ppo_hparam_search/ \
