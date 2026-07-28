@@ -25,25 +25,32 @@ source /scratch/epatard/miniconda3/etc/profile.d/conda.sh
 conda activate dynamicauc
 cd ~/projects/dynamicauc
 
-N_SEEDS=100
+N_SEEDS=1000
 OUT_DIR="benchmark/benchmark_results/timing"
 mkdir -p "${OUT_DIR}"
 
-# Find the first available model for this algo and derive the scenario from its path.
-# We only need inference latency — the model must run on the scenario it was trained on.
-MODEL_ZIP=$(ls /scratch/epatard/dynamicauc/models/${ALGO}/*/best_model.zip 2>/dev/null | head -1)
-if [ -z "${MODEL_ZIP}" ]; then
-    echo "ERROR: no trained ${ALGO} model found in /scratch/epatard/dynamicauc/models/${ALGO}/"
+SCENARIO="survival-second-price-exponential"
+
+# Best-model paths for the survival scenario (η=50).
+# Using explicit paths to avoid glob depth mismatch (models/<algo>/<scenario>/<run_name>/).
+case "${ALGO}" in
+    ppo) MODEL="benchmark/models/ppo/squashing=clip/eta50/lr=0.0003_ent=0.02_steps=512_gamma=0.95_epochs=5/best_model" ;;
+    sac) MODEL="benchmark/models/sac/squashing=clip/eta50/lr=5e-05_bs=512_warmup=500_gamma=0.95/best_model" ;;
+    td3) MODEL="benchmark/models/td3/squashing=clip/eta50/lr=0.0001_bs=512_noise=0.1_warmup=500_gamma=0.99/best_model" ;;
+    *)   echo "ERROR: unknown ALGO=${ALGO}"; exit 1 ;;
+esac
+
+if [ ! -f "${MODEL}.zip" ]; then
+    echo "ERROR: model not found at ${MODEL}.zip"
     exit 1
 fi
-MODEL="${MODEL_ZIP%.zip}"
-# Extract scenario name from path: .../models/<algo>/<scenario>/best_model.zip
-SCENARIO=$(basename "$(dirname "${MODEL_ZIP}")")
+echo "Using model: ${MODEL}"
 echo "Using model: ${MODEL}  (scenario: ${SCENARIO})"
 
 # Capture the exact output CSV path from evaluate.py stdout to avoid race conditions
 CSV_PATH=$(python -m benchmark.evaluate \
     --scenario-id "${SCENARIO}" \
+    --horizon-eta 50 \
     --algos "${ALGO}" \
     --${ALGO}-model "${MODEL}" \
     --baselines none \
