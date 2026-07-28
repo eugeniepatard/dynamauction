@@ -1,0 +1,26 @@
+defaults:
+  - algo: ppo        # override with algo=sac, algo=td3
+  - _self_
+
+scenario_id: survival-second-price-exponential
+scenario_overrides: {}           # e.g. {horizon_eta: 30.0}
+
+training:
+  total_timesteps: 30_000_000
+  use_vec_normalize: true
+  mask_expected_reward: true   # hide oracle value from RL agents
+  n_envs: 4
+  seed: 42
+  max_bid: 5.0
+  eval_freq: 100_000
+  n_eval_episodes: 50
+  verbose: true
+  scratch_dir: null            # if set, models/logs go here instead of benchmark/models|logs
+  run_name: ""                 # optional subdir name; defaults to scenario_id when empty
+
+hydra:
+  run:
+    dir: benchmark/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}_${algo.name}
+  sweep:
+    dir: benchmark/outputs/multirun/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${algo.name}
