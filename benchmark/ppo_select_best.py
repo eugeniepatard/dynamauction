@@ -22,6 +22,7 @@ from pathlib import Path
 
 
 SEARCH_DIRS = {
+    "survival":  "/scratch/epatard/dynamicauc/ppo_hparam_search_survival",
     "immediate": "/scratch/epatard/dynamicauc/ppo_hparam_search_immediate",
     "recency":   "/scratch/epatard/dynamicauc/ppo_hparam_search_recency",
     "mixed":     "/scratch/epatard/dynamicauc/ppo_hparam_search_mixed",
