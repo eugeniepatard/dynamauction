@@ -173,9 +173,15 @@ class AuctionEnv(Env):
                 **{f"x_{j}": float(v) for j, v in enumerate(x)},
             )
 
-            # Handle Immediate conversions ~ Poisson(κ)
+            # Handle Immediate conversions.
+            # 'bernoulli': Bernoulli(κ) — at most one conversion (ImmediateSurvivalKernel).
+            # 'poisson':   Poisson(κ)   — multiple conversions possible (MixedKernel).
             kap = sc.kernel.kappa(u, x, auction_state.ctx, y_t)
-            for _ in range(int(rng.poisson(kap))):
+            if sc.kappa_distribution == 'bernoulli':
+                n_kappa = int(rng.random() < kap)
+            else:
+                n_kappa = int(rng.poisson(kap))
+            for _ in range(n_kappa):
                 conversions_data.append(dict(
                     step=auction_state.t,
                     auction_id=auction_state.step_idx,

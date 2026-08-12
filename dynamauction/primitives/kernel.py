@@ -293,3 +293,20 @@ class SurvivalKernel(RewardKernel):
         if remaining <= 0.0:
             return 0.0
         return f * (1.0 - np.exp(-self.alpha * remaining))
+
+
+class ImmediateSurvivalKernel(SurvivalKernel):
+    """
+    Same conversion probability as SurvivalKernel but reward is realized
+    immediately at bid time (kappa = f, lambda_ = 0).  Used to diagnose
+    whether delayed credit assignment is the bottleneck for RL.
+    """
+
+    def kappa(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float) -> float:
+        return self.conversion_probability(u, x, ctx)
+
+    def lambda_(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float, t: float, s: float) -> float:
+        return 0.0
+
+    def expected_reward(self, u: np.ndarray, x: np.ndarray, ctx: float, y_func: Callable[[float], float], t: float, horizon: float) -> float:
+        return self.conversion_probability(u, x, ctx)

@@ -7,11 +7,11 @@ from .competition import CompetitionDistribution, UniformCompetition, LogNormalC
 from .exogenous_process import ExogenousProcess, CompetitorClickProcess, TrivialProcess
 from .arrival_process import ArrivalProcess, PiecewiseConstantPoisson, ConstantPoisson
 from .gamma import Gamma, AdditiveGamma, MultiplicativeGamma, LastWonTimeGamma, ConstantGamma
-from .kernel import RewardKernel, SaturationKernel, MixedKernel, RecencyDisplayKernel, CompetitorExtinctionKernel, SurvivalKernel
+from .kernel import RewardKernel, SaturationKernel, MixedKernel, RecencyDisplayKernel, CompetitorExtinctionKernel, SurvivalKernel, ImmediateSurvivalKernel
 from .display_sampler import DisplaySampler, IIDUniformSampler, CatalogueSampler, FixedSampler, NormalSampler
 from .user import UserFeatureGenerator, UniformUser, NormalUser, FixedUser
 from .horizon import HorizonGenerator, FixedHorizon, ExponentialHorizon
-from .conversion_probe import ConversionProbe, SurvivalProbe, PoissonProbe
+from .conversion_probe import ConversionProbe, SurvivalProbe, PoissonProbe, NullProbe
 from .delay_sampler import DelaySampler, SingleConversionSampler, MultiConversionSampler
 from . import auctions
 from . import competition
