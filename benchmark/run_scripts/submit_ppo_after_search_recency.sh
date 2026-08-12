@@ -1,10 +1,12 @@
 #!/bin/bash
-# Run this on Margaret AFTER jobs 414526 (ppo_hp_rec) complete.
-# Picks the best trial and submits a 1000-seed eval directly on its saved model.
-# No retrain needed — the best trial model (1M steps) is used as-is.
+# Run this on Margaret AFTER jobs 414304 (ppo_hp_rec) complete.
+# Picks the best hyperparameters and submits a full 10M-step retrain.
 #
 # Usage (on Margaret, from ~/projects/dynamicauc):
 #   bash benchmark/run_scripts/submit_ppo_after_search_recency.sh
+#
+# After the retrain job finishes (~3h), run:
+#   bash benchmark/run_scripts/submit_ppo_eval_1000seeds_recency.sh
 
 set -e
 
@@ -17,11 +19,13 @@ eval "$(python benchmark/ppo_select_best.py --scenario recency | grep -v '^#')"
 echo "Best trial ${BEST_TRIAL}: reward=${BEST_REWARD}"
 echo "  ent_coef=${BEST_ENT_COEF}  lr=${BEST_LR}  n_steps=${BEST_N_STEPS}  gae=${BEST_GAE_LAMBDA}"
 
-RUN_NAME="hparam_search_recency/trial_${BEST_TRIAL}"
+RUN_NAME="ppo_best_recency"
 
-SCENARIO_ID="recency-second-price-lognormal-eta50" \
 ALGO=ppo \
-RUN_NAME="${RUN_NAME}" \
-    sbatch --job-name=eval_ppo_best_rec benchmark/run_scripts/run_eval_rl_robustness.sh
+SCENARIO_ID="recency-second-price-lognormal-eta50" \
+EXTRA_ARGS="algo.ent_coef=${BEST_ENT_COEF} algo.learning_rate=${BEST_LR} algo.n_steps=${BEST_N_STEPS} algo.gae_lambda=${BEST_GAE_LAMBDA} training.mask_expected_reward=true training.run_name=${RUN_NAME}" \
+    sbatch --job-name=ppo_best_rec benchmark/run_scripts/run_train_rl_robustness.sh
 
-echo "Submitted 1000-seed eval for recency-eta50 (model: ${RUN_NAME})"
+echo ""
+echo "Submitted retrain job.  After it completes, run:"
+echo "  bash benchmark/run_scripts/submit_ppo_eval_1000seeds_recency.sh"

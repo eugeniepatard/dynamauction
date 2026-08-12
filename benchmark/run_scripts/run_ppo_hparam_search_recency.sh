@@ -3,7 +3,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
 #SBATCH --time=3:00:00
-#SBATCH --array=0-134%20
+#SBATCH --array=0-134%70
 #SBATCH --output=/scratch/epatard/submitit_logs/%x_%A_%a.out
 #SBATCH --error=/scratch/epatard/submitit_logs/%x_%A_%a.err
 
