@@ -17,6 +17,7 @@ SCENARIO_PRESETS = {
         "max_history": 1,
         "probe": {"name": "survival"},
         "delay_sampler": {"name": "single"},
+        "kappa_distribution": "poisson",
     },
 
     "saturation-second-price-uniform": {
@@ -33,6 +34,7 @@ SCENARIO_PRESETS = {
         "max_history": 10,
         "probe": {"name": "poisson"},
         "delay_sampler": {"name": "multi"},
+        "kappa_distribution": "poisson",
     },
     "recency-second-price-lognormal": {
         "description": "Recency kernel with second-price auction and lognormal competition",
@@ -48,6 +50,7 @@ SCENARIO_PRESETS = {
         "max_history": 10,
         "probe": {"name": "poisson"},
         "delay_sampler": {"name": "multi"},
+        "kappa_distribution": "poisson",
     },
     "mixed-second-price-exponential": {
         "description": "Mixed kernel (immediate + delayed) with second-price and exponential competition",
@@ -69,6 +72,7 @@ SCENARIO_PRESETS = {
         "max_history": 10,
         "probe": {"name": "poisson"},
         "delay_sampler": {"name": "multi"},
+        "kappa_distribution": "poisson",
     },
 
     # ── Exponential-horizon variants (eta=50) for robustness comparison ────────
@@ -89,6 +93,7 @@ SCENARIO_PRESETS = {
         "max_history": 10,
         "probe": {"name": "poisson"},
         "delay_sampler": {"name": "multi"},
+        "kappa_distribution": "poisson",
     },
 
     "recency-second-price-lognormal-eta50": {
@@ -105,6 +110,7 @@ SCENARIO_PRESETS = {
         "max_history": 10,
         "probe": {"name": "poisson"},
         "delay_sampler": {"name": "multi"},
+        "kappa_distribution": "poisson",
     },
 
     # ── Immediate-reward variant of the main survival scenario ───────────────────
@@ -149,5 +155,6 @@ SCENARIO_PRESETS = {
         "max_history": 10,
         "probe": {"name": "poisson"},
         "delay_sampler": {"name": "multi"},
+        "kappa_distribution": "poisson",
     },
 }
