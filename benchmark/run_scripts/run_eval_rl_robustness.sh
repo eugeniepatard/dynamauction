@@ -47,5 +47,4 @@ python -m benchmark.evaluate \
     --${ALGO}-model "${MODEL}" \
     --baselines none \
     --sim-policies none \
-    --n-seeds 1000 \
-    ${EXTRA_EVAL_ARGS:-}
+    --n-seeds 1000

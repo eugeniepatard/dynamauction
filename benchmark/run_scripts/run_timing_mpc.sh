@@ -72,7 +72,7 @@ python -m benchmark.evaluate \
     --sim-policies "${SIM_POLICY}" \
     --mpc-horizons "${HORIZON}" \
     --mpc-n-bins "${BINS}" \
-    --mpc-alpha-candidates 0.5 0.6 0.7 0.8 0.9 1.0 \
+    --mpc-alpha-candidates 0.6 0.8 1.0 1.2 1.5 \
     --mpc-models "${MLP}" \
     --n-rollouts 10 \
     --n-seeds "${N_SEEDS}"

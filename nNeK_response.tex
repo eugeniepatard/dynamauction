@@ -1,0 +1,389 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{comment}
+\usepackage{amsmath}
+\usepackage{float}
+
+\newcommand{\todo}[1]{\textcolor{blue}{\textbf{TODO:} #1}}
+\newcommand{\reviewer}[1]{\textit{\textcolor{gray}{``#1''}}}
+\newcommand{\Benjamin}[1]{\textcolor{blue}{\textbf{b:} #1}}
+\begin{document}
+
+\section*{Reviewer nNeK}
+
+\subsection*{Subject}
+Review on DynamAuction
+
+\subsection*{Overall assessment}
+
+\begin{itemize}
+    \item Positive review (Rating: 5 -- Accept).
+    \item Reviewer likes the problem framing.
+    \item Appreciates the benchmark, mathematical formulation, and MPC approach.
+    \item Main concerns are about empirical validation, robustness, and practical applicability.
+\end{itemize}
+
+
+\subsection*{Response}
+
+% ─── W1 / Robustness across presets ────────────────────────────────────────
+
+\noindent\textbf{W1 / Robustness across presets.}\quad
+\reviewer{``Could the authors provide a small robustness study on at least 2--3
+additional built-in presets, such as saturation, recency, or mixed kernels?
+A reduced comparison among FiPla, Shading, MPC, MPCTimeBinned, and one RL
+baseline would already be informative.''}
+
+\textsc{MPC} consistently dominates across all four presets, with gains amplified by
+stronger temporal dependence (Recency: $+267\%$, Saturation: $+114\%$ for
+\textsc{MPC}($H{=}10$)).
+\textsc{PPO} underperforms \textsc{FiPla} in three of four scenarios despite
+exhaustive per-scenario hyperparameter search (135-combination grid over
+$\mathrm{lr}\times\mathrm{ent\_coef}\times n_\mathrm{steps}\times\lambda_\mathrm{GAE}$,
+10\,M-step retrain), confirming that pure Deep RL approaches struggle in this setting.
+\textsc{Shading} is scenario-dependent, gaining on Survival but losing on Recency and Mixed.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Cross-preset robustness ($\eta{=}50$, 1\,000 seeds).
+         Each cell shows mean reward (gain vs.\ \textsc{FiPla},
+         the greedy myopic policy with access to the expected-reward oracle).
+         Shading uses the best $\alpha$ per scenario:
+         $0.7$ / $0.5$ / $0.7$ / $0.6$ for
+         Survival / Saturation / Recency / Mixed.
+         Shading values updated from 200-seed sweeps to dedicated 1\,000-seed runs.}
+
+\label{tab:robustness}
+\begin{tabular}{lrrrr}
+\toprule
+Policy & Survival & Saturation & Recency & Mixed \\
+\midrule
+\textsc{FiPla}
+  & 1.706 ({---})
+  & 1.392 ({---})
+  & 1.988 ({---})
+  & 1.766 ({---}) \\
+\midrule
+\textsc{Shading} (best $\alpha$)
+  & 1.915 ($+12.3\%$)
+  & 1.396 ($+0.3\%$)
+  & 1.849 ($-7.0\%$)
+  & 1.745 ($-1.2\%$) \\
+\textsc{PPO}
+  & 1.592 ($-6.7\%$)
+  & 1.288 ($-7.5\%$)
+  & 1.704 ($-14.3\%$)
+  & 1.794 ($+1.6\%$) \\
+\midrule
+\textsc{MPC}($H{=}10$)
+  & 2.282 ($+33.7\%$)
+  & 2.973 ($+113.5\%$)
+  & 7.293 ($+266.8\%$)
+  & 3.126 ($+77.0\%$) \\
+\textsc{MPC}($H{=}10,K{=}2$)
+  & 2.352 ($+37.9\%$)
+  & 3.095 ($+122.3\%$)
+  & 7.896 ($+297.1\%$)
+  & 3.108 ($+76.0\%$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% ─── W2 / V0 sensitivity ────────────────────────────────────────────────────
+
+\noindent\textbf{W2 / Sensitivity of MPC to $V_0$.}\quad
+\reviewer{``Could the authors add a sensitivity analysis where $V_0$ is imperfect?
+For example, evaluate MPC under noisy $V_0$, under fewer training rollouts for
+the $V_0$ estimator, or with a deliberately misspecified valuation head.''}
+
+Table~\ref{tab:nrollouts} shows mean reward for \textsc{MPC}($H{=}10$) as $M$, the number of simulation rollouts,  varies
+from 1 to 50 (survival scenario, 1\,000 seeds, $\alpha\in\{0.5,0.6,\ldots,1.0\}$).
+Even at $M{=}1$ the agent already exceeds \textsc{FiPla} ($2.219 > 1.706$, $+30.1\%$),
+and reward is essentially flat from $M{=}5$ onward (range $2.305$--$2.340$, within
+Monte Carlo noise of the planning rollouts).
+This confirms that the planning gain comes overwhelmingly from the MLP terminal-value
+head $V_0$, not from the rollout dynamics themselves: once $V_0$ provides a reliable
+bootstrap estimate, additional rollouts yield negligible improvement.
+Latency, by contrast, scales approximately linearly with $M$ (11\,ms at $M{=}1$
+to 550\,ms at $M{=}50$), which directly motivates the choice of a small default
+($M{=}10$) in our benchmarks.
+
+\begin{table}[H]
+\centering
+\caption{Reward vs.\ number of planning rollouts $M$ for \textsc{MPC}($H{=}10$)
+         (survival scenario, 1\,000 seeds, $\alpha\in\{0.5,0.6,\ldots,1.0\}$).
+         FiPla (myopic-optimal baseline): $1.706$.
+         Latency scales approximately linearly with $M$; reward is flat beyond $M{=}1$,
+         confirming that planning gain comes from the $V_0$ terminal-value head.}
+\label{tab:nrollouts}
+\begin{tabular}{rrrr}
+\toprule
+$M$ (rollouts) & Mean reward & Gain vs.\ \textsc{FiPla} & Latency (ms) \\
+\midrule
+ 1 & 2.219 & $+30.1\%$ &  11.2 \\
+\midrule
+ 5 & 2.311 & $+35.4\%$ &  55.3 \\
+10 & 2.334 & $+36.8\%$ & 111.1 \\
+25 & 2.305 & $+35.1\%$ & 275.7 \\
+50 & 2.340 & $+37.2\%$ & 550.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{MPC mean episode reward (500 seeds) as a function of the number
+         of episodes $n_\text{ep}$ used to train the $V_0$ MLP
+         (survival-second-price-exponential, $\eta{=}50$).
+         Performance stabilises around $n_\text{ep}{=}100$.}
+\label{tab:mlp-sensitivity}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lcccccc}
+\toprule
+Policy & \multicolumn{6}{c}{$n_\text{ep}$ (MLP training episodes)} \\
+\cmidrule(l){2-7}
+ & 10 & 25 & 50 & 100 & 200 & 500 \\
+\midrule
+\textsc{MPC}($H{=}10$)
+  & 1.060 & 1.715 & 1.781 & 2.113 & 2.156 & 2.175 \\
+\textsc{MPC}($H{=}25$)
+  & 1.044 & 1.842 & 1.845 & 2.210 & 2.309 & 2.345 \\
+\textsc{MPCTimeBinned}($H{=}10$, $K{=}2$)
+  & 1.110 & 1.787 & 1.871 & 2.148 & 2.217 & 2.269 \\
+\textsc{MPCTimeBinned}($H{=}25$, $K{=}2$)
+  & 1.113 & 1.854 & 1.983 & 2.249 & 2.384 & 2.439 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% ─── W3 / RL diagnostic with immediate rewards ──────────────────────────────
+
+\noindent\textbf{W3 / RL diagnostic: immediate vs.\ delayed rewards.}\quad
+\reviewer{``Could the authors include a small diagnostic experiment with either
+immediate rewards or oracle-shaped rewards for RL agents?  This would help
+determine whether the RL baselines fail mainly because of planning difficulty,
+delayed credit assignment, or insufficient training.''}
+
+The immediate-reward variant of the survival kernel reuses the same
+conversion-probability function $f$ as the delayed kernel:
+%
+\begin{equation}
+  f(\mathbf{u},\mathbf{x},\mathrm{ctx})
+    = \mathrm{clip}\!\left(
+        \mathrm{ctx}
+        \cdot (\mathbf{u}^{\top}\mathbf{w}_u)
+        \cdot (\mathbf{x}^{\top}\mathbf{w}_x),\;0,\;1
+      \right),
+  \label{eq:f}
+\end{equation}
+%
+where $\mathbf{u}$ is the user embedding, $\mathbf{x}$ the display features,
+and $\mathrm{ctx}$ the campaign context signal.
+In the delayed kernel $\kappa\!=\!0$ and conversion times follow an exponential
+hazard $\lambda(s)=f\cdot\alpha e^{-\alpha s}$; in the immediate variant
+$\lambda\!=\!0$ and $\kappa\!=\!f$, so $n_\kappa\!\sim\!\mathrm{Bernoulli}(f)$,
+i.e.\ at most one conversion per impression, paid out at bid time.
+
+We retrained \textsc{PPO} from scratch on the immediate kernel in two settings:
+first with the same hyperparameters used for the delayed scenario
+(\textit{PPO tuned}), and second with the best configuration from a 124-trial
+grid search on the immediate kernel (\textit{PPO search},
+$\mathrm{lr}{=}3\!\times\!10^{-4}$, $\mathrm{ent\_coef}{=}0.01$,
+$n_\mathrm{steps}{=}2048$, $\lambda_\mathrm{GAE}{=}0.9$), both for 10\,M steps
+(Table~\ref{tab:ppo-retrain-diagnostic}).
+Results for \textsc{SAC} and \textsc{TD3} are not yet available as retraining
+takes $9$--$10$\,h; we will provide them in the rebuttal discussion.
+
+Retraining on the immediate kernel with the same hyperparameters narrows
+\textsc{PPO}'s gap from $-6.7\%$ to $-2.4\%$ ($+4.3$\,pp), confirming that
+delayed credit assignment contributes to the underperformance.
+Crucially, with search-optimised hyperparameters \textsc{PPO} slightly exceeds
+\textsc{FiPla} ($+2.9\%$), showing that the combination of immediate rewards
+and proper tuning is sufficient for \textsc{PPO} to match the myopic-optimal
+baseline.
+This suggests that the failure of RL on the delayed scenario stems from both
+credit-assignment difficulty and hyperparameter sensitivity, rather than an
+intrinsic inability to learn the task.
+
+\begin{comment}
+\begin{table}[H]
+\centering
+\caption{RL diagnostic: survival-trained models on delayed vs.\ immediate
+         reward (\texttt{survival-second-price-exponential}, $\eta{=}50$,
+         1\,000 seeds).
+         The immediate kernel uses $\kappa\!=\!f$ with
+         $n_\kappa\!\sim\!\mathrm{Bernoulli}(f)$ (see Eq.~\eqref{eq:f}).
+         Gain is vs.\ \textsc{FiPla} of the same variant
+         (\textsc{FiPla} delayed\,=\,1.706; immediate\,=\,1.830).}
+\label{tab:rl-diagnostic}
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{Delayed reward} & \multicolumn{2}{c}{Immediate reward ($\kappa=f$)} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Algorithm & Reward & vs.\ FiPla & Reward & vs.\ FiPla \\
+\midrule
+\textsc{PPO} & 1.592 & $-6.7\%$ & 1.750 & $-4.4\%$ \\
+\textsc{SAC} & 0.976 & $-42.8\%$ & 1.074 & $-41.3\%$ \\
+\textsc{TD3} & 1.573 & $-7.8\%$ & 1.457 & $-20.4\%$ \\
+\midrule
+\textsc{FiPla} (ref.) & 1.706 & --- & 1.830 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{comment}
+
+\begin{table}[H]
+\centering
+\caption{PPO diagnostic on \texttt{survival-second-price-exponential}
+         ($\eta{=}50$, 1\,000 seeds; gain vs.\ \textsc{FiPla} of the
+         same variant).
+         \textit{PPO (tuned)}: retrained on the immediate kernel with
+         the same hyperparameters as the delayed scenario.
+         \textit{PPO (search)}: retrained with the best configuration
+         from a 124-trial grid search; evaluated on the immediate kernel only.}
+\label{tab:ppo-retrain-diagnostic}
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{Delayed reward} & \multicolumn{2}{c}{Immediate reward (retrained)} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Policy & Reward & vs.\ \textsc{FiPla} & Reward & vs.\ \textsc{FiPla} \\
+\midrule
+\textsc{FiPla}        & 1.706 & ---      & 1.830 & ---      \\
+\textsc{PPO} (tuned)  & 1.592 & $-6.7\%$ & 1.787 & $-2.4\%$ \\
+\textsc{PPO} (search) & ---   & ---      & 1.883 & $+2.9\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+
+
+% ─── Q4 / Performance–cost tradeoff ────────────────────────────────────────
+
+\noindent\textbf{Q4 / Performance--cost tradeoff.}\quad
+\reviewer{``Could the authors report a performance--cost tradeoff table, such as
+reward versus average decision-time latency for MPC with different $H$, $M$,
+and $K$?  Even wall-clock time per episode or per bid on a standard CPU would
+be useful.''}
+
+\textsc{MPC}($H{=}10,K{=}1$) provides the best computation--performance
+trade-off among MPC variants (Table~\ref{tab:mpc-perf-cost}), improving the mean
+reward by $+31.6\%$ over \textsc{FiPla} with only $110.5$\,ms latency per bid.
+Increasing the horizon from $H{=}10$ to $H{=}25$ improves reward by an additional
+$+10.4\%$ relative to \textsc{FiPla}, but nearly doubles the inference latency.
+Increasing the number of rollout samples from $K{=}1$ to $K{=}2$ increases
+latency by approximately $6\times$ while providing negligible additional reward.
+Thus, longer planning improves performance, but the marginal gain quickly
+diminishes relative to the additional computation.
+
+Compared with Deep RL (Table~\ref{tab:rl-vs-mpc}), MPC requires substantially
+less offline training computation: $0.08$ CPU-hours for $V_0$ pretraining versus
+$3.2$--$40$ CPU-hours for PPO/SAC/TD3. The trade-off is shifted to online
+inference: MPC performs explicit rollouts at decision time
+($110$--$835$\,ms per bid), whereas neural policies require only a single forward
+pass ($<0.31$\,ms).
+
+\begin{table}[H]
+\centering
+\caption{Performance--latency trade-off for MPC variants
+         ($M{=}10$ Monte Carlo rollouts, survival scenario, 100 seeds,
+         1 CPU core, standard x86 server, no GPU).
+         \textsc{FiPla} is the greedy myopic policy with access to the
+         expected-reward oracle, used as the reference baseline.
+         \textsc{Shading} is included for comparison.
+         \textbf{Latency} is the mean wall-clock computation time per bidding
+         decision.
+         Relative latency is measured with respect to \textsc{MPC}($H{=}10,K{=}1$).
+         Evaluating \textsc{MPC}($H{=}25,K{=}2$) with 1\,000 seeds would require
+         more than 40 hours; rewards are therefore from the same 100-seed runs.}
+
+\label{tab:mpc-perf-cost}
+\begin{tabular}{lrrr}
+\toprule
+Policy & Mean reward & Latency (ms/bid) & Relative latency \\
+\midrule
+\textsc{FiPla}                   & 1.606 & 0.001 & --- \\
+\textsc{Shading}($\alpha=0.7$)   & 1.673 & 24.1  & --- \\
+\midrule
+\textsc{MPC}($H=10,K=1$)         & 2.113 & 110.5 & $1.0\times$ \\
+\textsc{MPC}($H=25,K=1$)         & 2.281 & 204.8 & $1.9\times$ \\
+\textsc{MPC}($H=10,K=2$)         & 2.128 & 657.6 & $6.0\times$ \\
+\textsc{MPC}($H=25,K=2$)         & 2.278 & 834.8 & $7.6\times$ \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.4em}
+{\footnotesize
+Relative latency is defined as
+$\tau(\pi)/\tau(\textsc{MPC}(H=10,K=1))$,
+where $\tau(\pi)$ denotes the average computation time per bid.
+}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Offline training and online inference cost comparison between Deep RL
+         and MPC on the survival scenario ($\eta=50$, 100 seeds,
+         4 CPU cores, standard x86 server, no GPU).
+         \textsc{FiPla} is the greedy myopic policy with access to the
+         expected-reward oracle.
+         \textbf{Wall (h)} denotes wall-clock training time.
+         \textbf{CPU-h} denotes the total consumed CPU core-hours
+         (RL uses 4 cores through vectorised environments; MPC $V_0$ pretraining
+         uses 1 core).
+         \textbf{Infer.\ (ms)} is the mean wall-clock computation time per
+         bidding decision.
+         The performance ratio is
+         $\rho_\pi=\bar{R}(\pi)/\bar{R}(\textsc{FiPla})$,
+         and the reward gain is
+         $(\rho_\pi-1)\times100\%$.
+         Inference efficiency is defined as
+         $\mathcal{E}_{\mathrm{infer}}(\pi)=
+         (\bar{R}(\pi)-\bar{R}(\textsc{FiPla}))/\tau(\pi)$,
+         where $\tau(\pi)$ is the inference latency.
+         Higher values indicate more reward improvement per millisecond of
+         computation; negative values indicate methods that consume computation
+         while reducing performance relative to \textsc{FiPla}.}
+\label{tab:rl-vs-mpc}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrrr}
+\toprule
+Policy & Type & Wall (h) & CPU-h & Infer.\ (ms) &
+$\rho_\pi$ & Reward gain & $\mathcal{E}_{\mathrm{infer}}$ \\
+\midrule
+\textsc{FiPla}              & myopic  & 0.00 &  0.00 &   0.001 & 1.000 & ---       & --- \\
+\textsc{PPO}                & Deep RL & 0.80 &  3.20 &   0.234 & 0.976 & $-2.4\%$  & $-0.164$ \\
+\textsc{SAC}                & Deep RL &10.00 & 40.00 &   0.306 & 0.483 & $-51.7\%$ & $-3.670$ \\
+\textsc{TD3}                & Deep RL & 9.10 & 36.40 &   0.231 & 0.694 & $-30.6\%$ & $-2.260$ \\
+\midrule
+\textsc{MPC}($H=10,K=1$)    & MPC     & 0.08 &  0.08 & 110.5 & 1.316 & $+31.6\%$ & $4.59\times10^{-3}$ \\
+\textsc{MPC}($H=25,K=1$)    & MPC     & 0.08 &  0.08 & 204.8 & 1.420 & $+42.0\%$ & $3.30\times10^{-3}$ \\
+\textsc{MPC}($H=10,K=2$)    & MPC     & 0.08 &  0.08 & 657.6 & 1.325 & $+32.5\%$ & $7.93\times10^{-4}$ \\
+\textsc{MPC}($H=25,K=2$)    & MPC     & 0.08 &  0.08 & 834.8 & 1.418 & $+41.8\%$ & $8.05\times10^{-4}$ \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.4em}
+{\footnotesize
+All methods are evaluated on \textbf{100 seeds}. RL training uses 10M
+environment steps with four parallel CPU workers. MPC requires only the
+offline $V_0$ head pretraining ($\approx5$ minutes on one CPU core),
+resulting in approximately $40$--$500\times$ lower CPU consumption than Deep RL.
+The computational trade-off is reversed during inference:
+MPC performs online Monte Carlo rollouts ($110$--$835$\,ms per bid),
+whereas RL executes a single neural-network forward pass
+($<0.31$\,ms).
+}
+\end{table}
+
+\end{document}

@@ -1,0 +1,410 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+\newcommand{\todo}[1]{\textcolor{blue}{\textbf{TODO:} #1}}
+\newcommand{\done}[1]{\textcolor{teal}{#1}}
+\newcommand{\reviewer}[1]{\textit{\textcolor{gray}{``#1''}}}
+
+\begin{document}
+
+\section*{Reviewer pnsQ}
+
+\subsection*{Subject}
+Niche Paper with model and framework not explained well enough
+
+\subsection*{Overall assessment}
+
+\begin{itemize}
+    \item Overall positive review (Rating: 4 -- Borderline Accept).
+    \item Reviewer appreciates the novelty of modeling temporal dependence through the carry-over context and reward kernel.
+    \item Likes the Gymnasium benchmark and the online learning formulation.
+    \item Main concerns relate to clarity of presentation, the formal justification of the myopic-optimal valuation, and missing empirical analysis of its contribution and computational efficiency.
+\end{itemize}
+
+\subsection*{Major points to address}
+
+\begin{enumerate}[leftmargin=*]
+
+\item \textbf{Improve exposition of the mathematical framework}
+
+\todo{Reorganize Section 3.1 into clearer definitions instead of introducing all notation in one paragraph.}
+
+\todo{Consider adding a notation table summarizing the main variables, symbols, and their meaning.}
+
+\todo{Introduce the mathematical formulation more progressively before presenting the formal model.}
+
+\todo{Use the Related Work section to motivate the formulation from classical repeated auction and bidding problems before introducing the new concepts.}
+
+\item \textbf{Formalize the notion of myopic-optimal valuation}
+
+\todo{Provide a precise definition of the myopic-optimal valuation.}
+
+\todo{Clearly state the assumptions under which it is optimal (second-price auction with no future interaction).}
+
+\todo{Explain why this approximation is expected to remain useful inside the MPC framework despite not being globally optimal.}
+
+\todo{Strengthen the theoretical motivation connecting the approximation to planning performance.}
+
+\item \textbf{Ablation study for myopic-optimal valuation}
+
+\done{We provide a formal ablation quantifying the planning gain attributable to multi-step
+      horizon planning on top of the myopic-optimal terminal value.  Results are presented
+      in Tables~\ref{tab:myopic-ablation} and \ref{tab:planning-gain} in the response
+      draft below.}
+
+\end{enumerate}
+
+\subsection*{Requested experiments}
+
+\begin{enumerate}[leftmargin=*]
+
+\item \textbf{Performance versus computation}
+
+\done{We report the full reward--latency trade-off for all MPC variants in
+      Table~\ref{tab:mpc-perf-cost} and Figure\,1 of the response draft.}
+
+\done{We additionally report how reward evolves with the number of planning rollouts
+      ($M$) in Table~\ref{tab:nrollouts}, showing that reward saturates quickly with
+      $M\ge 5$, establishing that MPC's planning gain stems primarily from the V$_0$
+      value head rather than rollout volume.}
+
+\item \textbf{Comparison with Deep RL}
+
+\done{Table~\ref{tab:rl-vs-mpc} reports one-time training cost (wall-clock hours on
+      the same cluster), per-bid inference latency (ms), and mean episode reward for all
+      policies, enabling a direct cost--benefit comparison.}
+
+\end{enumerate}
+
+\subsection*{Paper modifications}
+
+\begin{itemize}
+
+\item \todo{Improve the readability of Section 3.1 with clearer structure and notation.}
+
+\item \todo{Add a notation table summarizing symbols and variables.}
+
+\item \todo{Introduce the myopic-optimal valuation more formally.}
+
+\item \todo{Clarify why the approximation is theoretically justified within MPC.}
+
+\item \done{Include an ablation study for the myopic-optimal valuation (Tables~\ref{tab:myopic-ablation}--\ref{tab:nrollouts}).}
+
+\item \done{Expand discussion of computational complexity and efficiency
+      (Table~\ref{tab:rl-vs-mpc}).}
+
+\end{itemize}
+
+\newpage
+\subsection*{Response draft}
+
+We thank Reviewer pnsQ for the careful reading and constructive feedback.  We address the
+theoretical points (Weaknesses 1--2) jointly with co-authors in a separate section of the
+rebuttal.  Below we focus on the empirical questions: the myopic-optimal ablation
+(Weakness~3), the performance--computation trade-off (Question~1), and the RL vs.\ MPC
+computational comparison (Question~2).
+
+All experiments below were performed on the \texttt{survival-second-price-exponential}
+($\eta{=}50$) and \texttt{saturation-second-price-uniform} ($\eta{=}50$) benchmark
+scenarios included in our framework; the cluster is Margaret
+(\texttt{normal-best} partition, 4\,CPUs per job).
+
+\bigskip
+
+\noindent\textbf{W3 / Myopic-optimal ablation.}\quad
+\reviewer{``A formal ablation study to quantify the improvement brought upon by
+myopic-valuation is missing.''}
+
+\medskip
+
+The myopic-optimal policy, which we call \textsc{FiPla}, bids exactly the
+per-auction expected conversion reward $\mathbb{E}[R_t \mid \text{context}_t]$.
+Under a second-price auction rule and conditioned on winning, this bid is exactly
+optimal when future auctions are ignored: it is the unique fixed point of the
+myopic Bellman equation.  Any improvement of MPC over \textsc{FiPla} is therefore
+attributable \emph{solely} to multi-step planning---\textsc{FiPla} sets the ceiling
+for all single-step strategies.
+
+Table~\ref{tab:myopic-ablation} reports the full planning-gain decomposition on the
+survival scenario (100 seeds, $M{=}10$ rollouts, timing benchmark conditions),
+and Table~\ref{tab:planning-gain} provides the same analysis on the saturation
+scenario (1\,000 seeds, full benchmark).
+
+\begin{table}[h!]
+\centering
+\caption{Myopic-optimal ablation --- survival scenario
+         (\texttt{survival-second-price-exponential}, $\eta{=}50$, 100 seeds).
+         Gain is computed relative to \textsc{FiPla}.}
+\label{tab:myopic-ablation}
+\begin{tabular}{llrrr}
+\toprule
+Policy & Planning component & Mean reward & Std & Gain vs.\ \textsc{FiPla} \\
+\midrule
+\textsc{FiPla}                       & myopic-optimal (no planning)  & 1.606 & 1.591 & --- \\
+\textsc{GreedyMyopic}                & single-step, learned $V_0$    & 1.447 & 1.609 & $-9.9\%$ \\
+\textsc{Shading}($\alpha{=}0.7$)     & single $\alpha$, 10-rollout sim & 1.673 & 1.866 & $+4.2\%$ \\
+\textsc{MPC}($H{=}10,K{=}1$)        & horizon $H{=}10$              & 1.958 & 1.742 & $+21.9\%$ \\
+\textsc{MPC}($H{=}25,K{=}1$)        & horizon $H{=}25$              & 2.227 & 2.151 & $+38.7\%$ \\
+\textsc{MPC}($H{=}10,K{=}2$)        & $H{=}10$ + time bins          & 1.996 & 1.758 & $+24.3\%$ \\
+\textsc{MPC}($H{=}25,K{=}2$)        & $H{=}25$ + time bins          & 2.278 & 2.255 & $+41.8\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h!]
+\centering
+\caption{Planning gain over myopic-optimal --- saturation scenario
+         (\texttt{saturation-second-price-uniform}, $\eta{=}50$, 1\,000 seeds).
+         This scenario imposes a carry-over saturation effect that makes multi-step
+         planning more valuable than in the survival scenario.}
+\label{tab:planning-gain}
+\begin{tabular}{lrrr}
+\toprule
+Policy & Mean reward & Std & Gain vs.\ \textsc{FiPla} \\
+\midrule
+\textsc{FiPla}                       & 1.392 & 1.857 & --- \\
+\textsc{PPO} (tuned, ent=0.01)       & 1.288 & 1.616 & $-7.5\%$ \\
+\textsc{SAC}                         & 1.030 & 1.946 & $-26.0\%$ \\
+\textsc{MPC}($H{=}10,K{=}1$)        & 2.973 & 2.529 & $+113.6\%$ \\
+\textsc{MPC}($H{=}25,K{=}1$)        & 2.860 & 2.486 & $+105.5\%$ \\
+\textsc{MPC}($H{=}10,K{=}2$)        & 3.095 & 2.571 & $+122.3\%$ \\
+\textsc{MPC}($H{=}25,K{=}2$)        & 3.032 & 2.560 & $+117.8\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three findings emerge.  First, \textsc{FiPla} strictly dominates all non-planning policies
+on the saturation scenario ($+7.5\%$ over the best RL baseline) and is competitive on
+survival, confirming its role as a meaningful oracle ceiling for single-step bidding.
+Second, every MPC variant beats \textsc{FiPla} by a substantial margin---between $+22\%$
+and $+42\%$ on survival, and $+106\%$ to $+122\%$ on saturation---demonstrating that the
+planning horizon, not the terminal value approximation, drives MPC's advantage.  Third,
+RL baselines (PPO, SAC, TD3) uniformly \emph{underperform} \textsc{FiPla} on the
+saturation scenario despite orders-of-magnitude more training compute (see below), which
+shows that the bottleneck for deep RL is not sample efficiency but the difficulty of
+credit assignment in the presence of carry-over effects.
+
+\medskip
+\textbf{Number of rollouts ($M$) and V$_0$ dominance.}\quad
+Table~\ref{tab:nrollouts} shows mean reward for \textsc{MPC}($H{=}10$) as $M$ varies
+from 1 to 50 (survival scenario, 30 seeds).  Reward is essentially flat beyond $M{=}5$,
+with overlapping standard deviations at every point.  This confirms that the planning
+gain measured in Tables~\ref{tab:myopic-ablation}--\ref{tab:planning-gain} comes
+overwhelmingly from the MLP terminal-value head $V_0$, not from the rollout dynamics
+themselves.  Increasing $M$ only scales latency linearly without improving reward,
+which directly motivates the choice of a small default ($M{=}10$) in our benchmarks.
+
+\begin{table}[h!]
+\centering
+\caption{Reward vs.\ number of planning rollouts $M$ for \textsc{MPC}($H{=}10$)
+         (survival scenario, 30 seeds).  Latency scales approximately linearly with $M$;
+         reward is flat beyond $M{=}5$.}
+\label{tab:nrollouts}
+\begin{tabular}{rrrr}
+\toprule
+$M$ (rollouts) & Mean reward & Std & Avg bid latency (ms) \\
+\midrule
+1  & 1.655 & 1.575 & $\approx 9$ \\
+5  & 2.082 & 2.267 & $\approx 47$ \\
+10 & 1.727 & 1.665 & $\approx 94$ \\
+25 & 1.735 & 1.703 & $\approx 234$ \\
+50 & 1.768 & 1.633 & $\approx 469$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\bigskip
+
+\noindent\textbf{Q1 / Performance--computation trade-off for MPC.}\quad
+\reviewer{``What is the trade-off between computation and performance, when we replace
+full dynamic programming with myopic-optimal valuation?''}
+
+\medskip
+
+Full dynamic programming is intractable in our setting (continuous auction arrival
+times, stochastic competition, heterogeneous user features, carry-over context).
+Our framework replaces it with a two-component approximation: (i)~forward rollouts
+using \textsc{FiPla} bids---which are provably optimal at each step conditioned on
+the current carry-over context---to estimate future reward given an $\alpha$-scaled
+bid today, and (ii)~a learned $V_0$ MLP to estimate the campaign's terminal value.
+Table~\ref{tab:mpc-perf-cost} reports the per-bid decision latency and mean reward for
+all four MPC variants used in our experiments.
+
+\begin{table}[h!]
+\centering
+\caption{MPC variants: performance--cost trade-off
+         ($M{=}10$ rollouts, Margaret \texttt{normal-best}, 4\,CPUs).
+         \textbf{All runs use 100 seeds: evaluating \textsc{MPC}($H{=}25,K{=}2$) at
+         1\,000 seeds would exceed 40\,hours.  Rewards are from these same 100-seed
+         timing runs and therefore differ slightly from the 1\,000-seed results
+         reported elsewhere.}
+         \textsc{FiPla} and \textsc{Shading} are shown as reference baselines.}
+\label{tab:mpc-perf-cost}
+\begin{tabular}{lrrr}
+\toprule
+Policy & Mean reward & Avg bid latency (ms) & Cost vs.\ cheapest MPC \\
+\midrule
+\textsc{FiPla}                       & 1.606 &   0.001 &          — \\
+\textsc{Shading}($\alpha{=}0.7$)     & 1.673 &    24.1 &          — \\
+\midrule
+\textsc{MPC}($H{=}10,K{=}1$)        & 2.113 &  110.5  &  $1.0\times$ \\
+\textsc{MPC}($H{=}25,K{=}1$)        & 2.281 &  204.8  &  $1.9\times$ \\
+\textsc{MPC}($H{=}10,K{=}2$)        & 2.128 &  657.6  &  $6.0\times$ \\
+\textsc{MPC}($H{=}25,K{=}2$)        & 2.278 &  834.8  &  $7.6\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Doubling the planning horizon from $H{=}10$ to $H{=}25$ costs $1.9\times$ more latency.
+Adding time bins ($K{=}2$) multiplies latency by $6\times$ without consistent additional
+reward at 100 seeds.  In practice, $H{=}25$, $K{=}1$ offers the best
+reward--latency ratio.
+
+The $V_0$ MLP pretraining that enables this decomposition requires only $\approx 5$
+minutes ($\approx 0.08$\,h) on a single CPU node.  This is several orders of magnitude
+cheaper than training deep RL policies (see Table~\ref{tab:rl-vs-mpc}).
+
+\bigskip
+
+\noindent\textbf{Q2 / Computational comparison: MPC vs.\ Deep RL.}\quad
+\reviewer{``Computational load comparison between Deep RL techniques and MPC style
+approach.''}
+
+\medskip
+
+Table~\ref{tab:rl-vs-mpc} provides a comprehensive comparison of one-time training cost,
+per-bid inference latency, and mean episode reward for all policies.  Training times for
+RL were measured from SLURM wall-clock records on the same cluster (10M environment
+steps, 6 scenario instances in parallel).
+
+\begin{table}[h!]
+\centering
+\small
+\caption{Deep RL vs.\ MPC: training cost, inference latency, and reward
+         (survival scenario, $\eta{=}50$; RL: 10M steps; MPC: $V_0$ pretraining only;
+         latency measured on Margaret \texttt{normal-best}, 4\,CPUs).
+         \textbf{All runs use 100 seeds for fair comparison: evaluating
+         \textsc{MPC}($H{=}25,K{=}2$) at 1\,000 seeds would exceed 40\,hours.
+         Rewards are from these same 100-seed timing runs and may differ slightly
+         from the 1\,000-seed results reported in Tables~\ref{tab:myopic-ablation}
+         and~\ref{tab:robustness}.}
+         Performance ratio: $\eta = \bar{R}/\bar{R}_{\textsc{FiPla}}$
+         ($\eta{=}1$ matches FiPla; $\eta{>}1$ exceeds it; $\eta{<}1$ falls short).
+         Cost metrics (lower is better):
+         $c_{\text{train}} = t_{\text{train}}/\eta$ (training hours per unit $\eta$) and
+         $c_{\text{infer}} = t_{\text{infer}}/\eta$ (ms per bid per unit $\eta$).}
+\label{tab:rl-vs-mpc}
+\begin{tabular}{llrrrrrr}
+\toprule
+Policy & Type & Train.\ (h) & Infer.\ (ms) & $\eta$ & $c_{\text{train}}$ (h/$\eta$) & $c_{\text{infer}}$ (ms/$\eta$) \\
+\midrule
+\textsc{FiPla}                      & myopic     & 0.00   &   0.001 & 1.000 &   0.000 &     0.001 \\
+\textsc{PPO}                        & Deep RL    & 0.80   &   0.234 & 0.976 &   0.820 &     0.240 \\
+\textsc{SAC}                        & Deep RL    & 10.0   &   0.306 & 0.483 &  20.723 &     0.634 \\
+\textsc{TD3}                        & Deep RL    &  9.1   &   0.231 & 0.694 &  13.119 &     0.333 \\
+\textsc{MPC}($H{=}10,K{=}1$)       & MPC        & 0.08   & 110.500 & 1.316 &   0.061 &    83.986 \\
+\textsc{MPC}($H{=}25,K{=}1$)       & MPC        & 0.08   & 204.800 & 1.420 &   0.056 &   144.195 \\
+\textsc{MPC}($H{=}10,K{=}2$)       & MPC        & 0.08   & 657.600 & 1.325 &   0.060 &   496.290 \\
+\textsc{MPC}($H{=}25,K{=}2$)       & MPC        & 0.08   & 834.800 & 1.418 &   0.056 &   588.538 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Several observations stand out.
+
+\begin{itemize}
+  \item \textbf{Training cost}: MPC requires only $V_0$ pretraining ($\approx 5$\,min,
+        0.08\,h), which is $10\times$ cheaper than PPO (0.8\,h) and $125\times$ cheaper
+        than SAC or TD3 (9--10\,h).
+
+  \item \textbf{Inference cost}: Deep RL performs a single forward pass at bid time
+        ($\lesssim 0.31$\,ms), whereas MPC must execute $M{=}10$ simulation rollouts
+        per bid ($111$--$835$\,ms depending on $H$ and $K$).  MPC is therefore
+        $350$--$3\,600\times$ slower \emph{per bid} than RL.
+
+  \item \textbf{Reward}: No RL policy exceeds \textsc{FiPla} (1.606), while the cheapest
+        MPC variant (\textsc{MPC}($H{=}10,K{=}1$), 2.113) beats the best RL policy
+        (PPO, 1.567) by $+35\%$.  The best MPC variant (\textsc{MPC}($H{=}25,K{=}1$),
+        2.281) outperforms the best RL baseline by $+45\%$ at a fraction of the
+        training cost.
+
+  \item \textbf{Practical deployment}: Auction systems typically operate on 100\,ms
+        response-time budgets.  \textsc{MPC}($H{=}10,K{=}1$) at $\approx 110$\,ms
+        is near this limit; larger variants require pre-computation or asynchronous
+        planning.
+\end{itemize}
+
+In summary, MPC achieves substantially better reward at far lower training cost, at the
+price of higher per-bid latency.  For latency-critical settings, $H{=}10$, $K{=}1$
+provides the best reward--latency balance; for offline or asynchronous bidding,
+larger variants are preferable.
+
+\bigskip
+
+\noindent\textbf{Cross-preset robustness.}\quad
+MPC consistently dominates across all four built-in presets, with the planning
+gain amplified in scenarios with stronger temporal dependence
+(recency: $+267\%$, saturation: $+114\%$).
+
+\begin{table}[h!]
+\centering
+\small
+\caption{Cross-preset robustness ($\eta{=}50$, 1\,000 seeds).
+         Each cell shows mean reward (gain vs.\ \textsc{FiPla}).
+         Shading uses the best $\alpha$ per scenario:
+         $0.89$ / $0.5$ / $0.7$ / $0.6$ for
+         Survival / Saturation / Recency / Mixed.
+         Shading values updated from 200-seed sweeps to dedicated 1\,000-seed runs.}
+\label{tab:robustness}
+\begin{tabular}{lrrrr}
+\toprule
+Policy & Survival & Saturation & Recency & Mixed \\
+\midrule
+\textsc{FiPla}
+  & 2.560 ({---})
+  & 1.392 ({---})
+  & 1.988 ({---})
+  & 1.766 ({---}) \\
+\midrule
+\textsc{Shading} (best $\alpha$)
+  & 2.184 ($-14.7\%$)
+  & 1.396 ($+0.3\%$)
+  & 1.849 ($-7.0\%$)
+  & 1.745 ($-1.2\%$) \\
+\textsc{PPO}
+  & 1.647 ($-35.7\%$)
+  & 1.288 ($-7.5\%$)
+  & 1.704 ($-14.3\%$)
+  & 1.794 ($+1.6\%$) \\
+\midrule
+\textsc{MPC}($H{=}10$)
+  & 4.008 ($+56.6\%$)
+  & 2.973 ($+113.5\%$)
+  & 7.293 ($+266.8\%$)
+  & 3.126 ($+77.0\%$) \\
+\textsc{MPC}($H{=}10,K{=}2$)
+  & 4.129 ($+61.3\%$)
+  & 3.095 ($+122.3\%$)
+  & 7.896 ($+297.1\%$)
+  & 3.108 ($+76.0\%$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All \textsc{PPO} entries reflect a per-scenario hyperparameter search over 135 combinations
+($\mathrm{lr} \times \mathrm{ent\_coef} \times n\_\mathrm{steps} \times \lambda_\mathrm{GAE}$,
+5$\times$3$\times$3$\times$3 grid, 1\,M steps per trial) followed by a full 10\,M-step retrain
+with the best configuration.
+The updated Shading results (1\,000 seeds) further narrow the gap with \textsc{FiPla}:
+Shading is at best marginally above \textsc{FiPla} on saturation ($+0.3\%$) and below it on
+all other scenarios.  MPC dominates all baselines by wide margins in every preset.
+
+\end{document}

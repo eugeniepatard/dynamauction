@@ -2,7 +2,7 @@
 #SBATCH --partition=normal-best
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
-#SBATCH --time=2:00:00
+#SBATCH --time=0:30:00
 #SBATCH --output=/scratch/epatard/submitit_logs/%x_%j.out
 #SBATCH --error=/scratch/epatard/submitit_logs/%x_%j.err
 
@@ -16,7 +16,7 @@ conda activate dynamicauc
 cd ~/projects/dynamicauc
 
 SCENARIO="survival-second-price-exponential"
-N_SEEDS=1000
+N_SEEDS=100
 OUT_DIR="benchmark/benchmark_results/timing"
 mkdir -p "${OUT_DIR}"
 
