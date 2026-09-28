@@ -35,3 +35,5 @@ benchmark/benchmark_results
 benchmark/plots
 benchmark/retrain_best.py
 A_kernel_causal_model_for_repeated_auctions_with_dynamic_values.pdf
+camera-ready-exp/
+Dynamauction_prez/

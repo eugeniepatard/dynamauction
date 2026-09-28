@@ -11,7 +11,7 @@ from .kernel import RewardKernel, SaturationKernel, MixedKernel, RecencyDisplayK
 from .display_sampler import DisplaySampler, IIDUniformSampler, CatalogueSampler, FixedSampler, NormalSampler
 from .user import UserFeatureGenerator, UniformUser, NormalUser, FixedUser
 from .horizon import HorizonGenerator, FixedHorizon, ExponentialHorizon
-from .conversion_probe import ConversionProbe, SurvivalProbe, PoissonProbe, NullProbe
+from .conversion_probe import ConversionProbe, BernoulliProbe, PoissonProbe, NullProbe
 from .delay_sampler import DelaySampler, SingleConversionSampler, MultiConversionSampler
 from . import auctions
 from . import competition

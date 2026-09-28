@@ -1,9 +1,9 @@
-"""Tests for dynamauction/primitives/conversion_probe.py: PoissonProbe, SurvivalProbe."""
+"""Tests for dynamauction/primitives/conversion_probe.py: PoissonProbe, BernoulliProbe."""
 import numpy as np
 import pytest
 from unittest.mock import MagicMock
 
-from dynamauction.primitives.conversion_probe import PoissonProbe, SurvivalProbe
+from dynamauction.primitives.conversion_probe import PoissonProbe, BernoulliProbe
 from dynamauction.primitives.kernel import SurvivalKernel
 
 _U = np.ones(2, dtype=np.float32)
@@ -82,7 +82,7 @@ class TestPoissonProbe:
         assert any_multiple, "Expected sample_all to occasionally return >1 event"
 
 
-class TestSurvivalProbe:
+class TestBernoulliProbe:
 
     @pytest.fixture
     def zero_prob_kernel(self):
@@ -95,20 +95,20 @@ class TestSurvivalProbe:
         return SurvivalKernel(w_u=np.ones(2), w_x=np.ones(2), alpha=100.0)
 
     def test_sample_one_returns_list(self, zero_prob_kernel):
-        probe = SurvivalProbe(zero_prob_kernel)
+        probe = BernoulliProbe(zero_prob_kernel)
         result = probe.sample_one(_U, _X, 0.0, _Y, t=0.0, horizon=5.0,
                                   rng=np.random.default_rng(0))
         assert isinstance(result, list)
 
     def test_sample_all_returns_list(self, zero_prob_kernel):
-        probe = SurvivalProbe(zero_prob_kernel)
+        probe = BernoulliProbe(zero_prob_kernel)
         result = probe.sample_all(_U, _X, 0.0, _Y, t=0.0, horizon=5.0,
                                   rng=np.random.default_rng(0))
         assert isinstance(result, list)
 
     def test_zero_prob_always_returns_empty(self, zero_prob_kernel):
         # ctx=0.0 → conversion_probability = 0 → no conversions
-        probe = SurvivalProbe(zero_prob_kernel)
+        probe = BernoulliProbe(zero_prob_kernel)
         rng = np.random.default_rng(0)
         for _ in range(20):
             assert probe.sample_one(_U, _X, 0.0, _Y, t=0.0, horizon=10.0, rng=rng) == []
@@ -116,22 +116,22 @@ class TestSurvivalProbe:
 
     def test_sample_one_at_most_one_event(self, unit_prob_kernel):
         # At most one conversion per display for SurvivalKernel
-        probe = SurvivalProbe(unit_prob_kernel)
+        probe = BernoulliProbe(unit_prob_kernel)
         rng = np.random.default_rng(0)
         for _ in range(20):
             result = probe.sample_one(_U, _X, 1.0, _Y, t=0.0, horizon=100.0, rng=rng)
             assert len(result) <= 1
 
     def test_sample_all_at_most_one_event(self, unit_prob_kernel):
-        probe = SurvivalProbe(unit_prob_kernel)
+        probe = BernoulliProbe(unit_prob_kernel)
         rng = np.random.default_rng(0)
         for _ in range(20):
             result = probe.sample_all(_U, _X, 1.0, _Y, t=0.0, horizon=100.0, rng=rng)
             assert len(result) <= 1
 
     def test_sample_one_and_sample_all_are_equivalent(self, unit_prob_kernel):
-        # SurvivalProbe.sample_one and sample_all call the same internal method
-        probe = SurvivalProbe(unit_prob_kernel)
+        # BernoulliProbe.sample_one and sample_all call the same internal method
+        probe = BernoulliProbe(unit_prob_kernel)
         rng1 = np.random.default_rng(99)
         rng2 = np.random.default_rng(99)
         r1 = probe.sample_one(_U, _X, 1.0, _Y, t=0.0, horizon=5.0, rng=rng1)
@@ -141,13 +141,13 @@ class TestSurvivalProbe:
     def test_requires_survival_kernel(self):
         from dynamauction.primitives.kernel import RewardKernel
         wrong_kernel = MagicMock(spec=RewardKernel)
-        probe = SurvivalProbe(wrong_kernel)
+        probe = BernoulliProbe(wrong_kernel)
         with pytest.raises(AssertionError):
             probe.sample_one(_U, _X, 1.0, _Y, t=0.0, horizon=5.0,
                              rng=np.random.default_rng(0))
 
     def test_zero_remaining_returns_empty(self, unit_prob_kernel):
-        probe = SurvivalProbe(unit_prob_kernel)
+        probe = BernoulliProbe(unit_prob_kernel)
         result = probe.sample_one(_U, _X, 1.0, _Y, t=5.0, horizon=5.0,
                                   rng=np.random.default_rng(0))
         assert result == []

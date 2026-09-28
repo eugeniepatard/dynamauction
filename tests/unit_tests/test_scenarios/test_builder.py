@@ -43,7 +43,7 @@ def test_builder_with_survival_probe_and_multi_sampler():
         .with_delay_sampler("multi")
         .build()
     )
-    assert scenario.probe.__class__.__name__ == "SurvivalProbe"
+    assert scenario.probe.__class__.__name__ == "BernoulliProbe"
     assert scenario.delay_sampler.__class__.__name__ == "MultiConversionSampler"
 
 def test_make_survival_second_price_exponential():

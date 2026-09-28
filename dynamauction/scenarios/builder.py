@@ -83,7 +83,7 @@ from dynamauction.primitives import (
     # Conversion probes
     ConversionProbe,
     PoissonProbe,
-    SurvivalProbe,
+    BernoulliProbe,
     NullProbe,
     # Delay samplers
     DelaySampler,
@@ -220,7 +220,7 @@ def create_probe(name: str, kernel: RewardKernel, **kwargs) -> ConversionProbe:
     if name == "poisson":
         return PoissonProbe(kernel=kernel, **kwargs)
     elif name == "survival":
-        return SurvivalProbe(kernel=kernel, **kwargs)
+        return BernoulliProbe(kernel=kernel, **kwargs)
     elif name == "null":
         return NullProbe(kernel=kernel, **kwargs)
     else:

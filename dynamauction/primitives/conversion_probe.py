@@ -91,17 +91,17 @@ class PoissonProbe(ConversionProbe):
         return []
 
 
-class SurvivalProbe(ConversionProbe):
+class BernoulliProbe(ConversionProbe):
     """
     For SurvivalKernel: Bernoulli(p) gate then Exp(alpha) delay.
-    sample_one() and sample_all() are identical: returnat most 1 conversion by design.
+    sample_one() and sample_all() are identical: returns at most 1 conversion by design.
     alpha is read from the kernel.
     """
 
     def _draw(self, u, x, ctx, t, horizon, rng) -> List[float]:
         from dynamauction.primitives.kernel import SurvivalKernel
         assert isinstance(self.kernel, SurvivalKernel), (
-            "SurvivalProbe requires a SurvivalKernel"
+            "BernoulliProbe requires a SurvivalKernel"
         )
         prob = self.kernel.conversion_probability(u, x, ctx)
         if rng.uniform() >= prob:
