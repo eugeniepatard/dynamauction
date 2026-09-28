@@ -12,7 +12,7 @@ scenario:
 evaluation:
   n_seeds: 1000
   mask_expected_reward: true  # hide expected_reward from RL policies (paper setting)
-  policy_seed: 0             # seed for SimulationEstimator RNG (matches paper run)
+  policy_seed: 10             # seed for SimulationEstimator RNG (matches paper run)
 
 # RL models: paths to best_model stems (without .zip).
 # obs_rms.pkl is loaded from the same directory automatically.
