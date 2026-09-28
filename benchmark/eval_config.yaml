@@ -1,0 +1,66 @@
+# Camera-ready evaluation configuration
+# Reproduces the paper results (benchmark/benchmark_results/paper-results/)
+# exactly on 1000 seeds for the survival-second-price-exponential scenario.
+#
+# Key finding: SAC and TD3 require their *original* end-of-training obs_rms
+# (from benchmark/models/{sac,td3}/lr=.../obs_rms.pkl), NOT the recomputed
+# ones in eta50/.  The recomputed obs_rms files were created on May 6 20:43-45
+# via benchmark/recompute_obs_rms.py but yield different (lower) rewards.
+# PPO's eta50/ obs_rms happens to match the paper because PPO did not collapse.
+
+scenario:
+  id: survival-second-price-exponential
+  horizon_eta: 50    # Exponential horizon rate (mean ~50 auction arrivals)
+
+evaluation:
+  n_seeds: 1000      # Seeds 0..999
+  seed_range_start: 0
+
+rl_models:
+  ppo:
+    model: benchmark/models/ppo/eta50/lr=0.0003_ent=0.02_steps=512_gamma=0.95_epochs=5/best_model
+    obs_rms: benchmark/models/ppo/eta50/lr=0.0003_ent=0.02_steps=512_gamma=0.95_epochs=5/obs_rms.pkl
+    mask_expected_reward: true   # expected_reward excluded from obs during training
+    paper_mean_reward: 1.592118
+
+  sac:
+    model: benchmark/models/sac/lr=5e-05_bs=512_warmup=500_gamma=0.95/best_model
+    obs_rms: benchmark/models/sac/lr=5e-05_bs=512_warmup=500_gamma=0.95/obs_rms.pkl
+    # NOTE: do NOT use sac/eta50/.../obs_rms.pkl — that is the recomputed version
+    # and gives 0.944 instead of the paper's 0.976.
+    mask_expected_reward: true
+    paper_mean_reward: 0.976216
+
+  td3:
+    model: benchmark/models/td3/lr=0.0001_bs=512_noise=0.1_warmup=500_gamma=0.99/best_model
+    obs_rms: benchmark/models/td3/lr=0.0001_bs=512_noise=0.1_warmup=500_gamma=0.99/obs_rms.pkl
+    # NOTE: do NOT use td3/eta50/.../obs_rms.pkl — gives 1.344 instead of paper's 1.572.
+    mask_expected_reward: true
+    paper_mean_reward: 1.572457
+
+mlp_valuation_head:
+  path: benchmark/models/mlp_valuation_head/survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt
+
+mpc:
+  alpha_candidates: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+  n_rollouts: 10
+  planning_horizons: [10, 25]   # H values tested
+  n_bins: [1, 2, 3]             # K values tested
+
+shading:
+  alpha: 0.7    # Best alpha from sweep
+
+paper_results_eta50:
+  FiPla:                    1.705846
+  GreedyMyopic:             1.651651
+  Shading_alpha_0.7:        1.914890
+  PPO:                      1.592118
+  SAC:                      0.976216
+  TD3:                      1.572457
+  MPC_H10:                  2.281482
+  MPC_H25:                  2.459521
+  MPCTimeBinned_H10_K2:     2.351912
+  MPCTimeBinned_H10_K3:     2.355700
+  MPCTimeBinned_H25_K2:     2.494112
+  MPCTimeBinned_H25_K3:     2.502733
+  Constant_0.2105:          0.438235
