@@ -78,7 +78,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import pickle
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from tqdm import tqdm
 
 import numpy as np
@@ -187,6 +187,137 @@ class EvalConfig:
     mpc_planning_horizons:   List[float]    = field(default_factory=lambda: list(DEFAULT_MPC_HORIZONS))
     # Used by parallel_evaluate.benchmark(); ignored here.
     n_workers:               Optional[int]  = None
+
+
+def load_eval_config(
+    path: str | Path,
+) -> Tuple[EvalConfig, List[str], Optional[Dict[str, str]]]:
+    """
+    Load an EvalConfig from a YAML file.
+
+    YAML schema
+    -----------
+    scenario:
+      preset: <scenario_id>          # key in SCENARIO_PRESETS
+      overrides:                     # optional keyword overrides for dac.make()
+        horizon_eta: 50
+
+    evaluation:
+      n_seeds: 1000
+      mask_expected_reward: true     # default true
+
+    rl_models:                       # omit section or set to {} to skip RL
+      ppo: path/to/ppo/best_model    # without .zip
+      sac: path/to/sac/best_model
+      td3: path/to/td3/best_model
+
+    baselines:                       # list of baseline names; omit to use defaults
+      - fipla
+
+    sim_policies:
+      greedy: false                  # true/false, or omit
+      shading:                       # false/omit to skip; or map with options
+        alphas: [0.7]
+        n_rollouts: 10
+      mpc:
+        model: path/to/mlp.pt        # omit to use default MLP
+        horizons: [10, 25]
+        alpha_candidates: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        n_rollouts: 10
+      mpc_timebin:
+        model: path/to/mlp.pt
+        horizons: [10, 25]
+        n_bins: [2, 3]
+        alpha_candidates: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        n_rollouts: 10
+
+    Returns
+    -------
+    (cfg, algos, model_paths)
+        cfg          : EvalConfig ready to pass to run_full_benchmark / benchmark
+        algos        : list of RL algorithm names (e.g. ["ppo", "sac", "td3"])
+        model_paths  : {algo: path_str} explicit model overrides, or None
+    """
+    import yaml
+
+    with open(path) as f:
+        raw = yaml.safe_load(f)
+
+    # ── scenario ──────────────────────────────────────────────────────────────
+    scen_block  = raw.get("scenario", {})
+    scenario_id = scen_block.get("preset", SCENARIO_ID)
+    overrides   = scen_block.get("overrides", {})
+
+    # ── evaluation ────────────────────────────────────────────────────────────
+    eval_block            = raw.get("evaluation", {})
+    n_seeds               = int(eval_block.get("n_seeds", DEFAULT_N_SEEDS))
+    mask_expected_reward  = bool(eval_block.get("mask_expected_reward", True))
+
+    # ── baselines ─────────────────────────────────────────────────────────────
+    baselines = raw.get("baselines", list(DEFAULT_BASELINES))
+
+    # ── RL models ─────────────────────────────────────────────────────────────
+    rl_block    = raw.get("rl_models") or {}
+    algos       = list(rl_block.keys())
+    model_paths = {k: str(v) for k, v in rl_block.items()} if rl_block else None
+
+    # ── sim_policies ──────────────────────────────────────────────────────────
+    sim = raw.get("sim_policies") or {}
+
+    def _truthy(val) -> bool:
+        return bool(val) and val is not False
+
+    include_greedy   = _truthy(sim.get("greedy", False))
+    include_shading  = _truthy(sim.get("shading", False))
+    include_mpc      = _truthy(sim.get("mpc", False))
+    include_mpc_tb   = _truthy(sim.get("mpc_timebin", False))
+
+    shading_cfg  = sim.get("shading")  or {}
+    mpc_cfg      = sim.get("mpc")      or {}
+    mpc_tb_cfg   = sim.get("mpc_timebin") or {}
+
+    shading_alphas = list(shading_cfg.get("alphas", DEFAULT_SHADING_ALPHAS)) if isinstance(shading_cfg, dict) else list(DEFAULT_SHADING_ALPHAS)
+
+    # Merge n_rollouts: mpc overrides shading if both present
+    n_rollouts = int(
+        mpc_cfg.get("n_rollouts",
+            mpc_tb_cfg.get("n_rollouts",
+                shading_cfg.get("n_rollouts", DEFAULT_N_ROLLOUTS)
+                if isinstance(shading_cfg, dict) else DEFAULT_N_ROLLOUTS
+            )
+        ) if isinstance(mpc_cfg, dict) else DEFAULT_N_ROLLOUTS
+    )
+
+    mpc_horizons = list(mpc_cfg.get("horizons", DEFAULT_MPC_HORIZONS)) if isinstance(mpc_cfg, dict) else list(DEFAULT_MPC_HORIZONS)
+    mpc_alpha_candidates = list(mpc_cfg.get("alpha_candidates", DEFAULT_MPC_ALPHA_CANDIDATES)) if isinstance(mpc_cfg, dict) else list(DEFAULT_MPC_ALPHA_CANDIDATES)
+    mpc_n_bins = list(mpc_tb_cfg.get("n_bins", DEFAULT_MPC_N_BINS)) if isinstance(mpc_tb_cfg, dict) else list(DEFAULT_MPC_N_BINS)
+
+    # MPC model path: use from YAML if given, else None (→ default MLP auto-resolution)
+    _mpc_model_raw = None
+    if isinstance(mpc_cfg, dict) and "model" in mpc_cfg:
+        _mpc_model_raw = str(mpc_cfg["model"])
+    elif isinstance(mpc_tb_cfg, dict) and "model" in mpc_tb_cfg:
+        _mpc_model_raw = str(mpc_tb_cfg["model"])
+    mpc_model_paths: List[Optional[str]] = [_mpc_model_raw]
+
+    cfg = EvalConfig(
+        seeds=list(range(n_seeds)),
+        scenario_id=scenario_id,
+        scenario_overrides=overrides,
+        baselines=baselines,
+        mask_expected_reward=mask_expected_reward,
+        simulation_n_rollouts=n_rollouts,
+        shading_alphas=shading_alphas,
+        mpc_model_paths=mpc_model_paths,
+        mpc_planning_horizons=mpc_horizons,
+        mpc_alpha_candidates=mpc_alpha_candidates,
+        mpc_n_bins=mpc_n_bins,
+        include_greedy=include_greedy,
+        include_shading=include_shading,
+        include_mpc=include_mpc,
+        include_mpc_timebin=include_mpc_tb,
+    )
+    return cfg, algos, model_paths
 
 
 def _run_episode(
@@ -524,39 +655,80 @@ def main():
     parser.add_argument("--td3-model", type=str, default=None, metavar="PATH",
                         help="Explicit path to TD3 best_model (without .zip).")
 
+    # ── Config file ───────────────────────────────────────────────────────────
+    parser.add_argument("--config", type=str, default=None, metavar="PATH",
+                        help="YAML config file. CLI args override values from the file.")
+
     # ── MPC parameters ────────────────────────────────────────────────────────
-    parser.add_argument("--mpc-horizons", type=float, nargs="+", default=DEFAULT_MPC_HORIZONS,
+    parser.add_argument("--mpc-horizons", type=float, nargs="+", default=None,
                         help="Planning horizons H for MPC variants.")
-    parser.add_argument("--mpc-models",   type=str,   nargs="+", default=[_DEFAULT_MLP],
+    parser.add_argument("--mpc-models",   type=str,   nargs="+", default=None,
                         help="Paths to MLPValuationHead .pt files.")
     args = parser.parse_args()
 
-    algos     = [] if "none" in args.algos     else args.algos
-    baselines = [] if "none" in args.baselines else args.baselines
-    sim_pols  = [] if "none" in args.sim_policies else args.sim_policies
+    # ── If --config is given, start from YAML; CLI args override ─────────────
+    if args.config is not None:
+        cfg, algos, model_paths = load_eval_config(args.config)
+        # CLI overrides (only when user explicitly passed them)
+        if args.n_seeds != DEFAULT_N_SEEDS:
+            cfg.seeds = list(range(args.n_seeds))
+        if args.horizon_eta != DEFAULT_HORIZON_ETA:
+            cfg.scenario_overrides = {"horizon_eta": args.horizon_eta}
+        if "none" not in args.baselines and args.baselines != list(DEFAULT_BASELINES):
+            cfg.baselines = [] if "none" in args.baselines else args.baselines
+        if args.no_mask_expected_reward:
+            cfg.mask_expected_reward = False
+        if args.n_rollouts != DEFAULT_N_ROLLOUTS:
+            cfg.simulation_n_rollouts = args.n_rollouts
+        if args.alphas != list(DEFAULT_SHADING_ALPHAS):
+            cfg.shading_alphas = args.alphas
+        if args.mpc_horizons is not None:
+            cfg.mpc_planning_horizons = args.mpc_horizons
+        if args.mpc_models is not None:
+            cfg.mpc_model_paths = args.mpc_models
+        # explicit RL model path overrides
+        for algo, path in [("ppo", args.ppo_model), ("sac", args.sac_model), ("td3", args.td3_model)]:
+            if path is not None:
+                if model_paths is None:
+                    model_paths = {}
+                model_paths[algo] = path
+        # sim_policies CLI arg overrides YAML when explicitly used
+        if args.sim_policies != ["none"]:
+            sim_pols = args.sim_policies
+            cfg.include_greedy      = "greedy"      in sim_pols or "all" in sim_pols
+            cfg.include_shading     = "shading"     in sim_pols or "all" in sim_pols
+            cfg.include_mpc         = "mpc"         in sim_pols or "all" in sim_pols
+            cfg.include_mpc_oracle  = "mpc-oracle"  in sim_pols or "all" in sim_pols
+            cfg.include_mpc_timebin = "mpc-timebin" in sim_pols or "all" in sim_pols
+        if "none" not in args.algos and args.algos != list(DEFAULT_ALGOS):
+            algos = [] if "none" in args.algos else args.algos
+    else:
+        algos     = [] if "none" in args.algos     else args.algos
+        baselines = [] if "none" in args.baselines else args.baselines
+        sim_pols  = [] if "none" in args.sim_policies else args.sim_policies
 
-    model_paths = {k: v for k, v in
-                   [("ppo", args.ppo_model), ("sac", args.sac_model), ("td3", args.td3_model)]
-                   if v is not None}
+        model_paths = {k: v for k, v in
+                       [("ppo", args.ppo_model), ("sac", args.sac_model), ("td3", args.td3_model)]
+                       if v is not None}
 
-    cfg = EvalConfig(
-        seeds=list(range(args.n_seeds)),
-        scenario_overrides={"horizon_eta": args.horizon_eta},
-        baselines=baselines,
-        constant_bid=args.constant_bid,
-        random_max_bid=args.random_max_bid,
-        policy_seed=args.policy_seed,
-        mask_expected_reward=not args.no_mask_expected_reward,
-        simulation_n_rollouts=args.n_rollouts,
-        shading_alphas=args.alphas,
-        mpc_model_paths=args.mpc_models,
-        mpc_planning_horizons=args.mpc_horizons,
-        include_greedy      ="greedy"      in sim_pols or "all" in sim_pols,
-        include_shading     ="shading"     in sim_pols or "all" in sim_pols,
-        include_mpc         ="mpc"         in sim_pols or "all" in sim_pols,
-        include_mpc_oracle  ="mpc-oracle"  in sim_pols or "all" in sim_pols,
-        include_mpc_timebin ="mpc-timebin" in sim_pols or "all" in sim_pols,
-    )
+        cfg = EvalConfig(
+            seeds=list(range(args.n_seeds)),
+            scenario_overrides={"horizon_eta": args.horizon_eta},
+            baselines=baselines,
+            constant_bid=args.constant_bid,
+            random_max_bid=args.random_max_bid,
+            policy_seed=args.policy_seed,
+            mask_expected_reward=not args.no_mask_expected_reward,
+            simulation_n_rollouts=args.n_rollouts,
+            shading_alphas=args.alphas,
+            mpc_model_paths=args.mpc_models or [_DEFAULT_MLP],
+            mpc_planning_horizons=args.mpc_horizons or list(DEFAULT_MPC_HORIZONS),
+            include_greedy      ="greedy"      in sim_pols or "all" in sim_pols,
+            include_shading     ="shading"     in sim_pols or "all" in sim_pols,
+            include_mpc         ="mpc"         in sim_pols or "all" in sim_pols,
+            include_mpc_oracle  ="mpc-oracle"  in sim_pols or "all" in sim_pols,
+            include_mpc_timebin ="mpc-timebin" in sim_pols or "all" in sim_pols,
+        )
 
     run_full_benchmark(algos=algos, cfg=cfg, save=not args.no_save, model_paths=model_paths or None)
 
