@@ -5,6 +5,11 @@ Output: per-step DataFrame with columns
     policy, seed, step, t, reward, cum_reward, won, bid, payment,
     ctx, expected_reward, competing_bid, alpha_chosen
 
+    Config file
+-----------
+    python -m benchmark.evaluate --config benchmark/eval_config.yaml
+    python -m benchmark.evaluate --config benchmark/eval_config.yaml --n-seeds 100  # CLI overrides YAML
+
 Python API
 ----------
     from benchmark.evaluate import run_full_benchmark, score_matrix, EvalConfig
@@ -69,6 +74,8 @@ CLI (run from repo root)
 
     # Dry run (no CSV saved)
     python -m benchmark.evaluate --no-save
+
+
 
 Results -> benchmark/benchmark_results/<scenario_id>_eta<η>_<timestamp>.csv
 """

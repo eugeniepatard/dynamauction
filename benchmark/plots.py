@@ -913,6 +913,80 @@ def plot_alpha_over_normalized_time(
     return fig
 
 
+def plot_score_table(
+    score_dicts:  Dict[str, Dict[str, np.ndarray]],
+    labels:       Optional[List[str]] = None,
+    title_prefix: str                 = "Mean episode reward",
+    save:         bool                = True,
+    filename:     str                 = "score_table.pdf",
+) -> plt.Figure:
+    """
+    Render a side-by-side summary table of mean ± std episode reward.
+
+    Parameters
+    ----------
+    score_dicts : ordered dict of {label: score_matrix_dict}
+        Each value is a ``{policy: (n_seeds,) array}`` score matrix.
+        Pass one entry per condition (e.g. η = 50 and η = 100).
+    labels : display titles for each sub-table; defaults to the keys of score_dicts.
+    title_prefix : prefix for each sub-table title.
+    """
+    _style()
+
+    def _build_df(scores: Dict[str, np.ndarray]) -> pd.DataFrame:
+        rows = [
+            {"policy": p, "mean": float(v.mean()), "std": float(v.std()), "n_seeds": len(v)}
+            for p, v in scores.items()
+        ]
+        return (
+            pd.DataFrame(rows)
+            .sort_values("mean", ascending=False)
+            .reset_index(drop=True)
+        )
+
+    def _render(df: pd.DataFrame, ax: plt.Axes, title: str) -> None:
+        cell_text = [
+            [row["policy"], f"{row['mean']:.4f}", f"{row['std']:.4f}", str(row["n_seeds"])]
+            for _, row in df.iterrows()
+        ]
+        col_labels = ["Policy", "Mean reward", "Std", "Seeds"]
+        ax.axis("off")
+        tbl = ax.table(
+            cellText=cell_text,
+            colLabels=col_labels,
+            loc="center",
+            cellLoc="center",
+        )
+        tbl.auto_set_font_size(False)
+        tbl.set_fontsize(10)
+        tbl.auto_set_column_width([0, 1, 2, 3])
+        for col in range(len(col_labels)):
+            tbl[0, col].set_facecolor(PALETTE["PPO"])
+            tbl[0, col].set_text_props(color="white", fontweight="bold")
+        for row in range(1, len(df) + 1):
+            bg = "#EFF3FB" if row % 2 == 0 else "white"
+            for col in range(len(col_labels)):
+                tbl[row, col].set_facecolor(bg)
+        ax.set_title(title, fontsize=12, pad=12, fontweight="bold")
+
+    tables   = {k: _build_df(v) for k, v in score_dicts.items()}
+    disp_lbl = labels if labels is not None else list(score_dicts.keys())
+    n_rows   = max(len(t) for t in tables.values())
+    n_cols   = len(tables)
+
+    fig, axes = plt.subplots(1, n_cols, figsize=(9 * n_cols, n_rows * 0.45 + 1.5))
+    if n_cols == 1:
+        axes = [axes]
+    for ax, (key, df) in zip(axes, tables.items()):
+        lbl = disp_lbl[list(tables.keys()).index(key)]
+        _render(df, ax, f"{title_prefix} — {lbl}")
+
+    fig.tight_layout()
+    if save:
+        _save(fig, filename)
+    return fig
+
+
 def plot_mpc_alpha_distribution(
     mpc_policies: Dict[str, Any],
     title:        str  = "MPC: chosen α* distribution",
