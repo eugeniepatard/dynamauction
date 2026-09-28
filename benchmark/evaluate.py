@@ -259,6 +259,7 @@ def load_eval_config(
     eval_block            = raw.get("evaluation", {})
     n_seeds               = int(eval_block.get("n_seeds", DEFAULT_N_SEEDS))
     mask_expected_reward  = bool(eval_block.get("mask_expected_reward", True))
+    policy_seed           = int(eval_block.get("policy_seed", 0))
 
     # ── baselines ─────────────────────────────────────────────────────────────
     baselines = raw.get("baselines", list(DEFAULT_BASELINES))
@@ -323,6 +324,7 @@ def load_eval_config(
         include_shading=include_shading,
         include_mpc=include_mpc,
         include_mpc_timebin=include_mpc_tb,
+        policy_seed=policy_seed,
     )
     return cfg, algos, model_paths
 
@@ -647,7 +649,7 @@ def main():
                         help="Upper bound for RandomPolicy bids.")
 
     # ── Simulation-based policy parameters ───────────────────────────────────
-    parser.add_argument("--policy-seed",  type=int,   default=DEFAULT_N_ROLLOUTS)
+    parser.add_argument("--policy-seed",  type=int,   default=0)
     parser.add_argument("--n-rollouts",   type=int,   default=DEFAULT_N_ROLLOUTS,
                         help="Monte Carlo rollouts per decision step.")
     parser.add_argument("--alphas",       type=float, nargs="+", default=DEFAULT_SHADING_ALPHAS,

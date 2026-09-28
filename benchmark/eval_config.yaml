@@ -12,6 +12,7 @@ scenario:
 evaluation:
   n_seeds: 1000
   mask_expected_reward: true  # hide expected_reward from RL policies (paper setting)
+  policy_seed: 0             # seed for SimulationEstimator RNG (matches paper run)
 
 # RL models: paths to best_model stems (without .zip).
 # obs_rms.pkl is loaded from the same directory automatically.
@@ -42,14 +43,15 @@ sim_policies:
     alpha_candidates: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     n_rollouts: 10
 
-# Paper results (eta=50, 1000 seeds) — for reference only, not read by evaluate.py
-# policy                    mean_reward
-# FiPla                     1.705846
-# GreedyMyopic              ~1.3
-# Shading(alpha=0.7)        ~1.6
-# PPO                       1.592118
-# SAC                       0.976216
-# TD3                       1.572457
-# MPC(H=10, K=1)            ~2.0
-# MPC(H=25, K=1)            2.459521
-# MPCTimeBinned(H=25, K=3)  2.502733
+# Paper results (eta=50, 1000 seeds, policy_seed=10) — for reference only, not read by evaluate.py
+# policy                      mean_reward
+# FiPla                       1.705846
+# GreedyMyopic                1.651700
+# Shading(alpha=0.7)          1.914900
+# PPO                         1.592118
+# SAC                         0.976216
+# TD3                         1.572457
+# MPC(H=10, K=1)              2.281500
+# MPC(H=25, K=1)              2.459521
+# MPCTimeBinned(H=25, K=2)    2.494100
+# MPCTimeBinned(H=25, K=3)    2.502733
