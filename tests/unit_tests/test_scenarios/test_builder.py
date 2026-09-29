@@ -34,12 +34,12 @@ def test_builder_with_poisson_probe_and_single_sampler():
     assert scenario.probe.__class__.__name__ == "PoissonProbe"
     assert scenario.delay_sampler.__class__.__name__ == "SingleConversionSampler"
 
-def test_builder_with_survival_probe_and_multi_sampler():
+def test_builder_with_bernoulli_probe_and_multi_sampler():
     import numpy as np
     scenario = (
         dac.ScenarioBuilder()
-        .with_kernel("survival", w_u=np.ones(3), w_x=np.ones(3), alpha=1.0)
-        .with_probe("survival")
+        .with_kernel("survival", w_u=np.ones(3), w_x=np.ones(3), delay_rate=1.0)
+        .with_probe("bernoulli")
         .with_delay_sampler("multi")
         .build()
     )

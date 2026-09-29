@@ -87,12 +87,12 @@ class TestBernoulliProbe:
     @pytest.fixture
     def zero_prob_kernel(self):
         """SurvivalKernel with conversion probability = 0 (ctx=0 makes prob=0)."""
-        return SurvivalKernel(w_u=np.ones(2), w_x=np.ones(2), alpha=1.0)
+        return SurvivalKernel(w_u=np.ones(2), w_x=np.ones(2), delay_rate=1.0)
 
     @pytest.fixture
     def unit_prob_kernel(self):
         """SurvivalKernel with conversion probability = 1 (ctx=1, unit weights, unit features)."""
-        return SurvivalKernel(w_u=np.ones(2), w_x=np.ones(2), alpha=100.0)
+        return SurvivalKernel(w_u=np.ones(2), w_x=np.ones(2), delay_rate=100.0)
 
     def test_sample_one_returns_list(self, zero_prob_kernel):
         probe = BernoulliProbe(zero_prob_kernel)

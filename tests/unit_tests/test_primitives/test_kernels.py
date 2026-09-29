@@ -52,24 +52,24 @@ class TestRecencyDisplayKernel:
 
     @staticmethod
     def test_initial_recency():
-        kernel = RecencyDisplayKernel(alpha=1.0)
-        assert kernel._recency_factor(float("-inf"), 10.0) == 1.0
+        kernel = RecencyDisplayKernel(recency_coef=1.0)
+        assert kernel._conversion_prob(float("-inf"), 10.0) == 1.0
 
 
     @staticmethod
     def test_recency_decay():
-        kernel = RecencyDisplayKernel(alpha=1.0)
-        low_recency = kernel._recency_factor(ctx=9.9, t=10.0)
-        high_recency = kernel._recency_factor(ctx=1.0, t=10.0)
+        kernel = RecencyDisplayKernel(recency_coef=1.0)
+        low_recency = kernel._conversion_prob(ctx=9.9, t=10.0)
+        high_recency = kernel._conversion_prob(ctx=1.0, t=10.0)
         assert low_recency < high_recency
 
     @staticmethod
     def test_expected_reward(user_vec, x_vec, constant_y):
-        alpha = 0.5
-        kernel = RecencyDisplayKernel(alpha=alpha, delay_rate=1.0)
+        recency_coef = 0.5
+        kernel = RecencyDisplayKernel(recency_coef=recency_coef, delay_rate=1.0)
         t, ctx = 10.0, 8.0
-        
-        expected = 1.0 - np.exp(-alpha * (t - ctx))
+
+        expected = 1.0 - np.exp(-recency_coef * (t - ctx))
         actual = kernel.expected_reward(user_vec, x_vec, ctx, constant_y, t, horizon=100)
         
         assert pytest.approx(actual, rel=1e-3) == expected
@@ -109,7 +109,7 @@ class TestMixedKernel:
 class TestSurvivalKernel:
     @staticmethod
     def test_conversion_probability(user_vec, x_vec):
-        kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]), alpha=1.0)
+        kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]), delay_rate=1.0)
         prob = kernel.conversion_probability(user_vec, x_vec, ctx=0.5)
         assert pytest.approx(prob) == 0.75
 
@@ -118,7 +118,7 @@ class TestSurvivalKernel:
 
     @staticmethod
     def test_expected_reward(user_vec, x_vec, constant_y):
-        kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]), alpha=1.0)
+        kernel = SurvivalKernel(w_u=np.array([1.0, 1.0]), w_x=np.array([1.0, 1.0]), delay_rate=1.0)
 
         expected = 0.75 * (1.0 - np.exp(-100.0))
         actual = kernel.expected_reward(user_vec, x_vec, ctx=0.5, y_func=constant_y, t=0.0, horizon=100.0)
