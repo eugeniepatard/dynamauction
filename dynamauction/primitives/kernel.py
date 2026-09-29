@@ -125,23 +125,36 @@ class SaturationKernel(RewardKernel):
         self.saturation_scale = saturation_scale
         self.delay_rate = delay_rate
 
+    def _conversion_prob(self, ctx: float) -> float:
+        return self.base_rate * np.exp(-ctx / self.saturation_scale)
+
     def kappa(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float) -> float:
         return 0.0
 
     def lambda_(
         self, u: np.ndarray, x: np.ndarray, ctx: float, y: float, t: float, s: float
     ) -> float:
-        return (
-            self.base_rate
-            * np.exp(-ctx / self.saturation_scale)
-            * self.delay_rate
-            * np.exp(-self.delay_rate * s)
-        )
+        return self._conversion_prob(ctx) * self.delay_rate * np.exp(-self.delay_rate * s)
 
     def lambda_upper_bound(
         self, u: np.ndarray, x: np.ndarray, ctx: float, t: float, remaining: float
     ) -> float:
-        return self.base_rate * np.exp(-ctx / self.saturation_scale) * self.delay_rate
+        return self._conversion_prob(ctx) * self.delay_rate
+
+    def expected_reward(
+        self,
+        u: np.ndarray,
+        x: np.ndarray,
+        ctx: float,
+        y_func: Callable[[float], float],
+        t: float,
+        horizon: float,
+    ) -> float:
+        """Closed form: p_i is constant in s, so ∫₀^R λ ds = p_i·(1 − e^{−delay_rate·R})."""
+        remaining = horizon - t
+        if remaining <= 0.0:
+            return 0.0
+        return self._conversion_prob(ctx) * (1.0 - np.exp(-self.delay_rate * remaining))
 
 
 class RecencyDisplayKernel(RewardKernel):
@@ -153,14 +166,14 @@ class RecencyDisplayKernel(RewardKernel):
     λ    = (1 − exp(−α·τ)) · delay_rate · exp(−delay_rate · s)
     """
 
-    def __init__(self, alpha: float = 0.5, delay_rate: float = 0.5):
-        self.alpha = alpha
+    def __init__(self, recency_coef: float = 0.6, delay_rate: float = 0.5):
         self.delay_rate = delay_rate
+        self.recency_coef = recency_coef
 
-    def _recency_factor(self, ctx: float, t: float) -> float:
+    def _conversion_prob(self, ctx: float, t: float) -> float:
         if ctx == float("-inf"):
             return 1.0
-        return 1.0 - np.exp(-self.alpha * (t - ctx))
+        return 1.0 - np.exp(-self.recency_coef * (t - ctx))
 
     def kappa(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float) -> float:
         return 0.0
@@ -168,12 +181,27 @@ class RecencyDisplayKernel(RewardKernel):
     def lambda_(
         self, u: np.ndarray, x: np.ndarray, ctx: float, y: float, t: float, s: float
     ) -> float:
-        return self._recency_factor(ctx, t) * self.delay_rate * np.exp(-self.delay_rate * s)
+        return self._conversion_prob(ctx, t) * self.delay_rate * np.exp(-self.delay_rate * s)
 
     def lambda_upper_bound(
         self, u: np.ndarray, x: np.ndarray, ctx: float, t: float, remaining: float
     ) -> float:
-        return self._recency_factor(ctx, t) * self.delay_rate
+        return self._conversion_prob(ctx, t) * self.delay_rate
+
+    def expected_reward(
+        self,
+        u: np.ndarray,
+        x: np.ndarray,
+        ctx: float,
+        y_func: Callable[[float], float],
+        t: float,
+        horizon: float,
+    ) -> float:
+        """Closed form: p_i is constant in s, so ∫₀^R λ ds = p_i·(1 − e^{−delay_rate·R})."""
+        remaining = horizon - t
+        if remaining <= 0.0:
+            return 0.0
+        return self._conversion_prob(ctx, t) * (1.0 - np.exp(-self.delay_rate * remaining))
 
 
 class CompetitorExtinctionKernel(RewardKernel):
@@ -248,11 +276,11 @@ class SurvivalKernel(RewardKernel):
         self,
         w_u: np.ndarray,
         w_x: np.ndarray,
-        alpha: float = 1.0,
+        delay_rate: float = 1.0,
     ):
         self.w_u = np.asarray(w_u, dtype=float)
         self.w_x = np.asarray(w_x, dtype=float)
-        self.alpha = alpha
+        self.delay_rate = delay_rate
 
     def conversion_probability(self, u: np.ndarray, x: np.ndarray, ctx: float) -> float:
         """p(z) = clip(ctx · (w_u⊤u) · (w_x⊤x), 0, 1)."""
@@ -265,18 +293,18 @@ class SurvivalKernel(RewardKernel):
 
     def lambda_(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float, t: float, s: float) -> float:
         f = self.conversion_probability(u, x, ctx)
-        return f * self.alpha * np.exp(-self.alpha * s)
+        return f * self.delay_rate * np.exp(-self.delay_rate * s)
 
     def lambda_upper_bound(self, u: np.ndarray, x: np.ndarray, ctx: float, t: float, remaining: float) -> float:
         f = self.conversion_probability(u, x, ctx)
-        return f * self.alpha
+        return f * self.delay_rate
 
     def expected_reward(self, u: np.ndarray, x: np.ndarray, ctx: float, y_func: Callable[[float], float], t: float, horizon: float) -> float:
         f = self.conversion_probability(u, x, ctx)
         remaining = horizon - t
         if remaining <= 0.0:
             return 0.0
-        return f * (1.0 - np.exp(-self.alpha * remaining))
+        return f * (1.0 - np.exp(-self.delay_rate * remaining))
 
 
 class ImmediateSurvivalKernel(SurvivalKernel):

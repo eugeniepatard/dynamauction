@@ -8,7 +8,12 @@ display produces and to draw their individual delay times.
 from abc import ABC, abstractmethod
 from typing import List, Optional
 import numpy as np
-from dynamauction.primitives.kernel import RewardKernel
+from dynamauction.primitives.kernel import (
+    RewardKernel,
+    SurvivalKernel,
+    SaturationKernel,
+    RecencyDisplayKernel,
+)
 
 
 class ConversionProbe(ABC):
@@ -93,20 +98,29 @@ class PoissonProbe(ConversionProbe):
 
 class BernoulliProbe(ConversionProbe):
     """
-    For SurvivalKernel: Bernoulli(p) gate then Exp(alpha) delay.
+    Bernoulli(p) gate then Exp(delay_rate) delay.
+
+    Valid for any kernel with kappa=0 and lambda(s) = p * delay_rate * exp(-delay_rate * s),
+    where p is constant in s (i.e. lambda_upper_bound is the tight max, attained at s=0).
+    Compatible kernels: SurvivalKernel, SaturationKernel, RecencyDisplayKernel.
     sample_one() and sample_all() are identical: returns at most 1 conversion by design.
-    alpha is read from the kernel.
     """
 
+    _COMPATIBLE_KERNELS = (SurvivalKernel, SaturationKernel, RecencyDisplayKernel)
+
     def _draw(self, u, x, ctx, t, horizon, rng) -> List[float]:
-        from dynamauction.primitives.kernel import SurvivalKernel
-        assert isinstance(self.kernel, SurvivalKernel), (
-            "BernoulliProbe requires a SurvivalKernel"
+        assert isinstance(self.kernel, self._COMPATIBLE_KERNELS), (
+            f"BernoulliProbe requires a kernel with a constant-in-s conversion "
+            f"probability ({', '.join(k.__name__ for k in self._COMPATIBLE_KERNELS)}), "
+            f"got {type(self.kernel).__name__}"
         )
-        prob = self.kernel.conversion_probability(u, x, ctx)
+        remaining = horizon - t
+        if remaining <= 0.0:
+            return []
+        prob = self.kernel.lambda_upper_bound(u, x, ctx, t, remaining) / self.kernel.delay_rate
         if rng.uniform() >= prob:
             return []
-        delay = rng.exponential(1.0 / self.kernel.alpha)
+        delay = rng.exponential(1.0 / self.kernel.delay_rate)
         return [delay] if t + delay <= horizon else []
 
     def sample_one(self, u, x, ctx, y_func, t, horizon, rng) -> List[float]:

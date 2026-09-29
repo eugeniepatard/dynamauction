@@ -219,7 +219,7 @@ def create_probe(name: str, kernel: RewardKernel, **kwargs) -> ConversionProbe:
     """
     if name == "poisson":
         return PoissonProbe(kernel=kernel, **kwargs)
-    elif name == "survival":
+    elif name == "bernoulli":
         return BernoulliProbe(kernel=kernel, **kwargs)
     elif name == "null":
         return NullProbe(kernel=kernel, **kwargs)
