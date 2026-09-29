@@ -139,7 +139,7 @@ class MPCOraclePolicy(BiddingPolicy):
             cumulative = 0.0
             for seed in crn_seeds:
                 env_copy = copy.deepcopy(self._env)
-                env_copy.rng = np.random.default_rng(seed)
+                env_copy.unwrapped.rng = np.random.default_rng(seed)
                 cumulative += self._mpc_rollout(
                     env_copy, alpha, v0_now, t_start
                 )
@@ -188,11 +188,12 @@ class MPCPolicy(BiddingPolicy):
     where R^(m)(α) is the cumulative reward of rollout m when bid b_k = α_k · V₀(s_k, x_k),
     with α_first = α at step t and α_k = alpha_cont for all k > t.
 
-    **Common Random Numbers (CRN)**: M noise streams are pre-fixed via seeds
-    shared across all α candidates.  The future auction schedule and horizon are
-    resampled independently for each rollout so the policy does not see the true
-    future T (contrast with :class:`MPCOraclePolicy`).  CRN still holds: all α
-    candidates at a given seed face the same resampled T' and noise stream.
+    **Common Random Numbers (CRN)**: each rollout m uses two independent seeds —
+    ``scenario_seed_m`` for resampling T′ / arrival schedule / exogenous, and
+    ``noise_seed_m`` for env step stochasticity.  Both seeds are shared across
+    all α candidates, so every α faces the same resampled future and the same
+    noise stream.  Using separate seeds keeps the two randomization axes
+    orthogonal, matching the design of :class:`SimulationEstimator`.
 
     Parameters
     ----------
@@ -247,17 +248,21 @@ class MPCPolicy(BiddingPolicy):
         v0_now = self.v0.predict(observations)
         t_start = float(observations["t"].ravel()[0])
 
-        crn_seeds = [int(s) for s in self._rng.integers(0, 2**31, size=self.n_rollouts)]
+        # Two independent seeds per rollout — keeps scenario (T′, arrivals, exogenous)
+        # and env step noise on orthogonal RNG axes, matching SimulationEstimator design.
+        # Both seeds are shared across all α candidates (CRN holds).
+        crn_seeds = [
+            (int(self._rng.integers(0, 2**31 - 1)), int(self._rng.integers(0, 2**31 - 1)))
+            for _ in range(self.n_rollouts)
+        ]
 
         q_hat: Dict[float, float] = {}
         for alpha in self.alpha_candidates:
             cumulative = 0.0
-            for seed in crn_seeds:
+            for scenario_seed, noise_seed in crn_seeds:
                 env_copy = copy.deepcopy(self._env)
-                # Resample T' so rollouts don't see the true future schedule.
-                # Same seed → same T' for all α at this rollout (CRN holds).
-                _resample_remaining_horizon(env_copy, np.random.default_rng(seed))
-                env_copy.rng = np.random.default_rng(seed)
+                _resample_remaining_horizon(env_copy, np.random.default_rng(scenario_seed))
+                env_copy.unwrapped.rng = np.random.default_rng(noise_seed)
                 cumulative += self._mpc_rollout(
                     env_copy, alpha, v0_now, t_start
                 )
@@ -316,8 +321,9 @@ class MPCTimeBinnedPolicy(BiddingPolicy):
         α* = argmax_{α} Q̂(α)
     executes b_t = α*₀ · V₀(s_t, x_t), and re-plans at the next auction.
 
-    CRN holds: all candidate vectors share the same M noise streams and the
-    same resampled horizon T' per rollout.
+    CRN holds: all candidate vectors share the same M rollouts, each defined by
+    an independent scenario seed (T′, arrivals, exogenous) and noise seed (env
+    step stochasticity) — two orthogonal RNG axes per rollout.
 
     Special case: K = 1 is equivalent to MPCPolicy where α_cont = α₀.
 
@@ -369,15 +375,18 @@ class MPCTimeBinnedPolicy(BiddingPolicy):
         t_start   = float(observations["t"].ravel()[0])
         bin_width = self.planning_horizon / self.n_bins
 
-        crn_seeds = [int(s) for s in self._rng.integers(0, 2**31, size=self.n_rollouts)]
+        crn_seeds = [
+            (int(self._rng.integers(0, 2**31 - 1)), int(self._rng.integers(0, 2**31 - 1)))
+            for _ in range(self.n_rollouts)
+        ]
 
         q_hat: Dict[Tuple[float, ...], float] = {}
         for alpha_vec in itertools.product(self.alpha_candidates, repeat=self.n_bins):
             cumulative = 0.0
-            for seed in crn_seeds:
+            for scenario_seed, noise_seed in crn_seeds:
                 env_copy = copy.deepcopy(self._env)
-                _resample_remaining_horizon(env_copy, np.random.default_rng(seed))
-                env_copy.rng = np.random.default_rng(seed)
+                _resample_remaining_horizon(env_copy, np.random.default_rng(scenario_seed))
+                env_copy.unwrapped.rng = np.random.default_rng(noise_seed)
                 cumulative += self._rollout(
                     env_copy, observations, alpha_vec, v0_now, t_start, bin_width
                 )
