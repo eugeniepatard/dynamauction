@@ -157,9 +157,10 @@ def train(
     algo: str,
     cfg: TrainingConfig = TrainingConfig(),
     scenario_overrides: Optional[dict] = None,
+    scenario_id: Optional[str] = None,
 ) -> object:
     """
-    Train a single RL algorithm on the survival-second-price-exponential scenario.
+    Train a single RL algorithm.
 
     Parameters
     ----------
@@ -169,6 +170,8 @@ def train(
         Hyper-parameters and training budget.
     scenario_overrides : dict, optional
         Key-value pairs forwarded to ``dac.make()`` to override scenario defaults.
+    scenario_id : str, optional
+        Scenario preset name.  Defaults to ``survival-second-price-exponential``.
 
     Returns
     -------
@@ -179,7 +182,8 @@ def train(
     if algo not in _ALGO_CLS:
         raise ValueError(f"Unknown algo {algo!r}. Choose from {list(_ALGO_CLS)}")
 
-    scenario = dac.make(SCENARIO_ID, **(scenario_overrides or {}))
+    sid = scenario_id if scenario_id is not None else SCENARIO_ID
+    scenario = dac.make(sid, **(scenario_overrides or {}))
     if cfg.fixed_horizon is not None:
         scenario.horizon_generator = FixedHorizon(cfg.fixed_horizon)
 
@@ -226,7 +230,7 @@ def train(
         print(f"\n{'='*60}")
         print(f"  Algorithm : {algo.upper()}")
         print(f"  Timesteps : {cfg.total_timesteps:,}")
-        print(f"  Scenario  : {SCENARIO_ID}")
+        print(f"  Scenario  : {sid}")
         print(f"  Horizon   : {'fixed=' + str(cfg.fixed_horizon) if cfg.fixed_horizon else 'exponential'}")
         print(f"  VecNorm   : {cfg.use_vec_normalize}")
         print(f"  MaskER    : {cfg.mask_expected_reward}  (expected_reward hidden from RL obs)")
