@@ -321,9 +321,14 @@ class AuctionEnv(Env):
         else:
             times += [0.0] * (self.scenario.max_history - len(times))
 
+        # Clip ctx to a finite range so that sentinel values like -inf
+        # (used by LastWonTimeGamma before the first win) do not propagate
+        # into ML feature vectors or VecNormalize running statistics.
+        ctx_obs = np.clip(float(self.state.ctx), -1e6, 1e6)
+
         obs : Dict[str, Any] =  {
             "t": np.array([self.state.t], dtype=np.float32),
-            "ctx": np.array([self.state.ctx], dtype=np.float32),
+            "ctx": np.array([ctx_obs], dtype=np.float32),
             "step": np.int64(self.state.step_idx),
             "user_features": u_obs.astype(np.float32),
             "display_features": self.state.display_features.astype(np.float32),

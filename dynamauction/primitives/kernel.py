@@ -171,8 +171,6 @@ class RecencyDisplayKernel(RewardKernel):
         self.recency_coef = recency_coef
 
     def _conversion_prob(self, ctx: float, t: float) -> float:
-        if ctx == float("-inf"):
-            return 1.0
         return 1.0 - np.exp(-self.recency_coef * (t - ctx))
 
     def kappa(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float) -> float:

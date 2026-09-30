@@ -44,7 +44,7 @@ class MultiplicativeGamma(Gamma):
 
 class LastWonTimeGamma(Gamma):
     """Context is the time of the last won auction."""
-    def __init__(self, initial_value: float = float('-inf')):
+    def __init__(self, initial_value: float = -1e6):
         self.initial_value = initial_value
 
     def initiate_context(self) -> float:

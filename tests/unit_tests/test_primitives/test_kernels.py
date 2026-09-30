@@ -53,7 +53,8 @@ class TestRecencyDisplayKernel:
     @staticmethod
     def test_initial_recency():
         kernel = RecencyDisplayKernel(recency_coef=1.0)
-        assert kernel._conversion_prob(float("-inf"), 10.0) == 1.0
+        # Default sentinel -1e6: t - ctx = t + 1e6, so prob ≈ 1.0
+        assert kernel._conversion_prob(-1e6, 0.0) == pytest.approx(1.0, abs=1e-6)
 
 
     @staticmethod

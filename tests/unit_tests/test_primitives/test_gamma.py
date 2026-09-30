@@ -80,8 +80,8 @@ class TestMultiplicativeGamma:
 
 class TestLastWonTimeGamma:
 
-    def test_default_initial_context_is_neg_inf(self):
-        assert LastWonTimeGamma().initiate_context() == float("-inf")
+    def test_default_initial_context_is_large_negative(self):
+        assert LastWonTimeGamma().initiate_context() == pytest.approx(-1e6)
 
     def test_custom_initial_context(self):
         assert LastWonTimeGamma(initial_value=0.0).initiate_context() == pytest.approx(0.0)
@@ -93,7 +93,7 @@ class TestLastWonTimeGamma:
 
     def test_update_ignores_previous_context(self):
         g = LastWonTimeGamma()
-        for prev in [0.0, 99.0, float("-inf")]:
+        for prev in [0.0, 99.0, -1e6]:
             assert g.update_context(prev, _X, _U, t_display=5.0, t_past_won_auctions=[]) == pytest.approx(5.0)
 
     def test_update_ignores_past_auctions_list(self):
