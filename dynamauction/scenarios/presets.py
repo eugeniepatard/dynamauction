@@ -20,7 +20,7 @@ SCENARIO_PRESETS = {
         "kappa_distribution": "poisson",
     },
 
-    "saturation-second-price-uniform": {
+    "saturation-second-price-lognormal": {
         "description": "Saturation kernel with second-price auction and uniform competition",
         "kernel": {"name": "saturation", "params": {"base_rate": 1.0, "saturation_scale": 10.0, "delay_rate": 0.5}},
         "auction": {"name": "second-price"},
@@ -48,7 +48,7 @@ SCENARIO_PRESETS = {
         "user": {"name": "normal", "params": {"full_dim": 3, "observable_dim": 3, "mu": 0.0, "sigma": 1.0}},
         "gamma": {"name": "last-won-time"},
         "max_history": 10,
-        "probe": {"name": "poisson"},
+        "probe": {"name": "bernoulli"},
         "delay_sampler": {"name": "single"},
         "kappa_distribution": "poisson",
     },
