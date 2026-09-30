@@ -1,7 +1,7 @@
 import dynamauction as dac
 
 def test_make_preset():
-    scenario = dac.make("saturation-second-price-uniform")
+    scenario = dac.make("saturation-second-price-lognormal")
     assert scenario is not None
     assert scenario.kernel is not None
     assert scenario.auction is not None
