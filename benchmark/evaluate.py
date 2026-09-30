@@ -84,6 +84,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 import pickle
+import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from tqdm import tqdm
@@ -344,7 +345,9 @@ def _run_episode(
     rows: List[dict] = []
 
     while not done:
+        t0     = time.perf_counter()
         bid    = policy.bid(obs)
+        bid_time_ms = (time.perf_counter() - t0) * 1000.0
         action = np.array([bid], dtype=np.float32)
         obs, reward, done, _truncated, info = env.step(action)
         cum_reward += float(reward)
@@ -370,6 +373,7 @@ def _run_episode(
             "expected_reward": float(obs["expected_reward"].ravel()[0]),
             "competing_bid":   float(info["auction"]["competing_bid"]),
             "alpha_chosen":    alpha_chosen,
+            "bid_time_ms":     bid_time_ms,
         })
 
     return pd.DataFrame(rows)
