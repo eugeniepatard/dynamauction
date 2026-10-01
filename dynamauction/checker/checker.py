@@ -241,6 +241,9 @@ def _check_gamma(gamma: Gamma, sc: Scenario, issues: _Issues) -> None:
     ctx2, ok = _try(issues, "Gamma.update_context", gamma.update_context, ctx, x, u, 1.0, [0.5])
     if ok and not isinstance(ctx2, (int, float, np.floating)):
         issues.error(f"Gamma.update_context must return a scalar float, got {type(ctx2).__name__}")
+    ctx3, ok = _try(issues, "Gamma.current_context", gamma.current_context, ctx, 1.0, [0.5])
+    if ok and not isinstance(ctx3, (int, float, np.floating)):
+        issues.error(f"Gamma.current_context must return a scalar float, got {type(ctx3).__name__}")
 
 
 def _check_kernel(kernel: RewardKernel, sc: Scenario, issues: _Issues) -> None:

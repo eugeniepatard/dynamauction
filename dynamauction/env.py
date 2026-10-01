@@ -139,8 +139,9 @@ class AuctionEnv(Env):
                 Updated kernel context after this auction/display.
         """
         sc = self.scenario
+        ctx_now = sc.gamma.current_context(auction_state.ctx, auction_state.t, self.t_past_won_auctions)
         B = sc.competition.sample(rng)
-        
+
         won = sc.auction.win(bid, B)
         payment = sc.auction.payment(bid, B) if won else 0.0
         y_t = y_func(auction_state.t)
@@ -154,7 +155,7 @@ class AuctionEnv(Env):
             competing_bid=B,
             won=won,
             payment=payment,
-            context=auction_state.ctx,
+            context=ctx_now,
             y=y_t,
         )
 
@@ -168,7 +169,7 @@ class AuctionEnv(Env):
                 step=auction_state.t,
                 auction_id=auction_state.step_idx,
                 time=auction_state.t,
-                context=auction_state.ctx,
+                context=ctx_now,
                 y=y_t,
                 **{f"x_{j}": float(v) for j, v in enumerate(x)},
             )
@@ -176,7 +177,7 @@ class AuctionEnv(Env):
             # Handle Immediate conversions.
             # 'bernoulli': Bernoulli(κ) — at most one conversion (ImmediateSurvivalKernel).
             # 'poisson':   Poisson(κ)   — multiple conversions possible (MixedKernel).
-            kap = sc.kernel.kappa(u, x, auction_state.ctx, y_t)
+            kap = sc.kernel.kappa(u, x, ctx_now, y_t)
             if sc.kappa_distribution == 'bernoulli':
                 n_kappa = int(rng.random() < kap)
             else:
@@ -192,7 +193,7 @@ class AuctionEnv(Env):
                 ))
 
             # Handle Delayed conversions via the configured sampler 
-            for s in self.delay_sampler.sample(self.probe, u, x, auction_state.ctx, y_func, auction_state.t, horizon, rng):
+            for s in self.delay_sampler.sample(self.probe, u, x, ctx_now, y_func, auction_state.t, horizon, rng):
                 conversions_data.append(dict(
                     step=auction_state.t,
                     auction_id=auction_state.step_idx,
@@ -304,10 +305,11 @@ class AuctionEnv(Env):
         from the previous interval.
         """
 
+        ctx_now = self.scenario.gamma.current_context(self.state.ctx, self.state.t, self.t_past_won_auctions)
         expected_reward = self.conversion_value * self.scenario.kernel.expected_reward(
             self.user_features,
             self.state.display_features,
-            self.state.ctx,
+            ctx_now,
             self.state.y_func,
             self.state.t,
             self.horizon,
@@ -324,7 +326,7 @@ class AuctionEnv(Env):
         # Clip ctx to a finite range so that sentinel values like -inf
         # (used by LastWonTimeGamma before the first win) do not propagate
         # into ML feature vectors or VecNormalize running statistics.
-        ctx_obs = np.clip(float(self.state.ctx), -1e6, 1e6)
+        ctx_obs = np.clip(float(ctx_now), -1e6, 1e6)
 
         obs : Dict[str, Any] =  {
             "t": np.array([self.state.t], dtype=np.float32),
