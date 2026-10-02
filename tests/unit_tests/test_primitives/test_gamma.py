@@ -77,6 +77,47 @@ class TestMultiplicativeGamma:
         ctx = g.update_context(3.0, _X, _U, t_display=1000.0, t_past_won_auctions=[0.0])
         assert ctx == pytest.approx(3.0, abs=1e-3)
 
+    def test_first_win_leaves_context_unchanged(self):
+        # No previous win → no factor, whatever the display time (S(0⁻) = initial value)
+        g = MultiplicativeGamma(c=0.9)
+        for t in [0.1, 0.5, 1.0, 7.0]:
+            assert g.update_context(1.0, _X, _U, t_display=t, t_past_won_auctions=[]) == pytest.approx(1.0)
+
+    def test_current_context_without_past_win(self):
+        assert MultiplicativeGamma(c=0.9).current_context(1.0, t=0.2, t_past_won_auctions=[]) == pytest.approx(1.0)
+
+    def test_current_context_uses_gap_to_last_win(self):
+        g = MultiplicativeGamma(c=0.9)
+        ctx = g.current_context(0.5, t=4.0, t_past_won_auctions=[1.0, 3.0])
+        assert ctx == pytest.approx(0.5 * (1.0 - 0.9 * np.exp(-1.0)))
+
+    def test_update_stores_current_context(self):
+        g = MultiplicativeGamma(c=0.9)
+        stored = g.update_context(0.5, _X, _U, t_display=4.0, t_past_won_auctions=[3.0])
+        assert stored == pytest.approx(g.current_context(0.5, t=4.0, t_past_won_auctions=[3.0]))
+
+    def test_default_beta_is_one(self):
+        g = MultiplicativeGamma(c=0.9)
+        assert g.beta == pytest.approx(1.0)
+        assert g.current_context(0.5, t=4.0, t_past_won_auctions=[1.5]) == pytest.approx(
+            MultiplicativeGamma(c=0.9, beta=1.0).current_context(0.5, t=4.0, t_past_won_auctions=[1.5]))
+
+    def test_beta_scales_gap(self):
+        g = MultiplicativeGamma(c=0.9, beta=0.5)
+        ctx = g.current_context(0.5, t=4.0, t_past_won_auctions=[1.0, 2.0])
+        assert ctx == pytest.approx(0.5 * (1.0 - 0.9 * np.exp(-0.5 * 2.0)))
+
+    def test_beta_ignored_before_first_win(self):
+        g = MultiplicativeGamma(c=0.9, beta=3.0)
+        assert g.current_context(1.0, t=0.2, t_past_won_auctions=[]) == pytest.approx(1.0)
+
+
+class TestCurrentContextDefault:
+
+    @pytest.mark.parametrize("gamma", [AdditiveGamma(initial_value=2.0), LastWonTimeGamma(), ConstantGamma(value=7.5)])
+    def test_identity(self, gamma):
+        assert gamma.current_context(3.25, t=10.0, t_past_won_auctions=[1.0, 9.9]) == pytest.approx(3.25)
+
 
 class TestLastWonTimeGamma:
 

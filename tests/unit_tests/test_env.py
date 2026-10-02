@@ -41,6 +41,7 @@ def mock_scenario():
     scenario.gamma = MagicMock()
     scenario.gamma.initiate_context.return_value = 0.0
     scenario.gamma.update_context.side_effect = lambda ctx, x, u, t, t_past: ctx + 1.0
+    scenario.gamma.current_context.side_effect = lambda ctx, t, t_past: ctx
 
     scenario.competition.sample.return_value = 0.5
     scenario.auction.win.side_effect = lambda bid, comp: bid > comp
@@ -141,3 +142,25 @@ def test_poisson_probe_statistical_properties():
 
     mean_samples = np.mean(sample_counts)
     assert 95 <= mean_samples <= 105
+
+
+def test_multiplicative_context_follows_paper_recursion():
+    """Survival preset, always winning: the context used at each auction (observation and
+    auction record) is S(t_{k+1}⁻) = S(t_k⁻)·(1 − c·exp(−(t_{k+1} − t_k))), S = 1 before the first win."""
+    import dynamauction as dac
+
+    scenario = dac.make("survival-second-price-exponential")
+    c = scenario.gamma.c
+    env = AuctionEnv(scenario)
+    for seed in range(5):
+        obs, _ = env.reset(seed=seed)
+        s_prev, t_last, done = 1.0, None, False
+        while not done:
+            t = env.state.t
+            s_now = 1.0 if t_last is None else s_prev * (1.0 - c * np.exp(-(t - t_last)))
+            assert obs["ctx"][0] == pytest.approx(s_now, rel=1e-5, abs=1e-7)
+            assert s_now >= 0.0
+            obs, _, done, _, info = env.step(np.array([1e9], dtype=np.float32))
+            assert info["auction"]["won"]
+            assert info["auction"]["context"] == pytest.approx(s_now)
+            s_prev, t_last = s_now, t

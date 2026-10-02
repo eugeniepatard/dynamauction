@@ -28,6 +28,7 @@ def mock_scenario():
 
     scenario.gamma.initiate_context.return_value = 0.0
     scenario.gamma.update_context.side_effect = lambda ctx, x, u, t, t_past: ctx + 1.0
+    scenario.gamma.current_context.side_effect = lambda ctx, t, t_past: ctx
 
     scenario.competition.sample.return_value = 0.3
     scenario.auction.win.side_effect = lambda bid, comp: bid > comp

@@ -35,15 +35,17 @@ class AdditiveGamma(Gamma):
         return ctx + 1.0
 
 class MultiplicativeGamma(Gamma):
-    """S(t_{i+1}⁻) = S(t_i⁻) · (1 − c·exp(−(t_{i+1} − t_i))), S(0⁻) = initial_value.
+    """S(t_{i+1}⁻) = S(t_i⁻) · (1 − c·exp(−beta·(t_{i+1} − t_i))), S(0⁻) = initial_value.
 
-    At an auction at time t: S(t⁻) = stored · (1 − c·exp(−(t − t_last))) with t_last the
+    At an auction at time t: S(t⁻) = stored · (1 − c·exp(−beta·(t − t_last))) with t_last the
     last won auction, and no factor before the first win. A win stores S(t_display⁻).
+    beta is the recovery rate: beta < 1 makes the fatigue of a win last longer, beta > 1 shorter.
     """
 
-    def __init__(self, c : float, initial_value: float = 1.0):
+    def __init__(self, c : float, initial_value: float = 1.0, beta: float = 1.0):
         self.c = c
         self.initial_value = initial_value
+        self.beta = beta
 
     def initiate_context(self) -> float:
         return self.initial_value
@@ -51,7 +53,7 @@ class MultiplicativeGamma(Gamma):
     def current_context(self, ctx: float, t: float, t_past_won_auctions: List[float]) -> float:
         if not t_past_won_auctions:
             return ctx
-        return ctx * (1.0 - self.c * np.exp(-(t - max(t_past_won_auctions))))
+        return ctx * (1.0 - self.c * np.exp(-self.beta * (t - max(t_past_won_auctions))))
 
     def update_context(self, ctx: float, x: np.ndarray, u: np.ndarray, t_display: float, t_past_won_auctions: List[float]) -> float:
         return self.current_context(ctx, t_display, t_past_won_auctions)
