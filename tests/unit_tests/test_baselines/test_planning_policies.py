@@ -351,6 +351,38 @@ class TestMPCTimeBinnedPolicy:
         policy.bid(obs)
         assert len(policy.alpha_log) == 2
 
+    # ── non-uniform bins (bin_edges) ──────────────────────────────────────────
+
+    def test_default_bins_are_equal_width(self, mock_mlp):
+        policy = MPCTimeBinnedPolicy(v0=mock_mlp, n_bins=2, planning_horizon=10.0)
+        assert policy.bin_edges is None
+        assert [policy._bin_index(e, 5.0) for e in (0.0, 4.9, 5.0, 9.9, 12.0)] == [0, 0, 1, 1, 1]
+
+    def test_bin_edges_assign_bins(self, mock_mlp):
+        policy = MPCTimeBinnedPolicy(v0=mock_mlp, n_bins=2, planning_horizon=25.0, bin_edges=(1.5,))
+        assert [policy._bin_index(e, 12.5) for e in (0.1, 1.49, 1.5, 7.0, 24.9)] == [0, 0, 1, 1, 1]
+        three = MPCTimeBinnedPolicy(v0=mock_mlp, n_bins=3, planning_horizon=25.0, bin_edges=(1.0, 5.0))
+        assert [three._bin_index(e, 0.0) for e in (0.5, 1.0, 4.0, 5.0, 20.0)] == [0, 1, 1, 2, 2]
+
+    def test_bin_edges_zero_puts_only_the_current_auction_in_bin_0(self, mock_mlp):
+        policy = MPCTimeBinnedPolicy(v0=mock_mlp, n_bins=2, planning_horizon=25.0, bin_edges=(0.0,))
+        assert all(policy._bin_index(e, 12.5) == 1 for e in (1e-9, 0.3, 10.0))
+
+    @pytest.mark.parametrize("edges, n_bins", [((1.5,), 3), ((2.0, 1.0), 3), ((-1.0,), 2)])
+    def test_bin_edges_validation(self, mock_mlp, edges, n_bins):
+        with pytest.raises(ValueError):
+            MPCTimeBinnedPolicy(v0=mock_mlp, n_bins=n_bins, bin_edges=edges)
+
+    def test_explicit_uniform_edges_match_default(self, mock_mlp, live_env):
+        """bin_edges=(H/2,) with K=2 gives exactly the default (equal-width) decisions."""
+        env, obs = live_env
+        kw = dict(v0=mock_mlp, alpha_candidates=[0.5, 1.0], n_bins=2, n_rollouts=3, planning_horizon=6.0, seed=0)
+        default, explicit = MPCTimeBinnedPolicy(**kw), MPCTimeBinnedPolicy(**kw, bin_edges=(3.0,))
+        for p in (default, explicit):
+            p.set_env(env)
+        assert default.bid(obs) == explicit.bid(obs)
+        assert default.alpha_log == explicit.alpha_log
+
 
 class TestNoOracleAccess:
     """

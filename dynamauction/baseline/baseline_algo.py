@@ -1,6 +1,7 @@
 """Planning-based baseline bidding policies. See docs/API_REFERENCE.md § 8."""
 from __future__ import annotations
 
+import bisect
 import copy
 import itertools
 from pathlib import Path
@@ -320,90 +321,6 @@ class MPCPolicy(BiddingPolicy):
 
         return total
 
-
-class MPCWinLossPolicy(MPCPolicy):
-    """
-    MPC variant for second-price auctions that integrates the first competing bid with many draws.
-
-    In a second-price auction a rollout depends on α only through whether the first bid
-    b = α·V₀ beats the competing bid B (the payment is B, the next state only depends on
-    win / loss).  With W the rollout reward when the first auction is won (payment
-    excluded) and L the reward when it is lost:
-
-        Q(α) = F(b)·W − E[B·1{B < b}] + (1 − F(b))·L,      F = CDF of B.
-
-    W and L are estimated with ``n_rollouts`` CRN rollouts each (first bid forced to win,
-    resp. lose; continuation bids α_cont·V₀ as in :class:`MPCPolicy`).  F and
-    E[B·1{B < b}] are estimated with ``n_first_draws`` samples of the scenario's competition
-    distribution, so candidates are separated even when no rollout's B falls between their
-    bids.  Cost per decision: 2·n_rollouts rollouts instead of len(alpha_candidates)·n_rollouts.
-
-    Parameters
-    ----------
-    n_first_draws : int
-        Number of competing-bid samples used for the first auction.
-    Other parameters: see :class:`MPCPolicy`.
-    """
-
-    _FORCE_WIN_BID = 1e9
-
-    def __init__(self, *args, n_first_draws: int = 1000, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.n_first_draws = n_first_draws
-        self.win_loss_log: List[Tuple[float, float]] = []
-
-    def bid(self, observations: Dict[str, Any]) -> float:
-        if self._env is None:
-            raise RuntimeError("Call set_env(env) before bid().")
-        scenario = self._env.unwrapped.scenario
-        if not isinstance(scenario.auction, SecondPriceAuction):
-            raise ValueError("MPCWinLossPolicy assumes a second-price auction (payment = competing bid).")
-
-        v0_now = self.v0.predict(observations)
-        t_start = float(observations["t"].ravel()[0])
-        crn_seeds = [
-            (int(self._rng.integers(0, 2**31 - 1)), int(self._rng.integers(0, 2**31 - 1)))
-            for _ in range(self.n_rollouts)
-        ]
-        draw_rng = np.random.default_rng(int(self._rng.integers(0, 2**31 - 1)))
-
-        win_values, lose_values = [], []
-        for scenario_seed, noise_seed in crn_seeds:
-            for first_bid, values in ((self._FORCE_WIN_BID, win_values), (0.0, lose_values)):
-                env_copy = copy.deepcopy(self._env)
-                _resample_remaining_horizon(env_copy, np.random.default_rng(scenario_seed))
-                env_copy.unwrapped.rng = np.random.default_rng(noise_seed)
-                values.append(self._rollout_from_first_bid(env_copy, first_bid, t_start))
-        w_hat, l_hat = float(np.mean(win_values)), float(np.mean(lose_values))
-
-        b_draws = np.array([scenario.competition.sample(draw_rng) for _ in range(self.n_first_draws)])
-        q_hat: Dict[float, float] = {}
-        for alpha in self.alpha_candidates:
-            won = b_draws < alpha * v0_now
-            p_win = float(won.mean())
-            q_hat[alpha] = p_win * w_hat - float((b_draws * won).mean()) + (1.0 - p_win) * l_hat
-
-        alpha_star = self._select_alpha(q_hat)
-        self.alpha_log.append(alpha_star)
-        self.win_loss_log.append((w_hat, l_hat))
-        return float(max(0.0, alpha_star * v0_now))
-
-    def _rollout_from_first_bid(self, env: AuctionEnv, first_bid: float, t_start: float) -> float:
-        """Rollout reward with the first payment added back (W or L above)."""
-        obs, reward, done, _trunc, info = env.step(np.array([first_bid], dtype=np.float32))
-        total = float(reward) + float(info["auction"]["payment"])
-
-        while not done:
-            t_now = float(obs["t"].ravel()[0])
-            if t_now - t_start > self.planning_horizon:
-                break
-            bid_k = self.alpha_cont * self.v0.predict(obs)
-            obs, reward, done, _trunc, _ = env.step(np.array([bid_k], dtype=np.float32))
-            total += float(reward)
-
-        return total
-
-
 class MPCTimeBinnedPolicy(BiddingPolicy):
     """
     Time-binned MPC (V3): jointly optimises K shading multipliers over the
@@ -426,6 +343,12 @@ class MPCTimeBinnedPolicy(BiddingPolicy):
 
     Special case: K = 1 is equivalent to MPCPolicy where α_cont = α₀.
 
+    **Non-uniform bins** (``bin_edges``): the bin boundaries can be given explicitly, e.g. ``bin_edges=(1.5,)`` gives
+    a short first bin [t, t+1.5) and one bin for the rest [t+1.5, t+H), so the policy can express "wait now (low
+    α₀ for the next 1.5 time units), bid later (α₁)" at the cost of K = 2. ``bin_edges=(0.0,)`` puts only the
+    current auction in the first bin: α₀ is the current bid multiplier and α₁ the continuation multiplier, i.e.
+    :class:`MPCPolicy` with α_cont optimised jointly at every decision.
+
     Parameters
     ----------
     v0 : MLPValuationHead
@@ -439,6 +362,10 @@ class MPCTimeBinnedPolicy(BiddingPolicy):
     planning_horizon : float
         H in scenario time units.
     seed : int
+    bin_edges : sequence of float, optional
+        Interior bin boundaries, in time elapsed since the decision (increasing, ≥ 0); bin j covers
+        [bin_edges[j-1], bin_edges[j]). Requires ``n_bins == len(bin_edges) + 1``. None (default): K equal bins
+        of width H/K.
     """
 
     def __init__(
@@ -449,7 +376,15 @@ class MPCTimeBinnedPolicy(BiddingPolicy):
         n_rollouts: int = 10,
         planning_horizon: float = 7.0,
         seed: int = 0,
+        bin_edges: Optional[Sequence[float]] = None,
     ) -> None:
+        if bin_edges is not None:
+            bin_edges = [float(e) for e in bin_edges]
+            if len(bin_edges) + 1 != n_bins:
+                raise ValueError(f"n_bins={n_bins} but bin_edges={bin_edges} defines {len(bin_edges) + 1} bins")
+            if bin_edges[0] < 0 or any(b <= a for a, b in zip(bin_edges, bin_edges[1:])):
+                raise ValueError(f"bin_edges must be increasing and non-negative, got {bin_edges}")
+        self.bin_edges = bin_edges
         self.v0 = v0
         self.alpha_candidates = list(alpha_candidates)
         self.n_bins = n_bins
@@ -495,6 +430,12 @@ class MPCTimeBinnedPolicy(BiddingPolicy):
         self.alpha_log.append(alpha_star)
         return float(max(0.0, alpha_star[0] * v0_now))
 
+    def _bin_index(self, elapsed: float, bin_width: float) -> int:
+        """Bin of an auction ``elapsed`` time units after the decision (equal bins unless ``bin_edges``)."""
+        if self.bin_edges is None:
+            return min(int(elapsed / bin_width), self.n_bins - 1)
+        return bisect.bisect_right(self.bin_edges, elapsed)
+
     def _rollout(
         self,
         env: AuctionEnv,
@@ -515,7 +456,7 @@ class MPCTimeBinnedPolicy(BiddingPolicy):
             elapsed = t_now - t_start
             if elapsed >= self.planning_horizon:
                 break
-            j     = min(int(elapsed / bin_width), self.n_bins - 1)
+            j     = self._bin_index(elapsed, bin_width)
             bid_k = alpha_vec[j] * self.v0.predict(obs)
             obs, reward, done, _trunc, _ = env.step(
                 np.array([bid_k], dtype=np.float32)
