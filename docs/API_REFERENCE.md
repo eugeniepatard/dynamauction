@@ -480,8 +480,12 @@ policy = MPCWinLossPolicy(v0=mlp, alpha_candidates=[0.1, 0.2, 0.5, 1.0], n_rollo
 
 ### MPCTimeBinnedPolicy and MPCOraclePolicy
 
-`MPCTimeBinnedPolicy(v0, alpha_candidates, n_bins=K, n_rollouts, planning_horizon, seed)` searches one multiplier per
-time bin of width H/K (|A₀|^K vectors) and bids the first-bin multiplier. `MPCOraclePolicy` is an ablation that keeps
+`MPCTimeBinnedPolicy(v0, alpha_candidates, n_bins=K, n_rollouts, planning_horizon, seed, bin_edges=None)` searches one
+multiplier per time bin (|A₀|^K vectors) and bids the first-bin multiplier. Bins have width H/K by default; `bin_edges`
+gives the interior boundaries instead (time elapsed since the decision; K = len(bin_edges) + 1). With
+`bin_edges=(1.5,)` the first multiplier covers the current auction and the next 1.5 time units ("wait now, bid later"
+at the cost of K = 2); with `bin_edges=(0.0,)` it covers only the current auction, i.e. `MPCPolicy` with α_cont chosen
+jointly at every decision. `MPCOraclePolicy` is an ablation that keeps
 the real future auction schedule and horizon in its rollouts (privileged information).
 
 ### Plugging into the benchmark

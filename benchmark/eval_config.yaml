@@ -1,13 +1,18 @@
 # Camera-ready evaluation configuration
-# Pass to evaluate.py with: python -m benchmark.evaluate --config camera-ready-exp/eval_config.yaml
+# Pass to evaluate.py with: python -m benchmark.evaluate --config benchmark/eval_config.yaml
 #
 # The scenario block references a preset from dynamauction/scenarios/presets.py.
 # Only fields in 'overrides' need to be specified — everything else comes from the preset.
+# The values below reproduce the paper setup; the new parameters are set to their defaults (same behaviour).
 
 scenario:
-  preset: survival-second-price-exponential  # key in SCENARIO_PRESETS
-  overrides:
-    horizon_eta: 50  # overrides the preset's eta (default 50 matches the paper)
+  preset: survival-second-price-exponential  # key in SCENARIO_PRESETS; scenario 2: survival-second-price-exponential-2
+  overrides:                                 # keyword overrides for dac.make(), underscore paths into the preset
+    horizon_eta: 50          # mean campaign length η (default 50 matches the paper)
+    gamma_beta: 1.0          # recovery rate β of the fatigue factor ρ(Δ) = 1 − c·exp(−βΔ) (β < 1: longer fatigue)
+    gamma_c: 0.9             # fatigue strength c
+    competition_mu: 0.0      # competing bid B ~ LogNormal(μ, σ); scenario 2 uses μ = −1
+    competition_sigma: 1.0
 
 evaluation:
   n_seeds: 1000
@@ -16,8 +21,6 @@ evaluation:
 
 # RL models: paths to best_model stems (without .zip).
 # obs_rms.pkl is loaded from the same directory automatically.
-# NOTE: SAC and TD3 use the lr=... directories (original end-of-training obs_rms).
-#       The eta50/ directories have recomputed obs_rms and produce different results.
 rl_models:
   ppo: benchmark/models/ppo/eta50/lr=0.0003_ent=0.02_steps=512_gamma=0.95_epochs=5/best_model
   sac: benchmark/models/sac/lr=5e-05_bs=512_warmup=500_gamma=0.95/best_model
@@ -30,28 +33,22 @@ sim_policies:
   greedy: false
   shading:
     alphas: [0.7]
-    n_rollouts: 10
+    n_rollouts: 10           # Monte-Carlo rollouts of the value estimate (also used by GreedyMyopic)
   mpc:
     model: benchmark/models/mlp_valuation_head/survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt
-    horizons: [10, 25]
-    alpha_candidates: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    n_rollouts: 10
+    horizons: [10, 25]       # planning horizon H
+    alpha_candidates: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    n_rollouts: 10           # M
+    alpha_cont: 1.0          # multiplier of the continuation bids in the rollouts; a list → one MPC per value
+    tie_alpha: null          # null: ties → first candidate; a value: the tied candidate closest to it
+    win_loss: false          # true: MPCWinLossPolicy (W/L decomposition, second price only) instead of MPCPolicy
+    n_first_draws: 1000      # MPCWinLossPolicy only: competing-bid draws for the current auction
   mpc_timebin:
     model: benchmark/models/mlp_valuation_head/survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt
     horizons: [10, 25]
-    n_bins: [2, 3]
-    alpha_candidates: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    n_bins: [2, 3]           # K equal-width bins (width H/K)
+    bin_edges: []            # extra variants with explicit bin edges, e.g. [[1.5], [0.0]]:
+                             #   [1.5] → bins [0, 1.5) and [1.5, H) ("wait now, bid later");
+                             #   [0.0] → first bin = current auction only (MPC with α_cont optimised)
+    alpha_candidates: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]   # per bin (|A|^K vectors)
     n_rollouts: 10
-
-# Paper results (eta=50, 1000 seeds, policy_seed=10) — for reference only, not read by evaluate.py
-# policy                      mean_reward
-# FiPla                       1.705846
-# GreedyMyopic                1.651700
-# Shading(alpha=0.7)          1.914900
-# PPO                         1.592118
-# SAC                         0.976216
-# TD3                         1.572457
-# MPC(H=10, K=1)              2.281500
-# MPC(H=25, K=1)              2.459521
-# MPCTimeBinned(H=25, K=2)    2.494100
-# MPCTimeBinned(H=25, K=3)    2.502733

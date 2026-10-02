@@ -86,7 +86,7 @@ from datetime import datetime
 import pickle
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Sequence, Dict, List, Optional, Tuple
 from tqdm import tqdm
 
 import numpy as np
@@ -102,6 +102,7 @@ from dynamauction.baseline.baseline_algo import (
     MPCOraclePolicy,
     MPCPolicy,
     MPCTimeBinnedPolicy,
+    MPCWinLossPolicy,
 )
 
 from benchmark.train_rl import (
@@ -193,6 +194,16 @@ class EvalConfig:
     mpc_model_paths:         List[Optional[str]] = field(default_factory=lambda: [None])
     mpc_alpha_candidates:    List[float]    = field(default_factory=lambda: list(DEFAULT_MPC_ALPHA_CANDIDATES))
     mpc_planning_horizons:   List[float]    = field(default_factory=lambda: list(DEFAULT_MPC_HORIZONS))
+    # Per-family settings (None → shared value above); defaults reproduce the paper setup
+    shading_n_rollouts:      Optional[int]  = None            # Shading and GreedyMyopic
+    mpc_n_rollouts:          Optional[int]  = None            # MPC, MPCOracle
+    mpc_alpha_cont:          List[float]    = field(default_factory=lambda: [1.0])   # one MPC per value
+    mpc_tie_alpha:           Optional[float] = None           # None: ties → first candidate
+    mpc_win_loss:            bool           = False           # True: MPCWinLossPolicy instead of MPCPolicy
+    mpc_n_first_draws:       int            = 1000            # MPCWinLossPolicy only
+    mpc_timebin_n_rollouts:  Optional[int]  = None
+    mpc_timebin_alpha_candidates: Optional[List[float]] = None  # None → mpc_alpha_candidates
+    mpc_timebin_bin_edges:   List[List[float]] = field(default_factory=list)  # extra non-uniform-bin variants
     # Used by parallel_evaluate.benchmark(); ignored here.
     n_workers:               Optional[int]  = None
 
@@ -232,10 +243,15 @@ def load_eval_config(
         horizons: [10, 25]
         alpha_candidates: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
         n_rollouts: 10
+        alpha_cont: 1.0              # or a list → one MPC per value
+        tie_alpha: null              # null: ties → first candidate; a value: candidate closest to it
+        win_loss: false              # true: MPCWinLossPolicy (second price only)
+        n_first_draws: 1000          # MPCWinLossPolicy only
       mpc_timebin:
         model: path/to/mlp.pt
         horizons: [10, 25]
-        n_bins: [2, 3]
+        n_bins: [2, 3]               # equal-width bins (H/K)
+        bin_edges: [[1.5], [0.0]]    # extra variants with explicit bin edges (K = len(edges) + 1)
         alpha_candidates: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
         n_rollouts: 10
 
@@ -301,6 +317,15 @@ def load_eval_config(
     mpc_alpha_candidates = list(mpc_cfg.get("alpha_candidates", DEFAULT_MPC_ALPHA_CANDIDATES)) if isinstance(mpc_cfg, dict) else list(DEFAULT_MPC_ALPHA_CANDIDATES)
     mpc_n_bins = list(mpc_tb_cfg.get("n_bins", DEFAULT_MPC_N_BINS)) if isinstance(mpc_tb_cfg, dict) else list(DEFAULT_MPC_N_BINS)
 
+    def _opt_int(block, key):
+        return int(block[key]) if isinstance(block, dict) and block.get(key) is not None else None
+
+    mpc_d, tb_d = (mpc_cfg if isinstance(mpc_cfg, dict) else {}), (mpc_tb_cfg if isinstance(mpc_tb_cfg, dict) else {})
+    alpha_cont = mpc_d.get("alpha_cont", 1.0)
+    alpha_cont = [float(a) for a in (alpha_cont if isinstance(alpha_cont, (list, tuple)) else [alpha_cont])]
+    tie_alpha = mpc_d.get("tie_alpha")
+    tb_alphas = tb_d.get("alpha_candidates")
+
     # MPC model path: use from YAML if given, else None (→ default MLP auto-resolution)
     _mpc_model_raw = None
     if isinstance(mpc_cfg, dict) and "model" in mpc_cfg:
@@ -326,6 +351,15 @@ def load_eval_config(
         include_mpc=include_mpc,
         include_mpc_timebin=include_mpc_tb,
         policy_seed=policy_seed,
+        shading_n_rollouts=_opt_int(shading_cfg, "n_rollouts"),
+        mpc_n_rollouts=_opt_int(mpc_cfg, "n_rollouts"),
+        mpc_alpha_cont=alpha_cont,
+        mpc_tie_alpha=None if tie_alpha is None else float(tie_alpha),
+        mpc_win_loss=bool(mpc_d.get("win_loss", False)),
+        mpc_n_first_draws=int(mpc_d.get("n_first_draws", 1000)),
+        mpc_timebin_n_rollouts=_opt_int(mpc_tb_cfg, "n_rollouts"),
+        mpc_timebin_alpha_candidates=None if tb_alphas is None else [float(a) for a in tb_alphas],
+        mpc_timebin_bin_edges=[[float(e) for e in edges] for edges in (tb_d.get("bin_edges") or [])],
     )
     return cfg, algos, model_paths
 
@@ -401,8 +435,9 @@ def get_planning_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
     return policies
 
 
-def _mpc_label(path: Optional[str], horizon: float, n_models: int, n_horizons: int, prefix: str = "MPC") -> str:
-    parts = [f"H={horizon:g}"]
+def _mpc_label(path: Optional[str], horizon: float, n_models: int, n_horizons: int, prefix: str = "MPC",
+               extra: Sequence[str] = ()) -> str:
+    parts = [f"H={horizon:g}", *extra]
     if n_models > 1:
         if path is None:
             parts.append("auto")
@@ -415,11 +450,18 @@ def _mpc_label(path: Optional[str], horizon: float, n_models: int, n_horizons: i
 def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
     policies: Dict[str, BiddingPolicy] = {}
 
+    shading_m = cfg.shading_n_rollouts or cfg.simulation_n_rollouts
+    mpc_m = cfg.mpc_n_rollouts or cfg.simulation_n_rollouts
+    tb_m = cfg.mpc_timebin_n_rollouts or cfg.simulation_n_rollouts
+
+    def _ac_extra(a: float) -> List[str]:   # label suffix only when α_cont differs from the default or varies
+        return [f"α_cont={a:g}"] if (len(cfg.mpc_alpha_cont) > 1 or a != 1.0) else []
+
     if cfg.include_greedy:
         policies["GreedyMyopic"] = GreedyMyopicPolicy(
             SimulationEstimator(
                 pi0=ConstantPolicy(0.0),
-                n_rollouts=cfg.simulation_n_rollouts,
+                n_rollouts=shading_m,
                 seed=cfg.policy_seed,
             )
         )
@@ -430,7 +472,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
             policies[label] = ShadingPolicy(
                 SimulationEstimator(
                     pi0=ConstantPolicy(0.0),
-                    n_rollouts=cfg.simulation_n_rollouts,
+                    n_rollouts=shading_m,
                     seed=cfg.policy_seed,
                 ),
                 alpha=alpha,
@@ -442,15 +484,20 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
         for path in cfg.mpc_model_paths:
             mlp = load_mlp(cfg.scenario_id, path)
             for horizon in cfg.mpc_planning_horizons:
-                label = _mpc_label(path, horizon, n_models, n_horizons)
-                policies[label] = MPCPolicy(
-                    v0=mlp,
-                    alpha_candidates=cfg.mpc_alpha_candidates,
-                    alpha_cont=1.0,
-                    n_rollouts=cfg.simulation_n_rollouts,
-                    planning_horizon=horizon,
-                    seed=cfg.policy_seed,
-                )
+                for alpha_cont in cfg.mpc_alpha_cont:
+                    prefix = "MPCWinLoss" if cfg.mpc_win_loss else "MPC"
+                    label = _mpc_label(path, horizon, n_models, n_horizons, prefix=prefix, extra=_ac_extra(alpha_cont))
+                    cls, extra_kw = (MPCWinLossPolicy, {"n_first_draws": cfg.mpc_n_first_draws}) if cfg.mpc_win_loss else (MPCPolicy, {})
+                    policies[label] = cls(
+                        v0=mlp,
+                        alpha_candidates=cfg.mpc_alpha_candidates,
+                        alpha_cont=alpha_cont,
+                        n_rollouts=mpc_m,
+                        planning_horizon=horizon,
+                        seed=cfg.policy_seed,
+                        tie_alpha=cfg.mpc_tie_alpha,
+                        **extra_kw,
+                    )
 
     if cfg.include_mpc_oracle:
         n_models   = len(cfg.mpc_model_paths)
@@ -458,35 +505,41 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
         for path in cfg.mpc_model_paths:
             mlp = load_mlp(cfg.scenario_id, path)
             for horizon in cfg.mpc_planning_horizons:
-                label = _mpc_label(path, horizon, n_models, n_horizons, prefix="MPCOracle")
-                policies[label] = MPCOraclePolicy(
-                    v0=mlp,
-                    alpha_candidates=cfg.mpc_alpha_candidates,
-                    alpha_cont=1.0,
-                    n_rollouts=cfg.simulation_n_rollouts,
-                    planning_horizon=horizon,
-                    seed=cfg.policy_seed,
-                )
+                for alpha_cont in cfg.mpc_alpha_cont:
+                    label = _mpc_label(path, horizon, n_models, n_horizons, prefix="MPCOracle", extra=_ac_extra(alpha_cont))
+                    policies[label] = MPCOraclePolicy(
+                        v0=mlp,
+                        alpha_candidates=cfg.mpc_alpha_candidates,
+                        alpha_cont=alpha_cont,
+                        n_rollouts=mpc_m,
+                        planning_horizon=horizon,
+                        seed=cfg.policy_seed,
+                    )
 
     if cfg.include_mpc_timebin:
         n_models   = len(cfg.mpc_model_paths)
         n_horizons = len(cfg.mpc_planning_horizons)
         for path in cfg.mpc_model_paths:
             mlp = load_mlp(cfg.scenario_id, path)
+            tb_alphas = cfg.mpc_timebin_alpha_candidates or cfg.mpc_alpha_candidates
+            variants = [(f"K={k}", k, None) for k in cfg.mpc_n_bins]
+            variants += [(f"edges={'-'.join(f'{e:g}' for e in edges)}", len(edges) + 1, edges)
+                         for edges in cfg.mpc_timebin_bin_edges]
             for horizon in cfg.mpc_planning_horizons:
-                for k in cfg.mpc_n_bins:
-                    parts = [f"H={horizon:g}", f"K={k}"]
+                for tag, k, edges in variants:
+                    parts = [f"H={horizon:g}", tag]
                     if n_models > 1:
                         stem = Path(path).stem if path else "auto"
                         parts.append(stem.split("_", 1)[-1] if "_" in stem else stem)
                     label = "MPCTimeBinned" + (f"({','.join(parts)})" if parts else "")
                     policies[label] = MPCTimeBinnedPolicy(
                         v0=mlp,
-                        alpha_candidates=cfg.mpc_alpha_candidates,
+                        alpha_candidates=tb_alphas,
                         n_bins=k,
-                        n_rollouts=cfg.simulation_n_rollouts,
+                        n_rollouts=tb_m,
                         planning_horizon=horizon,
                         seed=cfg.policy_seed,
+                        bin_edges=edges,
                     )
 
     return policies
@@ -685,14 +738,15 @@ def main():
         # CLI overrides (only when user explicitly passed them)
         if args.n_seeds != DEFAULT_N_SEEDS:
             cfg.seeds = list(range(args.n_seeds))
-        if args.horizon_eta != DEFAULT_HORIZON_ETA:
-            cfg.scenario_overrides = {"horizon_eta": args.horizon_eta}
-        if "none" not in args.baselines and args.baselines != list(DEFAULT_BASELINES):
+        if args.horizon_eta != DEFAULT_HORIZON_ETA:   # keep the other YAML overrides (e.g. gamma_beta)
+            cfg.scenario_overrides = {**cfg.scenario_overrides, "horizon_eta": args.horizon_eta}
+        if args.baselines != list(DEFAULT_BASELINES):   # "--baselines none" disables them
             cfg.baselines = [] if "none" in args.baselines else args.baselines
         if args.no_mask_expected_reward:
             cfg.mask_expected_reward = False
-        if args.n_rollouts != DEFAULT_N_ROLLOUTS:
+        if args.n_rollouts != DEFAULT_N_ROLLOUTS:   # the CLI value wins over the per-family YAML values
             cfg.simulation_n_rollouts = args.n_rollouts
+            cfg.shading_n_rollouts = cfg.mpc_n_rollouts = cfg.mpc_timebin_n_rollouts = None
         if args.alphas != list(DEFAULT_SHADING_ALPHAS):
             cfg.shading_alphas = args.alphas
         if args.mpc_horizons is not None:
@@ -713,7 +767,7 @@ def main():
             cfg.include_mpc         = "mpc"         in sim_pols or "all" in sim_pols
             cfg.include_mpc_oracle  = "mpc-oracle"  in sim_pols or "all" in sim_pols
             cfg.include_mpc_timebin = "mpc-timebin" in sim_pols or "all" in sim_pols
-        if "none" not in args.algos and args.algos != list(DEFAULT_ALGOS):
+        if args.algos != list(DEFAULT_ALGOS):           # "--algos none" disables the RL models of the YAML
             algos = [] if "none" in args.algos else args.algos
     else:
         algos     = [] if "none" in args.algos     else args.algos
