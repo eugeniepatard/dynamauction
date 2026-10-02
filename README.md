@@ -16,7 +16,7 @@ It is built on a **kernel causal model** that captures realistic advertiser dyna
 - **Flexible scenario builder** — compose kernels, auction rules, competition models, arrival processes, and horizon generators from primitives, or use one of the built-in presets.
 - **Gymnasium environment** (`DynamAuction-v0`) — step-by-step interaction with delayed reward delivery and full observation of the kernel state.
 - **Multi-policy simulator** — run paired campaigns across seeds with any combination of policies; outputs tidy DataFrames per auction, display, conversion, and episode.
-- **Baseline policies** — `FiPlaPolicy`, `ConstantPolicy`, `RandomPolicy`, `GreedyMyopicPolicy`, `ShadingPolicy`, `MPCPolicy`, `MPCOraclePolicy`, `MPCTimeBinnedPolicy`.
+- **Baseline policies** — `FiPlaPolicy`, `ConstantPolicy`, `RandomPolicy`, `GreedyMyopicPolicy`, `ShadingPolicy`, `MPCPolicy`, `MPCWinLossPolicy`, `MPCOraclePolicy`, `MPCTimeBinnedPolicy`.
 - **Benchmark pipeline** — end-to-end reproduction of the paper results: RL training (PPO, SAC, TD3 via Stable Baselines3), MLP valuation head, multi-seed evaluation, and publication-quality plots.
 
 ---
@@ -129,12 +129,18 @@ tests/               Unit test suite
 
 ## Preset Scenarios
 
-| Preset | Kernel | Probe | Use case |
-|--------|--------|-------|----------|
-| `saturation-second-price-uniform` | `SaturationKernel` | Poisson / Multi | Display retargeting — audience fatigue |
-| `recency-second-price-lognormal` | `RecencyDisplayKernel` | Poisson / Multi | Email / push — freshness of last touch |
-| `mixed-second-price-exponential` | `MixedKernel` | Poisson / Multi | Rich-media — immediate click-through + delayed view-through |
-| `survival-second-price-exponential` | `SurvivalKernel` | Survival / Single | Single-purchase e-commerce — Cox-style model |
+| Preset | Kernel | Carry-over context | Probe / sampler | Use case |
+|--------|--------|--------------------|-----------------|----------|
+| `survival-second-price-exponential` | `SurvivalKernel` | multiplicative fatigue (c = 0.9, β = 1) | Bernoulli / single | Single-purchase e-commerce — Cox-style model (the paper's scenario) |
+| `survival-second-price-exponential-2` | `SurvivalKernel` | multiplicative fatigue (c = 0.9, β = 1) | Bernoulli / single | Same with lower competition (LogNormal(−1, 1)): winning often makes fatigue matter |
+| `survival-second-price-exponential-immediate` | `ImmediateSurvivalKernel` | multiplicative fatigue | none / single | Same conversion probability, reward at bid time (credit-assignment ablation) |
+| `saturation-second-price-lognormal` | `SaturationKernel` | number of wins | Bernoulli / single | Display retargeting — audience fatigue |
+| `recency-second-price-lognormal` | `RecencyDisplayKernel` | time of last win | Bernoulli / single | Email / push — freshness of last touch |
+| `mixed-second-price-exponential` | `MixedKernel` | number of wins | Poisson / multi | Rich-media — immediate click-through + delayed view-through |
+
+In the survival presets the fatigue factor at an auction at time $t$ is $S(t^-) = S(t_{\rm last}^-)\,(1 - c\,e^{-\beta(t - t_{\rm last})})$
+(no factor before the first win); `beta` (recovery rate) can be overridden with `dac.make(..., gamma_beta=...)`.
+See [docs/API_REFERENCE.md](docs/API_REFERENCE.md#carry-over-context-γ).
 
 ---
 
