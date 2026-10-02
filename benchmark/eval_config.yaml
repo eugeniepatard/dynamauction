@@ -41,8 +41,6 @@ sim_policies:
     n_rollouts: 10           # M
     alpha_cont: 1.0          # multiplier of the continuation bids in the rollouts; a list → one MPC per value
     tie_alpha: null          # null: ties → first candidate; a value: the tied candidate closest to it
-    win_loss: false          # true: MPCWinLossPolicy (W/L decomposition, second price only) instead of MPCPolicy
-    n_first_draws: 1000      # MPCWinLossPolicy only: competing-bid draws for the current auction
   mpc_timebin:
     model: benchmark/models/mlp_valuation_head/survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt
     horizons: [10, 25]

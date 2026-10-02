@@ -102,7 +102,6 @@ from dynamauction.baseline.baseline_algo import (
     MPCOraclePolicy,
     MPCPolicy,
     MPCTimeBinnedPolicy,
-    MPCWinLossPolicy,
 )
 
 from benchmark.train_rl import (
@@ -199,8 +198,6 @@ class EvalConfig:
     mpc_n_rollouts:          Optional[int]  = None            # MPC, MPCOracle
     mpc_alpha_cont:          List[float]    = field(default_factory=lambda: [1.0])   # one MPC per value
     mpc_tie_alpha:           Optional[float] = None           # None: ties → first candidate
-    mpc_win_loss:            bool           = False           # True: MPCWinLossPolicy instead of MPCPolicy
-    mpc_n_first_draws:       int            = 1000            # MPCWinLossPolicy only
     mpc_timebin_n_rollouts:  Optional[int]  = None
     mpc_timebin_alpha_candidates: Optional[List[float]] = None  # None → mpc_alpha_candidates
     mpc_timebin_bin_edges:   List[List[float]] = field(default_factory=list)  # extra non-uniform-bin variants
@@ -245,8 +242,6 @@ def load_eval_config(
         n_rollouts: 10
         alpha_cont: 1.0              # or a list → one MPC per value
         tie_alpha: null              # null: ties → first candidate; a value: candidate closest to it
-        win_loss: false              # true: MPCWinLossPolicy (second price only)
-        n_first_draws: 1000          # MPCWinLossPolicy only
       mpc_timebin:
         model: path/to/mlp.pt
         horizons: [10, 25]
@@ -355,8 +350,6 @@ def load_eval_config(
         mpc_n_rollouts=_opt_int(mpc_cfg, "n_rollouts"),
         mpc_alpha_cont=alpha_cont,
         mpc_tie_alpha=None if tie_alpha is None else float(tie_alpha),
-        mpc_win_loss=bool(mpc_d.get("win_loss", False)),
-        mpc_n_first_draws=int(mpc_d.get("n_first_draws", 1000)),
         mpc_timebin_n_rollouts=_opt_int(mpc_tb_cfg, "n_rollouts"),
         mpc_timebin_alpha_candidates=None if tb_alphas is None else [float(a) for a in tb_alphas],
         mpc_timebin_bin_edges=[[float(e) for e in edges] for edges in (tb_d.get("bin_edges") or [])],
@@ -485,10 +478,8 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
             mlp = load_mlp(cfg.scenario_id, path)
             for horizon in cfg.mpc_planning_horizons:
                 for alpha_cont in cfg.mpc_alpha_cont:
-                    prefix = "MPCWinLoss" if cfg.mpc_win_loss else "MPC"
-                    label = _mpc_label(path, horizon, n_models, n_horizons, prefix=prefix, extra=_ac_extra(alpha_cont))
-                    cls, extra_kw = (MPCWinLossPolicy, {"n_first_draws": cfg.mpc_n_first_draws}) if cfg.mpc_win_loss else (MPCPolicy, {})
-                    policies[label] = cls(
+                    label = _mpc_label(path, horizon, n_models, n_horizons, extra=_ac_extra(alpha_cont))
+                    policies[label] = MPCPolicy(
                         v0=mlp,
                         alpha_candidates=cfg.mpc_alpha_candidates,
                         alpha_cont=alpha_cont,
@@ -496,7 +487,6 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
                         planning_horizon=horizon,
                         seed=cfg.policy_seed,
                         tie_alpha=cfg.mpc_tie_alpha,
-                        **extra_kw,
                     )
 
     if cfg.include_mpc_oracle:

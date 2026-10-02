@@ -356,7 +356,6 @@ from dynamauction.baseline.baseline_algo import (
     GreedyMyopicPolicy,
     ShadingPolicy,
     MPCPolicy,
-    MPCWinLossPolicy,
     MPCOraclePolicy,
     MPCTimeBinnedPolicy,
 )
@@ -464,19 +463,6 @@ all candidates (common random numbers).
 **Ties.** In a second-price auction a candidate only changes a rollout if the simulated competing bid falls between two
 candidate bids, so candidates often get exactly the same Q̂ (more often with few rollouts). Ties go to the first candidate
 (`tie_alpha=None`) or to the candidate closest to `tie_alpha`.
-
-### MPCWinLossPolicy
-
-Same objective as `MPCPolicy` for **second-price** auctions, estimated differently: W (reward when the current auction is
-won, payment added back) and L (when it is lost) from `n_rollouts` CRN rollouts each, and the current competing bid
-integrated with `n_first_draws` samples of the competition distribution:
-Q(α) = F(b)·W − E[B·1{B<b}] + (1 − F(b))·L, b = α·V₀. Candidates are separated even when no rollout's bid falls between
-them; cost 2·M rollouts per decision instead of |A₀|·M.
-
-```python
-policy = MPCWinLossPolicy(v0=mlp, alpha_candidates=[0.1, 0.2, 0.5, 1.0], n_rollouts=20,
-                          planning_horizon=25.0, n_first_draws=1000)
-```
 
 ### MPCTimeBinnedPolicy and MPCOraclePolicy
 
