@@ -48,8 +48,9 @@ Available presets (all second price, Poisson arrivals of rate 1, campaign length
 | `"survival-second-price-exponential"` | `survival` | `multiplicative` (c = 0.9, β = 1) | LogNormal(0, 1) | Bernoulli / single |
 | `"survival-second-price-exponential-2"` | `survival` | `multiplicative` (c = 0.9, β = 1) | **LogNormal(−1, 1)** (lower competition) | Bernoulli / single |
 | `"survival-second-price-exponential-immediate"` | `immediate-survival` (reward at bid time) | `multiplicative` (c = 0.9, β = 1) | LogNormal(0, 1) | none / single (κ ~ Bernoulli) |
-| `"saturation-second-price-lognormal"` | `saturation` | `additive` (number of wins) | LogNormal(0, 1) | Bernoulli / single |
-| `"recency-second-price-lognormal"` | `recency` | `last-won-time` | LogNormal(0, 1) | Bernoulli / single |
+| `"survival-second-price-exponential-2-immediate"` | `immediate-survival` (reward at bid time) | `multiplicative` (c = 0.9, β = 1) | LogNormal(−1, 1) (scenario 2) | none / single (κ ~ Bernoulli) |
+| `"saturation-second-price-lognormal"` | `saturation` | `additive` (number of wins) | LogNormal(−1, 1) | Bernoulli / single |
+| `"recency-second-price-lognormal"` | `recency` | `last-won-time` (−1000 before the first win) | LogNormal(−1, 1) | Bernoulli / single |
 | `"mixed-second-price-exponential"` | `mixed` (immediate + saturation) | `additive` | Exponential(1); fixed $T = 20$, arrival rate 0.5 | Poisson / multi |
 
 Scenario 2 (`-2`) is the survival scenario with lower competition: the agent can win more often, so the fatigue of
@@ -128,7 +129,7 @@ The context `ctx` summarises the past won auctions and enters the conversion ker
 | γ | Stored context | Current context at time $t$ |
 |---|----------------|-----------------------------|
 | `additive` | number of won auctions | same |
-| `last-won-time` | time of the last won auction | same |
+| `last-won-time(initial_value=-1e6)` | time of the last won auction (`initial_value` before any win) | same |
 | `constant` | a constant | same |
 | `multiplicative(c, initial_value=1, beta=1)` | $S(t_{\rm last}^-)$ at the last win | $S(t^-) = S(t_{\rm last}^-)\,\big(1 - c\,e^{-\beta (t - t_{\rm last})}\big)$ |
 
@@ -145,6 +146,16 @@ ctx = g.initiate_context()                                    # 1.0
 g.current_context(ctx, t=2.0, t_past_won_auctions=[])         # 1.0   (no factor before the first win)
 g.current_context(0.5, t=4.0, t_past_won_auctions=[1.0, 3.0]) # 0.5 · (1 − 0.9 e^{−1}) ≈ 0.334
 ```
+
+> **Note — `last-won-time` before the first win: adapt `initial_value` to your scenario.** With the `recency`
+> kernel the conversion probability is $1 - e^{-\alpha (t - \mathrm{ctx})}$ (α = `recency_coef`), so `initial_value`
+> plays the role of "a win long ago". It must be far enough in the past that the first display behaves as a fresh one,
+> $\alpha\,(t - \mathrm{initial\_value}) \gg 1$ (e.g. $\ge 10$), but close enough to the real win times that `ctx`
+> stays on their scale: `ctx` is an input of the MLP valuation head (raw features) and of RL policies (`VecNormalize`
+> running statistics), and a sentinel like the class default −1e6 dominates those statistics and hides the time since
+> the last win. The `recency-second-price-lognormal` preset uses −1000 (α = 0.5, campaigns of mean length 50). When you
+> build your own recency scenario (other `recency_coef`, horizon or arrival rate), choose the value accordingly, e.g.
+> `.with_gamma("last-won-time", initial_value=-20.0)` or `dac.make(..., gamma_initial_value=-20.0)`.
 
 ---
 
