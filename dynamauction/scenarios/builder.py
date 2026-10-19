@@ -67,6 +67,8 @@ from dynamauction.primitives import (
     MixedKernel,
     SurvivalKernel,
     ImmediateSurvivalKernel,
+    EffectiveFrequencyKernel,
+    ReminderKernel,
     # Gammas
     Gamma,
     AdditiveGamma,
@@ -119,6 +121,10 @@ def create_kernel(name: str, **kwargs) -> RewardKernel:
         return SurvivalKernel(**kwargs)
     elif name == "immediate-survival":
         return ImmediateSurvivalKernel(**kwargs)
+    elif name == "effective-frequency":
+        return EffectiveFrequencyKernel(**kwargs)
+    elif name == "reminder":
+        return ReminderKernel(**kwargs)
     elif name == "mixed":
         base_kernel_cfg = kwargs.pop("base_kernel")
         base_kernel = create_kernel(base_kernel_cfg["name"], **base_kernel_cfg.get("params", {}))

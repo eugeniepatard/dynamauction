@@ -1,9 +1,10 @@
 name: ppo
-learning_rate: 2e-4
+# selected on the main scenario (144-configuration search, 200 validation campaigns)
+learning_rate: 5e-5
 gamma: 0.99
 # PPO-specific
-n_steps: 512 # number of steps to run for each environment per update (i.e. batch size is n_steps * n_envs)
-batch_size: 512  # must be <= n_steps
-n_epochs: 5
+n_steps: 256       # steps per environment per update (rollout = n_steps * n_envs)
+batch_size: 128    # mini-batch size
+n_epochs: 10
 gae_lambda: 0.90
-ent_coef: 0.01
+ent_coef: 0.0

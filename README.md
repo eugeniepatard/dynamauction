@@ -16,7 +16,7 @@ It is built on a **kernel causal model** that captures realistic advertiser dyna
 - **Flexible scenario builder** — compose kernels, auction rules, competition models, arrival processes, and horizon generators from primitives, or use one of the built-in presets.
 - **Gymnasium environment** (`DynamAuction-v0`) — step-by-step interaction with delayed reward delivery and full observation of the kernel state.
 - **Multi-policy simulator** — run paired campaigns across seeds with any combination of policies; outputs tidy DataFrames per auction, display, conversion, and episode.
-- **Baseline policies** — `FiPlaPolicy`, `ConstantPolicy`, `RandomPolicy`, `GreedyMyopicPolicy`, `ShadingPolicy`, `MPCPolicy`, `MPCWinLossPolicy`, `MPCOraclePolicy`, `MPCTimeBinnedPolicy`.
+- **Baseline policies** — `FiPlaPolicy`, `ConstantPolicy`, `RandomPolicy`, `GreedyMyopicPolicy`, `ShadingPolicy`, `MPCPolicy`, `MPCOraclePolicy`, `MPCTimeBinnedPolicy`.
 - **Benchmark pipeline** — end-to-end reproduction of the paper results: RL training (PPO, SAC, TD3 via Stable Baselines3), MLP valuation head, multi-seed evaluation, and publication-quality plots.
 
 ---
@@ -121,7 +121,7 @@ dynamauction/
 
 benchmark/           Full experimental pipeline (training, evaluation, plotting)
 docs/                API reference and Jupyter tutorials
-figures/             Pre-generated benchmark figures (η = 50 and η = 100)
+figures/             Pre-generated benchmark figures (main survival scenario, η = 50 and 100)
 tests/               Unit test suite
 ```
 
@@ -131,11 +131,14 @@ tests/               Unit test suite
 
 | Preset | Kernel | Carry-over context | Probe / sampler | Use case |
 |--------|--------|--------------------|-----------------|----------|
-| `survival-second-price-exponential` | `SurvivalKernel` | multiplicative fatigue (c = 0.9, β = 1) | Bernoulli / single | Single-purchase e-commerce — Cox-style model (the paper's scenario) |
-| `survival-second-price-exponential-2` | `SurvivalKernel` | multiplicative fatigue (c = 0.9, β = 1) | Bernoulli / single | Same with lower competition (LogNormal(−1, 1)): winning often makes fatigue matter |
-| `survival-second-price-exponential-immediate` | `ImmediateSurvivalKernel` | multiplicative fatigue | none / single | Same conversion probability, reward at bid time (credit-assignment ablation) |
+| `survival-second-price-exponential` | `SurvivalKernel` | multiplicative fatigue (c = 0.9, β = 1) | Bernoulli / single | **Main survival scenario.** Single-purchase e-commerce — Cox-style model, competition LogNormal(−1, 1): winning often makes fatigue matter |
+| `survival-second-price-exponential-1` | `SurvivalKernel` | multiplicative fatigue (c = 0.9, β = 1) | Bernoulli / single | Same with higher competition (LogNormal(0, 1)) |
+| `survival-second-price-exponential-immediate` | `ImmediateSurvivalKernel` | multiplicative fatigue | none / single | Main survival scenario with the reward at bid time (credit-assignment ablation) |
+| `survival-second-price-exponential-1-immediate` | `ImmediateSurvivalKernel` | multiplicative fatigue | none / single | Same for `survival-second-price-exponential-1` |
 | `saturation-second-price-lognormal` | `SaturationKernel` | number of wins | Bernoulli / single | Display retargeting — audience fatigue |
 | `recency-second-price-lognormal` | `RecencyDisplayKernel` | time of last win | Bernoulli / single | Email / push — freshness of last touch |
+| `effective-frequency-second-price-lognormal` | `EffectiveFrequencyKernel` | number of wins | Bernoulli / single | Brand / awareness — user/display relevance × wear-in over the first exposures, then wear-out |
+| `reminder-second-price-lognormal` | `ReminderKernel` | time of last win | Bernoulli / single | Retargeting — user/display relevance × a reminder converting best some time after the previous contact |
 | `mixed-second-price-exponential` | `MixedKernel` | number of wins | Poisson / multi | Rich-media — immediate click-through + delayed view-through |
 
 In the survival presets the fatigue factor at an auction at time $t$ is $S(t^-) = S(t_{\rm last}^-)\,(1 - c\,e^{-\beta(t - t_{\rm last})})$
@@ -157,14 +160,17 @@ See [docs/API_REFERENCE.md](docs/API_REFERENCE.md#carry-over-context-γ).
 
 ## Benchmark
 
-The `benchmark/` directory contains the full pipeline for reproducing the paper figures:
+The `benchmark/` directory contains the full pipeline for reproducing the paper results on the main survival scenario
+`survival-second-price-exponential` (η = 50; the results notebook also reports η = 100):
 
-1. **Train RL agents** (PPO, SAC, TD3) via Stable Baselines3 + Hydra.
-2. **Train the MLP valuation head** used by the MPC policy family.
-3. **Run evaluation** across 1 000 seeds for two horizon settings (η = 50, η = 100).
-4. **Generate plots** with `benchmark/plots.py`.
+1. **Train RL agents** (PPO, SAC, TD3) via Stable Baselines3 + Hydra, with the hyperparameters selected on validation
+   campaigns (pretrained models are provided).
+2. **Train the MLP valuation head** used by the MPC policy family (a trained head is provided).
+3. **Run evaluation** on 1 000 test campaigns (`benchmark/eval_config.yaml`).
+4. **Explore the results** in `benchmark/benchmark_results.ipynb` (main results) and
+   `benchmark/additional_bench_results.ipynb` (decision time, imperfect value estimates, immediate rewards, other kernels).
 
-Pre-generated figures are available in [`figures/`](figures/).
+Pre-generated figures are available in [`figures/eta50/`](figures/eta50/) and [`figures/eta100/`](figures/eta100/).
 See [benchmark/BENCHMARK.md](benchmark/BENCHMARK.md) for the complete reproduction guide.
 
 ---

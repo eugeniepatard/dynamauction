@@ -45,22 +45,25 @@ Available presets (all second price, Poisson arrivals of rate 1, campaign length
 
 | Preset | Kernel | Carry-over context γ | Competition | Probe / sampler |
 |--------|--------|----------------------|-------------|-----------------|
-| `"survival-second-price-exponential"` | `survival` | `multiplicative` (c = 0.9, β = 1) | LogNormal(0, 1) | Bernoulli / single |
-| `"survival-second-price-exponential-2"` | `survival` | `multiplicative` (c = 0.9, β = 1) | **LogNormal(−1, 1)** (lower competition) | Bernoulli / single |
-| `"survival-second-price-exponential-immediate"` | `immediate-survival` (reward at bid time) | `multiplicative` (c = 0.9, β = 1) | LogNormal(0, 1) | none / single (κ ~ Bernoulli) |
-| `"survival-second-price-exponential-2-immediate"` | `immediate-survival` (reward at bid time) | `multiplicative` (c = 0.9, β = 1) | LogNormal(−1, 1) (scenario 2) | none / single (κ ~ Bernoulli) |
+| `"survival-second-price-exponential"` (main) | `survival` | `multiplicative` (c = 0.9, β = 1) | LogNormal(−1, 1) | Bernoulli / single |
+| `"survival-second-price-exponential-1"` | `survival` | `multiplicative` (c = 0.9, β = 1) | LogNormal(0, 1) (higher competition) | Bernoulli / single |
+| `"survival-second-price-exponential-immediate"` | `immediate-survival` (reward at bid time) | `multiplicative` (c = 0.9, β = 1) | LogNormal(−1, 1) | none / single (κ ~ Bernoulli) |
+| `"survival-second-price-exponential-1-immediate"` | `immediate-survival` (reward at bid time) | `multiplicative` (c = 0.9, β = 1) | LogNormal(0, 1) | none / single (κ ~ Bernoulli) |
 | `"saturation-second-price-lognormal"` | `saturation` | `additive` (number of wins) | LogNormal(−1, 1) | Bernoulli / single |
 | `"recency-second-price-lognormal"` | `recency` | `last-won-time` (−1000 before the first win) | LogNormal(−1, 1) | Bernoulli / single |
+| `"effective-frequency-second-price-lognormal"` | `effective-frequency` (relevance clip((1ᵀu)(1ᵀx), 0, 1) × wear-in then wear-out) | `additive` (number of wins) | LogNormal(−1, 1) | Bernoulli / single |
+| `"reminder-second-price-lognormal"` | `reminder` (relevance clip((1ᵀu)(1ᵀx), 0, 1) × value peaking `peak_time` after the last win) | `last-won-time` (−1000 before the first win) | LogNormal(−1, 1) | Bernoulli / single |
 | `"mixed-second-price-exponential"` | `mixed` (immediate + saturation) | `additive` | Exponential(1); fixed $T = 20$, arrival rate 0.5 | Poisson / multi |
 
-Scenario 2 (`-2`) is the survival scenario with lower competition: the agent can win more often, so the fatigue of
-winning shortly after a previous win (see [Carry-over context](#carry-over-context-γ)) matters more.
+`survival-second-price-exponential` is the main survival scenario: with competition LogNormal(−1, 1) the agent can win
+often, so the fatigue of winning shortly after a previous win (see [Carry-over context](#carry-over-context-γ)) matters.
+`survival-second-price-exponential-1` is the same scenario with higher competition (LogNormal(0, 1)).
 
 ```python
 print(dac.list_scenarios())       # list all preset IDs
 print(dac.describe_scenarios())   # descriptions and kernel types
 
-info = dac.get_scenario_info("survival-second-price-exponential-2")
+info = dac.get_scenario_info("survival-second-price-exponential")
 print(info["description"])
 ```
 
@@ -91,7 +94,7 @@ Available components:
 
 | Type | Options |
 |------|---------|
-| Kernels | `"saturation"`, `"recency"`, `"competitor-extinction"`, `"mixed"`, `"survival"`, `"immediate-survival"` |
+| Kernels | `"saturation"`, `"recency"`, `"effective-frequency"`, `"reminder"`, `"competitor-extinction"`, `"mixed"`, `"survival"`, `"immediate-survival"` |
 | Carry-over context (γ) | `"additive"`, `"multiplicative"`, `"last-won-time"`, `"constant"` |
 | Auctions | `"first-price"`, `"second-price"` |
 | Competition | `"uniform"`, `"lognormal"`, `"exponential"` |
@@ -111,7 +114,7 @@ Start from a preset, override selected parameters.
 scenario = dac.make(
     "survival-second-price-exponential",
     horizon_eta=100,             # override horizon.params.eta
-    competition_mu=-1.0,         # override competition.params.mu
+    competition_mu=0.0,          # override competition.params.mu
     gamma_beta=0.5,              # override gamma.params.beta (recovery rate, see below)
 )
 ```

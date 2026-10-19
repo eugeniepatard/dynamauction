@@ -13,6 +13,8 @@ from dynamauction.primitives.kernel import (
     SurvivalKernel,
     SaturationKernel,
     RecencyDisplayKernel,
+    EffectiveFrequencyKernel,
+    ReminderKernel,
 )
 
 
@@ -102,11 +104,12 @@ class BernoulliProbe(ConversionProbe):
 
     Valid for any kernel with kappa=0 and lambda(s) = p * delay_rate * exp(-delay_rate * s),
     where p is constant in s (i.e. lambda_upper_bound is the tight max, attained at s=0).
-    Compatible kernels: SurvivalKernel, SaturationKernel, RecencyDisplayKernel.
+    Compatible kernels: SurvivalKernel, SaturationKernel, RecencyDisplayKernel, EffectiveFrequencyKernel,
+    ReminderKernel.
     sample_one() and sample_all() are identical: returns at most 1 conversion by design.
     """
 
-    _COMPATIBLE_KERNELS = (SurvivalKernel, SaturationKernel, RecencyDisplayKernel)
+    _COMPATIBLE_KERNELS = (SurvivalKernel, SaturationKernel, RecencyDisplayKernel, EffectiveFrequencyKernel, ReminderKernel)
 
     def _draw(self, u, x, ctx, t, horizon, rng) -> List[float]:
         assert isinstance(self.kernel, self._COMPATIBLE_KERNELS), (

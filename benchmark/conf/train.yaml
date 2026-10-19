@@ -2,19 +2,20 @@ defaults:
   - algo: ppo        # override with algo=sac, algo=td3
   - _self_
 
-scenario_id: survival-second-price-exponential
+scenario_id: survival-second-price-exponential   # main survival scenario
 scenario_overrides: {}           # e.g. {horizon_eta: 30.0}
 
 training:
-  total_timesteps: 30_000_000
+  total_timesteps: 10_000_000   # final trainings of the benchmark (the hyperparameter search used 5M)
   use_vec_normalize: true
   mask_expected_reward: true   # hide oracle value from RL agents
   n_envs: 4
   seed: 42
   max_bid: 5.0
-  eval_freq: 100_000
-  n_eval_episodes: 50
+  eval_freq: 10_000
+  n_eval_episodes: 20
   verbose: true
+  run_name: eta50/seed${training.seed}   # models -> benchmark/models/<algo>/eta50/seed<k>/
 
 hydra:
   run:

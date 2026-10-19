@@ -55,9 +55,12 @@ class TestCtxSentinel:
         assert math.isfinite(ctx), f"ctx at episode start is not finite: {ctx}"
 
     def test_initial_ctx_is_large_negative(self, recency_env):
+        # the preset sets initial_value = -1000 (the class default is -1e6): "a win long ago", on the scale of real win times
         obs, _ = recency_env.reset(seed=0)
         ctx = float(obs["ctx"].ravel()[0])
-        assert ctx == pytest.approx(-1e6)
+        assert ctx == pytest.approx(-1000.0)
+        kernel = recency_env.unwrapped.scenario.kernel
+        assert kernel._conversion_prob(ctx, 0.0) == pytest.approx(1.0, abs=1e-9)   # the first display is a fresh one
 
     def test_ctx_stays_finite_throughout_episode(self, recency_env):
         obs, _ = recency_env.reset(seed=0)

@@ -149,7 +149,7 @@ def test_multiplicative_context_follows_paper_recursion():
     auction record) is S(t_{k+1}⁻) = S(t_k⁻)·(1 − c·exp(−(t_{k+1} − t_k))), S = 1 before the first win."""
     import dynamauction as dac
 
-    scenario = dac.make("survival-second-price-exponential")
+    scenario = dac.make("survival-second-price-exponential-1")
     c = scenario.gamma.c
     env = AuctionEnv(scenario)
     for seed in range(5):

@@ -1,7 +1,8 @@
 name: td3
-learning_rate: 1e-4
+# selected on the main scenario (96-configuration search, 200 validation campaigns)
+learning_rate: 1e-3
 gamma: 0.99
 # TD3-specific
-batch_size: 256
-learning_starts: 5000 # number of steps before training starts (to populate the replay buffer with enough data)
-action_noise_sigma: 0.1   # std of Gaussian noise in normalized [-1, 1] action space (~10% of bid range)
+batch_size: 512
+learning_starts: 500      # steps before training starts (to populate the replay buffer)
+action_noise_sigma: 0.2   # std of the Gaussian exploration noise

@@ -196,9 +196,22 @@ def _make_linestyles(names: Sequence[str]) -> Dict[str, str]:
     return out
 
 
+def _rasterize_dense(fig: plt.Figure, max_points: int = 500, max_vertices: int = 2000) -> None:
+    """Rasterize only the dense layers (point clouds, large filled areas) so the PDF stays light; axes, text, lines
+    and small shapes stay vector."""
+    from matplotlib.collections import PathCollection, PolyCollection
+    for ax in fig.get_axes():
+        for c in ax.collections:
+            if isinstance(c, PathCollection) and len(c.get_offsets()) > max_points:
+                c.set_rasterized(True)
+            elif isinstance(c, PolyCollection) and sum(len(p.vertices) for p in c.get_paths()) > max_vertices:
+                c.set_rasterized(True)
+
+
 def _save(fig: plt.Figure, filename: str) -> None:
     path = PLOTS_DIR / filename
-    fig.savefig(path, bbox_inches="tight")
+    _rasterize_dense(fig)
+    fig.savefig(path, bbox_inches="tight", dpi=200)   # dpi of the rasterized layers
     print(f"  Saved -> {path}")
 
 

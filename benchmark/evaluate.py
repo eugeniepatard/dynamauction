@@ -121,7 +121,7 @@ RESULTS_DIR = Path(__file__).parent / "benchmark_results"
 # _find_model_path() globs for best_model.zip inside the eta-specific directory so
 # the exact hyperparameter folder name does not need to be hardcoded here.
 # MLP valuation head : produced by train_mlp.py. Required for MPC, MPCOracle, MPCTimeBinned.
-_DEFAULT_MLP = MODELS_DIR / "mlp_valuation_head" / "survival-second-price-exponential_h128-128_ep500_e500_lr0.001_s42.pt"
+_DEFAULT_MLP = MODELS_DIR / "mlp_valuation_head" / "survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.pt"
 
 
 def _find_model_path(algo: str, eta: Optional[int]) -> Optional[Path]:
@@ -229,6 +229,7 @@ def load_eval_config(
 
     baselines:                       # list of baseline names; omit to use defaults
       - fipla
+    constant_bid: 0.11               # bid of the "constant" baseline (default 0.5)
 
     sim_policies:
       greedy: false                  # true/false, or omit
@@ -275,6 +276,7 @@ def load_eval_config(
 
     # ── baselines ─────────────────────────────────────────────────────────────
     baselines = raw.get("baselines", list(DEFAULT_BASELINES))
+    constant_bid = float(raw.get("constant_bid", DEFAULT_CONSTANT_BID))
 
     # ── RL models ─────────────────────────────────────────────────────────────
     rl_block    = raw.get("rl_models") or {}
@@ -334,6 +336,7 @@ def load_eval_config(
         scenario_id=scenario_id,
         scenario_overrides=overrides,
         baselines=baselines,
+        constant_bid=constant_bid,
         mask_expected_reward=mask_expected_reward,
         simulation_n_rollouts=n_rollouts,
         shading_alphas=shading_alphas,

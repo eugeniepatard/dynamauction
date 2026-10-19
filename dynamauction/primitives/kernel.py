@@ -202,6 +202,157 @@ class RecencyDisplayKernel(RewardKernel):
         return self._conversion_prob(ctx, t) * (1.0 - np.exp(-self.delay_rate * remaining))
 
 
+class EffectiveFrequencyKernel(RewardKernel):
+    """
+    (F) Effective frequency: wear-in, then wear-out, of repeated exposures.
+
+    n    = ctx  (number of past won displays, AdditiveGamma)
+    p    = rel(u, x) · base_rate · σ((n − wear_in_mid) / wear_in_slope) · exp(−n / saturation_scale),  σ = logistic
+    rel  = clip((w_u⊤u)(w_x⊤x), 0, 1) if w_u and w_x are given (as in SurvivalKernel), else 1
+    κ    = 0
+    λ    = p · delay_rate · exp(−delay_rate · s)
+
+    The first exposures rarely convert (awareness builds up: wear-in), the next ones convert most, and many exposures
+    saturate the user (wear-out). Every won display counts as an exposure, whatever its relevance. A win therefore first
+    raises the value of the next displays, so the optimal bid can exceed the myopic value of the display (investment),
+    and later lowers it.
+    """
+
+    def __init__(
+        self,
+        base_rate: float = 1.0,
+        wear_in_mid: float = 2.0,
+        wear_in_slope: float = 0.7,
+        saturation_scale: float = 10.0,
+        delay_rate: float = 0.5,
+        w_u=None,
+        w_x=None,
+    ):
+        self.base_rate = base_rate
+        self.wear_in_mid = wear_in_mid
+        self.wear_in_slope = wear_in_slope
+        self.saturation_scale = saturation_scale
+        self.delay_rate = delay_rate
+        self.w_u = None if w_u is None else tuple(float(v) for v in w_u)
+        self.w_x = None if w_x is None else tuple(float(v) for v in w_x)
+
+    def relevance(self, u: np.ndarray, x: np.ndarray) -> float:
+        """clip((w_u⊤u)(w_x⊤x), 0, 1), or 1 without weights."""
+        if self.w_u is None or self.w_x is None:
+            return 1.0
+        return float(np.clip(np.dot(u, self.w_u) * np.dot(x, self.w_x), 0.0, 1.0))
+
+    def _conversion_prob(self, ctx: float) -> float:
+        """Exposure effect of the n = ctx past wins (wear-in, then wear-out), without the relevance."""
+        wear_in = 1.0 / (1.0 + np.exp(-(ctx - self.wear_in_mid) / self.wear_in_slope))
+        return float(np.clip(self.base_rate * wear_in * np.exp(-ctx / self.saturation_scale), 0.0, 1.0))
+
+    def conversion_probability(self, u: np.ndarray, x: np.ndarray, ctx: float) -> float:
+        return self.relevance(u, x) * self._conversion_prob(ctx)
+
+    def kappa(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float) -> float:
+        return 0.0
+
+    def lambda_(
+        self, u: np.ndarray, x: np.ndarray, ctx: float, y: float, t: float, s: float
+    ) -> float:
+        return self.conversion_probability(u, x, ctx) * self.delay_rate * np.exp(-self.delay_rate * s)
+
+    def lambda_upper_bound(
+        self, u: np.ndarray, x: np.ndarray, ctx: float, t: float, remaining: float
+    ) -> float:
+        return self.conversion_probability(u, x, ctx) * self.delay_rate
+
+    def expected_reward(
+        self,
+        u: np.ndarray,
+        x: np.ndarray,
+        ctx: float,
+        y_func: Callable[[float], float],
+        t: float,
+        horizon: float,
+    ) -> float:
+        """Closed form: p_i is constant in s, so ∫₀^R λ ds = p_i·(1 − e^{−delay_rate·R})."""
+        remaining = horizon - t
+        if remaining <= 0.0:
+            return 0.0
+        return self.conversion_probability(u, x, ctx) * (1.0 - np.exp(-self.delay_rate * remaining))
+
+
+class ReminderKernel(RewardKernel):
+    """
+    (M) Reminder window: the value of a display depends on the time since the previous won display.
+
+    τ    = t − ctx  (time since the last won display, LastWonTimeGamma; very large before the first win)
+    p    = rel(u, x) · [p_cold + (p_peak − p_cold) · (τ / peak_time) · exp(1 − τ / peak_time)]
+    rel  = clip((w_u⊤u)(w_x⊤x), 0, 1) if w_u and w_x are given (as in SurvivalKernel), else 1
+    κ    = 0
+    λ    = p · delay_rate · exp(−delay_rate · s)
+
+    A cold contact converts with p_cold. A reminder shortly after a contact is wasted, one peak_time after it converts
+    with p_peak, and the effect fades back to p_cold (the user forgets). Winning a cold display opens a high-value window,
+    and winning too early wastes it: the value of a win lies in its timing.
+    """
+
+    def __init__(
+        self,
+        p_cold: float = 0.1,
+        p_peak: float = 0.8,
+        peak_time: float = 2.0,
+        delay_rate: float = 0.5,
+        w_u=None,
+        w_x=None,
+    ):
+        self.p_cold = p_cold
+        self.p_peak = p_peak
+        self.peak_time = peak_time
+        self.delay_rate = delay_rate
+        self.w_u = None if w_u is None else tuple(float(v) for v in w_u)
+        self.w_x = None if w_x is None else tuple(float(v) for v in w_x)
+
+    def relevance(self, u: np.ndarray, x: np.ndarray) -> float:
+        """clip((w_u⊤u)(w_x⊤x), 0, 1), or 1 without weights."""
+        if self.w_u is None or self.w_x is None:
+            return 1.0
+        return float(np.clip(np.dot(u, self.w_u) * np.dot(x, self.w_x), 0.0, 1.0))
+
+    def _conversion_prob(self, ctx: float, t: float) -> float:
+        """Reminder effect of the time since the last win, without the relevance."""
+        r = max(t - ctx, 0.0) / self.peak_time
+        return float(np.clip(self.p_cold + (self.p_peak - self.p_cold) * r * np.exp(1.0 - r), 0.0, 1.0))
+
+    def conversion_probability(self, u: np.ndarray, x: np.ndarray, ctx: float, t: float) -> float:
+        return self.relevance(u, x) * self._conversion_prob(ctx, t)
+
+    def kappa(self, u: np.ndarray, x: np.ndarray, ctx: float, y: float) -> float:
+        return 0.0
+
+    def lambda_(
+        self, u: np.ndarray, x: np.ndarray, ctx: float, y: float, t: float, s: float
+    ) -> float:
+        return self.conversion_probability(u, x, ctx, t) * self.delay_rate * np.exp(-self.delay_rate * s)
+
+    def lambda_upper_bound(
+        self, u: np.ndarray, x: np.ndarray, ctx: float, t: float, remaining: float
+    ) -> float:
+        return self.conversion_probability(u, x, ctx, t) * self.delay_rate
+
+    def expected_reward(
+        self,
+        u: np.ndarray,
+        x: np.ndarray,
+        ctx: float,
+        y_func: Callable[[float], float],
+        t: float,
+        horizon: float,
+    ) -> float:
+        """Closed form: p_i is constant in s, so ∫₀^R λ ds = p_i·(1 − e^{−delay_rate·R})."""
+        remaining = horizon - t
+        if remaining <= 0.0:
+            return 0.0
+        return self.conversion_probability(u, x, ctx, t) * (1.0 - np.exp(-self.delay_rate * remaining))
+
+
 class CompetitorExtinctionKernel(RewardKernel):
     """
     (E) Competitor-click extinction.

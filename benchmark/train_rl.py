@@ -1,7 +1,7 @@
 """
 RL training for bidding policy benchmarks.
 
-Trains PPO, SAC, TD3 on the 'survival-second-price-exponential' scenario using
+Trains PPO, SAC, TD3 on the main 'survival-second-price-exponential' scenario using
 Stable Baselines3.  Model weights are saved to benchmark/models/<algo>/,
 TensorBoard logs to benchmark/logs/<algo>/.
 
@@ -40,7 +40,7 @@ from tqdm import tqdm
 
 import gymnasium as gym
 from stable_baselines3 import PPO, SAC, TD3
-from stable_baselines3.common.callbacks import EvalCallback
+from stable_baselines3.common.callbacks import BaseCallback, EvalCallback
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
@@ -223,6 +223,8 @@ def train(
     )
     if cfg.use_vec_normalize:
         common_kwargs["train_env"] = train_env
+        # obs_rms.pkl always matches best_model.zip: saved at every new best evaluation
+        common_kwargs["callback_on_new_best"] = _SaveObsRms(train_env, model_dir / "obs_rms.pkl")
 
     eval_cb = EvalCbCls(eval_env, **common_kwargs)
 
@@ -246,8 +248,8 @@ def train(
         reset_num_timesteps=True,
     )
 
-    if cfg.use_vec_normalize:
-        with open(model_dir / "obs_rms.pkl", "wb") as f:
+    if cfg.use_vec_normalize:   # statistics of the final model
+        with open(model_dir / "final_obs_rms.pkl", "wb") as f:
             pickle.dump(train_env.obs_rms, f)
 
     final_path = model_dir / "final_model"
@@ -286,6 +288,19 @@ def load_model(algo: str, path: Optional[str | Path] = None) -> object:
         path = MODELS_DIR / algo / "best_model"
     return cls.load(str(path))
 
+class _SaveObsRms(BaseCallback):
+    """Called on every new best evaluation: saves the VecNormalize statistics that go with best_model.zip."""
+
+    def __init__(self, train_env, path: Path):
+        super().__init__()
+        self._train_env, self._path = train_env, path
+
+    def _on_step(self) -> bool:
+        with open(self._path, "wb") as f:
+            pickle.dump(deepcopy(self._train_env.obs_rms), f)
+        return True
+
+
 def _cfg_to_training_config(cfg: DictConfig) -> TrainingConfig:
     """Build a TrainingConfig from the Hydra DictConfig."""
     t   = cfg.training
@@ -300,6 +315,7 @@ def _cfg_to_training_config(cfg: DictConfig) -> TrainingConfig:
         eval_freq=t.eval_freq,
         n_eval_episodes=t.n_eval_episodes,
         verbose=t.verbose,
+        run_name=str(t.get("run_name", "") or ""),
         learning_rate=a.learning_rate,
         gamma=a.gamma,
     )

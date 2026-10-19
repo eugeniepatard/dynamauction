@@ -45,6 +45,8 @@ from dynamauction.primitives import (
     CompetitorExtinctionKernel,
     MixedKernel,
     SurvivalKernel,
+    EffectiveFrequencyKernel,
+    ReminderKernel,
     # Gammas
     Gamma,
     AdditiveGamma,
@@ -91,6 +93,8 @@ __all__ = [
     "CompetitorExtinctionKernel",
     "MixedKernel",
     "SurvivalKernel",
+    "EffectiveFrequencyKernel",
+    "ReminderKernel",
     "Gamma",
     "AdditiveGamma",
     "MultiplicativeGamma",
