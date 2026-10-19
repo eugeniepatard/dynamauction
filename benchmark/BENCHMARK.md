@@ -113,7 +113,7 @@ written to `benchmark/logs/<algo>/eta50/seed<k>/`.
 | **FiPla** | Bids the oracle myopic value $V_0$ of the display (truthful for a single second-price auction) | — |
 | **Constant** | Bids the same value $b$ at every auction | $b = 0.11$ |
 | **GreedyMyopic** | Bids the incremental value $\Delta(s, x) = V^1(s, x) - V^0(s)$, estimated by $M$ Monte-Carlo rollouts | $M = 20$ |
-| **Shading(α)** | Bids $\alpha \cdot \Delta(s, x)$ | $\alpha = 0.4$, $M = 40$ |
+| **Shading(α)** | Bids $\alpha \cdot \Delta(s, x)$ | $\alpha = 0.4$, $M = 20$ |
 | **MPC(H)** | Model-predictive control: at every auction, selects $\alpha^* = \arg\max_{\alpha \in A_0} \hat Q(\alpha)$ over $M$ simulated futures of $H$ time units, then bids $\alpha^* \widehat V_0(s, x)$ with the MLP valuation head; the bids after the first one in each simulated future are $\alpha_{\rm cont} \widehat V_0$ | $H \in \{10, 25, 35\}$, $M = 60$ (and $M = 80$ for $H = 25$), $\alpha_{\rm cont} \in \{1, 0.4\}$ |
 | **MPCTimeBinned(H, K)** | MPC with one multiplier per time bin of $[t, t + H)$, jointly optimised over $A_0^K$ (equal bins, or explicit `bin_edges`) | additional results |
 
@@ -190,9 +190,9 @@ python -m benchmark.evaluate --config benchmark/eval_config.yaml
 - RL models: the configuration file points to training seed 42 of each algorithm; evaluate the other trainings, or freshly
   trained models, with `--ppo-model`, `--sac-model`, `--td3-model` (e.g. `benchmark/models/ppo/eta50/<...>_seed43/best_model`,
   `benchmark/models/ppo/eta50/seed42/best_model`).
-- `evaluate.py` uses one policy seed (`policy_seed`) for all campaigns instead of a fresh seed per campaign, and gives
-  GreedyMyopic the same $M$ as Shading; the stochastic planners then differ from the reported results by sampling noise
-  only. FiPla, Constant and the RL policies are reproduced exactly.
+- `evaluate.py` uses one policy seed (`policy_seed`) for all campaigns instead of a fresh seed per campaign (GreedyMyopic
+  and Shading both use $M = 20$, as in the reported results); the stochastic planners then differ from the reported
+  results by sampling noise only. FiPla, Constant and the RL policies are reproduced exactly.
 - `eval_config.yaml` runs every MPC with $M = 60$; for MPC($H = 25$, $M = 80$), set `horizons: [25]`, `n_rollouts: 80`
   and `alpha_cont: [1.0]` in its `mpc` block.
 - Cost: MPC($H = 25$, $M = 60$) takes about 2–4 s per decision on one CPU core (25–50 CPU-hours for 1 000 campaigns).
@@ -230,7 +230,7 @@ df = run_full_benchmark(
 | MPC($H = 25$, $M = 80$) | 4.127 ± 0.258 |
 | MPC($H = 25$, $M = 60$) | 4.108 ± 0.261 |
 | MPC($H = 10$, $M = 60$) | 3.697 ± 0.219 |
-| Shading($\alpha = 0.4$, $M = 40$) | 3.680 ± 0.234 |
+| Shading($\alpha = 0.4$, $M = 20$) | 3.680 ± 0.234 |
 | PPO (mean of 3 trainings) | 2.965 ± 0.182 |
 | GreedyMyopic | 2.826 ± 0.167 |
 | FiPla | 2.821 ± 0.160 |
@@ -254,7 +254,7 @@ $\eta = 100$ (`scenario_overrides={"horizon_eta": 100}` in `benchmark.train_mlp.
 | MPC($H = 25$, $M = 80$) | 6.788 ± 0.368 |
 | MPC($H = 25$, $M = 60$, $\alpha_{\rm cont} = 0.4$) | 6.704 ± 0.354 |
 | MPC($H = 25$, $M = 60$) | 6.659 ± 0.371 |
-| Shading($\alpha = 0.4$, $M = 40$) | 5.845 ± 0.321 |
+| Shading($\alpha = 0.4$, $M = 20$) | 5.991 ± 0.330 |
 | MPC($H = 10$, $M = 60$) | 5.705 ± 0.287 |
 | FiPla | 3.865 ± 0.190 |
 | GreedyMyopic | 3.833 ± 0.194 |

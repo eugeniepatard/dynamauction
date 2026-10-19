@@ -34,7 +34,7 @@ sim_policies:
   greedy: true               # GreedyMyopic = Shading(α = 1); uses the Shading n_rollouts
   shading:
     alphas: [0.4]
-    n_rollouts: 40           # Monte-Carlo rollouts of the value estimate
+    n_rollouts: 20           # Monte-Carlo rollouts of the value estimate
   mpc:
     model: benchmark/models/mlp_valuation_head/survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.pt
     horizons: [10, 25, 35]   # planning horizon H
