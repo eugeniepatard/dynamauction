@@ -198,7 +198,7 @@ See [benchmark/BENCHMARK.md](benchmark/BENCHMARK.md) for the complete reproducti
 ```bash
 pip install -e ".[dev]"
 pytest tests/
-pytest tests/ -m "not slow"   # skip long-running tests
+pytest tests/ -m "not slow"   # skip the check of the shipped models (tests/integration/)
 ```
 
 ---
@@ -210,7 +210,7 @@ If you use DynamAuction in your research, please cite:
 ```bibtex
 @inproceedings{heymann2026dynamauction,
   title     = {{DynamAuction}: a reinforcement learning environment for repeated auction with dynamic value},
-  author    = {Heymann, Benjamin and Patard, Eug{\'e}nie and Pla, Corentin and Loiseau, Patrick},
+  author    = {Heymann, Benjamin and Patard, Eugenie and Pla, Corentin and Loiseau, Patrick},
   booktitle = {Advances in Neural Information Processing Systems},
   year      = {2026}
 }

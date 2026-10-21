@@ -55,9 +55,7 @@ SCENARIO_PRESETS = {
         "kappa_distribution": "poisson",
     },
 
-    # Planning-oriented variants of the saturation / recency kernels (camera-ready, reviewers). Same campaign, arrivals,
-    # auction and competition as scenario 2; conversion probability = user/display relevance clip((1ᵀu)(1ᵀx), 0, 1)
-    # (as in the survival kernel) × an exposure-history effect.
+    # Planning-oriented variants of the saturation / recency kernels
     "effective-frequency-second-price-lognormal": {
         "description": "Effective-frequency kernel (wear-in then wear-out of repeated exposures) x user/display relevance, second-price, lognormal competition (mu=-1, sigma=1)",
         "kernel": {"name": "effective-frequency", "params": {"base_rate": 1.0, "wear_in_mid": 2.0, "wear_in_slope": 0.7,
@@ -117,10 +115,7 @@ SCENARIO_PRESETS = {
         "delay_sampler": {"name": "multi"},
         "kappa_distribution": "poisson",
     },
-
-    # ── Immediate-reward variant of the main survival scenario ───────────────────
-    # The main survival scenario with immediate rewards (diagnostic for RL: no delayed credit assignment; same fatigue
-    # dynamics, competition LogNormal(-1, 1), beta = 1). The conversion happens at bid time with probability f, so V0 = f.
+    
     "survival-second-price-exponential-immediate": {
         "description": "Immediate-reward version of the main survival scenario (competition LogNormal(-1, 1), beta=1) — conversion at bid time, no delay",
         "kernel": {"name": "immediate-survival", "params": {"w_u": [1.0, 1.0, 1.0], "w_x": [1.0, 1.0, 1.0], "delay_rate": 1.0}},
