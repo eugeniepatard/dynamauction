@@ -70,7 +70,7 @@ def test_reset_logic(mock_scenario):
     assert obs["user_features"].shape == (1,)
     assert obs["user_features"][0] == 1.0
     assert obs["display_features"].shape == (1,)
-    assert obs["display_features"][0] == 0.1
+    assert obs["display_features"][0] == pytest.approx(0.1)   # float32 observation
     assert obs["y_now"] == 0.0
     assert obs["step"] == 0
     assert info["horizon"] == 10.0
@@ -149,7 +149,7 @@ def test_multiplicative_context_follows_paper_recursion():
     auction record) is S(t_{k+1}⁻) = S(t_k⁻)·(1 − c·exp(−(t_{k+1} − t_k))), S = 1 before the first win."""
     import dynamauction as dac
 
-    scenario = dac.make("survival-second-price-exponential-1")
+    scenario = dac.make("survival-second-price-exponential")
     c = scenario.gamma.c
     env = AuctionEnv(scenario)
     for seed in range(5):

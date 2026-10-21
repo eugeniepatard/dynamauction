@@ -20,23 +20,6 @@ SCENARIO_PRESETS = {
             "kappa_distribution": "poisson",
         },
 
-    "survival-second-price-exponential-1": {
-        "description": "Survival kernel with single conversion per display, second-price, higher lognormal competition (mu=0, sigma=1)",
-        "kernel": {"name": "survival", "params": {"w_u": [1.0, 1.0, 1.0], "w_x": [1.0, 1.0, 1.0], "delay_rate": 1.0}},
-        "auction": {"name": "second-price"},
-        "competition": {"name": "lognormal", "params": {"mu": 0.0, "sigma": 1.0}},
-        "arrival": {"name": "cstpoisson", "params": {"rate": 1.0}},
-        "display": {"name": "normal", "params": {"dim": 3, "mu": 0.0, "sigma": 1.0}},
-        "exogenous": {"name": "trivial"},
-        "horizon": {"name": "exponential", "params": {"eta": 50.0}},
-        "user": {"name": "normal", "params": {"full_dim": 3, "observable_dim": 3, "mu": 0.0, "sigma": 1.0}},
-        "gamma": {"name": "multiplicative", "params": {"c" : 0.9 , "initial_value": 1.0, "beta": 1.0}},
-        "max_history": 1,
-        "probe": {"name": "bernoulli"},
-        "delay_sampler": {"name": "single"},
-        "kappa_distribution": "poisson",
-    },
-
     "saturation-second-price-lognormal": {
         "description": "Saturation kernel with second-price auction and lognormal competition (mu=-1, sigma=1)",
         "kernel": {"name": "saturation", "params": {"base_rate": 1.0, "saturation_scale": 10.0, "delay_rate": 0.5}},
@@ -136,10 +119,6 @@ SCENARIO_PRESETS = {
     },
 
     # ── Immediate-reward variant of the main survival scenario ───────────────────
-    # Same conversion probability as survival-second-price-exponential-1 but reward
-    # is realized at bid time (kappa=f, lambda_=0).  Used to isolate whether
-    # delayed credit assignment is the bottleneck for RL agents.
-
     # The main survival scenario with immediate rewards (diagnostic for RL: no delayed credit assignment; same fatigue
     # dynamics, competition LogNormal(-1, 1), beta = 1). The conversion happens at bid time with probability f, so V0 = f.
     "survival-second-price-exponential-immediate": {
@@ -158,21 +137,4 @@ SCENARIO_PRESETS = {
         "delay_sampler": {"name": "single"},
         "kappa_distribution": "bernoulli",
     },
-
-    "survival-second-price-exponential-1-immediate": {
-        "description": "Immediate-reward version of survival-second-price-exponential-1 — same conversion prob but reward at bid time, no delay",
-        "kernel": {"name": "immediate-survival", "params": {"w_u": [1.0, 1.0, 1.0], "w_x": [1.0, 1.0, 1.0], "delay_rate": 1.0}},
-        "auction": {"name": "second-price"},
-        "competition": {"name": "lognormal", "params": {"mu": 0.0, "sigma": 1.0}},
-        "arrival": {"name": "cstpoisson", "params": {"rate": 1.0}},
-        "display": {"name": "normal", "params": {"dim": 3, "mu": 0.0, "sigma": 1.0}},
-        "exogenous": {"name": "trivial"},
-        "horizon": {"name": "exponential", "params": {"eta": 50.0}},
-        "user": {"name": "normal", "params": {"full_dim": 3, "observable_dim": 3, "mu": 0.0, "sigma": 1.0}},
-        "gamma": {"name": "multiplicative", "params": {"c": 0.9, "initial_value": 1.0, "beta": 1.0}},
-        "max_history": 1,
-        "probe": {"name": "null"},
-        "delay_sampler": {"name": "single"},
-        "kappa_distribution": "bernoulli",
-    }
 }

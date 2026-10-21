@@ -31,7 +31,6 @@ from __future__ import annotations
 
 import copy
 from typing import Any, Dict, List, Optional, Tuple
-import numpy as np
 
 from dynamauction.types import Scenario
 from dynamauction.scenarios.presets import SCENARIO_PRESETS

@@ -212,7 +212,7 @@ def _save(fig: plt.Figure, filename: str) -> None:
     path = PLOTS_DIR / filename
     _rasterize_dense(fig)
     fig.savefig(path, bbox_inches="tight", dpi=200)   # dpi of the rasterized layers
-    print(f"  Saved -> {path}")
+    print(f"  Saved -> {PLOTS_DIR.name}/{filename}")
 
 
 def _bootstrap_ci(
@@ -422,7 +422,7 @@ def plot_reward_distribution(
     palette = _make_palette(order)
 
     fig, ax = plt.subplots(figsize=(max(6, len(order) * 1.6), 5))
-    sns.violinplot(data=summary, x="policy", y="episode_reward",
+    sns.violinplot(data=summary, x="policy", y="episode_reward", hue="policy", legend=False,
                    order=order, palette=palette, inner="box",
                    cut=0, linewidth=1.2, ax=ax)
     sns.stripplot(data=summary, x="policy", y="episode_reward",
@@ -431,7 +431,7 @@ def plot_reward_distribution(
     ax.set_xlabel("")
     ax.set_ylabel("Total episode reward")
     ax.set_title(title, fontweight="bold", pad=10)
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=40, ha="right", fontsize=9)
+    plt.setp(ax.get_xticklabels(), rotation=40, ha="right", fontsize=9)
     fig.tight_layout()
     if save:
         _save(fig, filename)
@@ -621,9 +621,10 @@ def plot_bid_distributions(
         sns.kdeplot(competing, ax=ax, color="grey", lw=1.5,
                     linestyle="--", label="Competing bid", fill=True,
                     alpha=0.15, clip=(0, x_max))
-        sns.kdeplot(bids, ax=ax, color=color, lw=2,
-                    label=f"{policy} bids", fill=True,
-                    alpha=0.30, clip=(0, x_max))
+        if np.std(bids) > 1e-6:   # a constant bid has no density (its KDE is a spike of height ~1e17): the mean line shows it
+            sns.kdeplot(bids, ax=ax, color=color, lw=2,
+                        label=f"{policy} bids", fill=True,
+                        alpha=0.30, clip=(0, x_max))
         ax.axvline(bids.mean(),      color=color,  lw=1.5, ls="-",
                    label=f"Mean bid = {bids.mean():.2f}")
         ax.axvline(competing.mean(), color="grey", lw=1.5, ls="--",
@@ -663,14 +664,14 @@ def plot_win_rate(
     palette = _make_palette(order)
 
     fig, ax = plt.subplots(figsize=(max(5, len(order) * 1.6), 4))
-    sns.barplot(data=summary, x="policy", y="win_rate",
+    sns.barplot(data=summary, x="policy", y="win_rate", hue="policy", legend=False,
                 order=order, palette=palette,
                 errorbar=("ci", 95), capsize=0.1, ax=ax)
     ax.set_xlabel("")
     ax.set_ylabel("Win rate")
     ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1))
     ax.set_title(title, fontweight="bold", pad=10)
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=40, ha="right", fontsize=9)
+    plt.setp(ax.get_xticklabels(), rotation=40, ha="right", fontsize=9)
     fig.tight_layout()
     if save:
         _save(fig, filename)
@@ -785,7 +786,7 @@ def plot_full_benchmark(
     order   = (summary.groupby("policy")["episode_reward"]
                .median().sort_values(ascending=False).index.tolist())
     dist_palette = _make_palette(order)
-    sns.violinplot(data=summary, x="policy", y="episode_reward",
+    sns.violinplot(data=summary, x="policy", y="episode_reward", hue="policy", legend=False,
                    order=order, palette=dist_palette, inner="box",
                    cut=0, linewidth=1.2, ax=ax_dist)
     ax_dist.tick_params(axis="x", rotation=15)
@@ -833,7 +834,7 @@ def plot_mpc_alpha_chosen(
     _style()
     fig, ax = plt.subplots(figsize=(max(5, len(policy_order) * 1.6), 4))
 
-    sns.violinplot(data=mpc_df, x="policy", y="alpha_chosen",
+    sns.violinplot(data=mpc_df, x="policy", y="alpha_chosen", hue="policy", legend=False,
                    order=policy_order, palette=palette,
                    inner="box", cut=0, linewidth=1.2, ax=ax)
     sns.stripplot(data=mpc_df, x="policy", y="alpha_chosen",
@@ -847,7 +848,7 @@ def plot_mpc_alpha_chosen(
     ax.set_ylabel(r"Chosen $\alpha^*$")
     ax.set_yticks(candidates)
     ax.set_title(title, fontweight="bold", pad=10)
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=40, ha="right", fontsize=9)
+    plt.setp(ax.get_xticklabels(), rotation=40, ha="right", fontsize=9)
     fig.tight_layout()
     if save:
         _save(fig, filename)
@@ -1045,7 +1046,7 @@ def plot_mpc_alpha_distribution(
     n = len(mpc_policies)
     fig, ax = plt.subplots(figsize=(max(5, n * 1.4), 4))
 
-    sns.violinplot(data=df, x="policy", y="alpha*", palette=palette,
+    sns.violinplot(data=df, x="policy", y="alpha*", hue="policy", legend=False, palette=palette,
                    inner="box", cut=0, linewidth=1.2, ax=ax)
     sns.stripplot(data=df, x="policy", y="alpha*",
                   color="black", alpha=0.15, size=2, jitter=True, ax=ax)

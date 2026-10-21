@@ -47,7 +47,7 @@ def test_builder_with_bernoulli_probe_and_multi_sampler():
     assert scenario.delay_sampler.__class__.__name__ == "MultiConversionSampler"
 
 def test_make_survival_second_price_exponential():
-    scenario = dac.make("survival-second-price-exponential-1", horizon_eta=50)
+    scenario = dac.make("survival-second-price-exponential", horizon_eta=50)
     assert scenario is not None
     assert scenario.kernel.__class__.__name__ == "SurvivalKernel"
     assert scenario.max_history >= 1

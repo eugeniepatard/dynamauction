@@ -1,0 +1,13 @@
+{
+  "test_campaigns": "env seeds 0-999, policy seed = env seed + 1000",
+  "experiments": [
+    "effective-frequency",
+    "immediate",
+    "main",
+    "recency",
+    "reminder",
+    "saturation",
+    "v0_sensitivity"
+  ],
+  "missing_or_incomplete": []
+}

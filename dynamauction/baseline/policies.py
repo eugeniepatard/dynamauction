@@ -4,7 +4,7 @@ Bidding policy interface and simple baseline implementations.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Dict, Any
+from typing import Dict, Any
 
 import numpy as np
 

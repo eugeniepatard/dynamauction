@@ -1,0 +1,2001 @@
+experiment,policy,timesteps,median,q25,q75,runs
+effective-frequency,PPO,10000,0,-0.007144,0,144
+effective-frequency,PPO,20000,0,0,0,144
+effective-frequency,PPO,30000,0,0,0,144
+effective-frequency,PPO,40000,0,0,0,144
+effective-frequency,PPO,50000,0,0,0,144
+effective-frequency,PPO,60000,0,0,0,144
+effective-frequency,PPO,70000,0,0,0,144
+effective-frequency,PPO,80000,0,0,0,144
+effective-frequency,PPO,90000,0,0,0,144
+effective-frequency,PPO,100000,0,0,0,144
+effective-frequency,PPO,110000,0,0,0,144
+effective-frequency,PPO,120000,0,0,0,144
+effective-frequency,PPO,130000,0,0,0,144
+effective-frequency,PPO,140000,0,0,0,144
+effective-frequency,PPO,150000,0,0,0,144
+effective-frequency,PPO,160000,0,0,0,144
+effective-frequency,PPO,170000,0,0,0,144
+effective-frequency,PPO,180000,0,0,0,144
+effective-frequency,PPO,190000,0,0,0,144
+effective-frequency,PPO,200000,0,0,0,144
+effective-frequency,PPO,210000,0,0,0,144
+effective-frequency,PPO,220000,0,0,0,144
+effective-frequency,PPO,230000,0,0,0,144
+effective-frequency,PPO,240000,0,0,0,144
+effective-frequency,PPO,250000,0,0,0,144
+effective-frequency,PPO,260000,0,0,0,144
+effective-frequency,PPO,270000,0,0,0,144
+effective-frequency,PPO,280000,0,0,0,144
+effective-frequency,PPO,290000,0,0,0,144
+effective-frequency,PPO,300000,0,0,0,144
+effective-frequency,PPO,310000,0,0,0,144
+effective-frequency,PPO,320000,0,0,0,144
+effective-frequency,PPO,330000,0,0,0,144
+effective-frequency,PPO,340000,0,0,0,144
+effective-frequency,PPO,350000,0,0,0,144
+effective-frequency,PPO,360000,0,0,0,144
+effective-frequency,PPO,370000,0,0,0,144
+effective-frequency,PPO,380000,0,0,0,144
+effective-frequency,PPO,390000,0,0,0,144
+effective-frequency,PPO,400000,0,0,0,144
+effective-frequency,PPO,410000,0,0,0,144
+effective-frequency,PPO,420000,0,0,0,144
+effective-frequency,PPO,430000,0,0,0,144
+effective-frequency,PPO,440000,0,0,0,144
+effective-frequency,PPO,450000,0,0,0,144
+effective-frequency,PPO,460000,0,0,0,144
+effective-frequency,PPO,470000,0,0,0,144
+effective-frequency,PPO,480000,0,0,0,144
+effective-frequency,PPO,490000,0,0,0,144
+effective-frequency,PPO,500000,0,0,0,144
+effective-frequency,PPO,510000,0,0,0,144
+effective-frequency,PPO,520000,0,0,0,144
+effective-frequency,PPO,530000,0,0,0,144
+effective-frequency,PPO,540000,0,0,0,144
+effective-frequency,PPO,550000,0,0,0,144
+effective-frequency,PPO,560000,0,0,0,144
+effective-frequency,PPO,570000,0,0,0,144
+effective-frequency,PPO,580000,0,0,0,144
+effective-frequency,PPO,590000,0,0,0,144
+effective-frequency,PPO,600000,0,0,0,144
+effective-frequency,PPO,610000,0,0,0,144
+effective-frequency,PPO,620000,0,0,0,144
+effective-frequency,PPO,630000,0,0,0,144
+effective-frequency,PPO,640000,0,0,0,144
+effective-frequency,PPO,650000,0,0,0,144
+effective-frequency,PPO,660000,0,0,0,144
+effective-frequency,PPO,670000,0,0,0,144
+effective-frequency,PPO,680000,0,0,0,144
+effective-frequency,PPO,690000,0,0,0,144
+effective-frequency,PPO,700000,0,0,0,144
+effective-frequency,PPO,710000,0,0,0,144
+effective-frequency,PPO,720000,0,0,0,144
+effective-frequency,PPO,730000,0,0,0,144
+effective-frequency,PPO,740000,0,0,0,144
+effective-frequency,PPO,750000,0,0,0,144
+effective-frequency,PPO,760000,0,0,0,144
+effective-frequency,PPO,770000,0,0,0,144
+effective-frequency,PPO,780000,0,0,0,144
+effective-frequency,PPO,790000,0,0,0,144
+effective-frequency,PPO,800000,0,0,0,144
+effective-frequency,PPO,810000,0,0,0,144
+effective-frequency,PPO,820000,0,0,0,144
+effective-frequency,PPO,830000,0,0,0,144
+effective-frequency,PPO,840000,0,0,0,144
+effective-frequency,PPO,850000,0,0,0,144
+effective-frequency,PPO,860000,0,0,0,144
+effective-frequency,PPO,870000,0,0,0,144
+effective-frequency,PPO,880000,0,0,0,144
+effective-frequency,PPO,890000,0,0,0,144
+effective-frequency,PPO,900000,0,0,0,144
+effective-frequency,PPO,910000,0,0,0,144
+effective-frequency,PPO,920000,0,0,0,144
+effective-frequency,PPO,930000,0,0,0,144
+effective-frequency,PPO,940000,0,0,0,144
+effective-frequency,PPO,950000,0,0,0,144
+effective-frequency,PPO,960000,0,0,0,144
+effective-frequency,PPO,970000,0,0,0,144
+effective-frequency,PPO,980000,0,0,0,144
+effective-frequency,PPO,990000,0,0,0,144
+effective-frequency,PPO,1000000,0,0,0,144
+effective-frequency,PPO,1010000,0,0,0,144
+effective-frequency,PPO,1020000,0,0,0,144
+effective-frequency,PPO,1030000,0,0,0,144
+effective-frequency,PPO,1040000,0,0,0,144
+effective-frequency,PPO,1050000,0,0,0,144
+effective-frequency,PPO,1060000,0,0,0,144
+effective-frequency,PPO,1070000,0,0,0,144
+effective-frequency,PPO,1080000,0,0,0,144
+effective-frequency,PPO,1090000,0,0,0,144
+effective-frequency,PPO,1100000,0,0,0,144
+effective-frequency,PPO,1110000,0,0,0,144
+effective-frequency,PPO,1120000,0,0,0,144
+effective-frequency,PPO,1130000,0,0,0,144
+effective-frequency,PPO,1140000,0,0,0,144
+effective-frequency,PPO,1150000,0,0,0,144
+effective-frequency,PPO,1160000,0,0,0,144
+effective-frequency,PPO,1170000,0,0,0,144
+effective-frequency,PPO,1180000,0,0,0,144
+effective-frequency,PPO,1190000,0,0,0,144
+effective-frequency,PPO,1200000,0,0,0,144
+effective-frequency,PPO,1210000,0,0,0,144
+effective-frequency,PPO,1220000,0,0,0,144
+effective-frequency,PPO,1230000,0,0,0,144
+effective-frequency,PPO,1240000,0,0,0,144
+effective-frequency,PPO,1250000,0,0,0,144
+effective-frequency,PPO,1260000,0,0,0,144
+effective-frequency,PPO,1270000,0,0,0,144
+effective-frequency,PPO,1280000,0,0,0,144
+effective-frequency,PPO,1290000,0,0,0,144
+effective-frequency,PPO,1300000,0,0,0,144
+effective-frequency,PPO,1310000,0,0,0,144
+effective-frequency,PPO,1320000,0,0,0,144
+effective-frequency,PPO,1330000,0,0,0,144
+effective-frequency,PPO,1340000,0,0,0,144
+effective-frequency,PPO,1350000,0,0,0,144
+effective-frequency,PPO,1360000,0,0,0,144
+effective-frequency,PPO,1370000,0,0,0,144
+effective-frequency,PPO,1380000,0,0,0,144
+effective-frequency,PPO,1390000,0,0,0,144
+effective-frequency,PPO,1400000,0,0,0,144
+effective-frequency,PPO,1410000,0,0,0,144
+effective-frequency,PPO,1420000,0,0,0,144
+effective-frequency,PPO,1430000,0,0,0,144
+effective-frequency,PPO,1440000,0,0,0,144
+effective-frequency,PPO,1450000,0,0,0,144
+effective-frequency,PPO,1460000,0,0,0,144
+effective-frequency,PPO,1470000,0,0,0,144
+effective-frequency,PPO,1480000,0,0,0,144
+effective-frequency,PPO,1490000,0,0,0,144
+effective-frequency,PPO,1500000,0,0,0,144
+effective-frequency,PPO,1510000,0,0,0,144
+effective-frequency,PPO,1520000,0,0,0,144
+effective-frequency,PPO,1530000,0,0,0,144
+effective-frequency,PPO,1540000,0,0,0,144
+effective-frequency,PPO,1550000,0,0,0,144
+effective-frequency,PPO,1560000,0,0,0,144
+effective-frequency,PPO,1570000,0,0,0,144
+effective-frequency,PPO,1580000,0,0,0,144
+effective-frequency,PPO,1590000,0,0,0,144
+effective-frequency,PPO,1600000,0,0,0,144
+effective-frequency,PPO,1610000,0,0,0,144
+effective-frequency,PPO,1620000,0,0,0,144
+effective-frequency,PPO,1630000,0,0,0,144
+effective-frequency,PPO,1640000,0,0,0,144
+effective-frequency,PPO,1650000,0,0,0,144
+effective-frequency,PPO,1660000,0,0,0,144
+effective-frequency,PPO,1670000,0,0,0,144
+effective-frequency,PPO,1680000,0,0,0,144
+effective-frequency,PPO,1690000,0,0,0,144
+effective-frequency,PPO,1700000,0,0,0,144
+effective-frequency,PPO,1710000,0,0,0,144
+effective-frequency,PPO,1720000,0,0,0,144
+effective-frequency,PPO,1730000,0,0,0,144
+effective-frequency,PPO,1740000,0,0,0,144
+effective-frequency,PPO,1750000,0,0,0,144
+effective-frequency,PPO,1760000,0,0,0,144
+effective-frequency,PPO,1770000,0,0,0,144
+effective-frequency,PPO,1780000,0,0,0,144
+effective-frequency,PPO,1790000,0,0,0,144
+effective-frequency,PPO,1800000,0,0,0,144
+effective-frequency,PPO,1810000,0,0,0,144
+effective-frequency,PPO,1820000,0,0,0,144
+effective-frequency,PPO,1830000,0,0,0,144
+effective-frequency,PPO,1840000,0,0,0,144
+effective-frequency,PPO,1850000,0,0,0,144
+effective-frequency,PPO,1860000,0,0,0,144
+effective-frequency,PPO,1870000,0,0,0,144
+effective-frequency,PPO,1880000,0,0,0,144
+effective-frequency,PPO,1890000,0,0,0,144
+effective-frequency,PPO,1900000,0,0,0,144
+effective-frequency,PPO,1910000,0,0,0,144
+effective-frequency,PPO,1920000,0,0,0,144
+effective-frequency,PPO,1930000,0,0,0,144
+effective-frequency,PPO,1940000,0,0,0,144
+effective-frequency,PPO,1950000,0,0,0,144
+effective-frequency,PPO,1960000,0,0,0,144
+effective-frequency,PPO,1970000,0,0,0,144
+effective-frequency,PPO,1980000,0,0,0,144
+effective-frequency,PPO,1990000,0,0,0,144
+effective-frequency,PPO,2000000,0,0,0,144
+effective-frequency,PPO,2010000,0,0,0,144
+effective-frequency,PPO,2020000,0,0,0,144
+effective-frequency,PPO,2030000,0,0,0,144
+effective-frequency,PPO,2040000,0,0,0,144
+effective-frequency,PPO,2050000,0,0,0,144
+effective-frequency,PPO,2060000,0,0,0,144
+effective-frequency,PPO,2070000,0,0,0,144
+effective-frequency,PPO,2080000,0,0,0,144
+effective-frequency,PPO,2090000,0,0,0,144
+effective-frequency,PPO,2100000,0,0,0,144
+effective-frequency,PPO,2110000,0,0,0,144
+effective-frequency,PPO,2120000,0,0,0,144
+effective-frequency,PPO,2130000,0,0,0,144
+effective-frequency,PPO,2140000,0,0,0,144
+effective-frequency,PPO,2150000,0,0,0,144
+effective-frequency,PPO,2160000,0,0,0,144
+effective-frequency,PPO,2170000,0,0,0,144
+effective-frequency,PPO,2180000,0,0,0,144
+effective-frequency,PPO,2190000,0,0,0,144
+effective-frequency,PPO,2200000,0,0,0,144
+effective-frequency,PPO,2210000,0,0,0,144
+effective-frequency,PPO,2220000,0,0,0,144
+effective-frequency,PPO,2230000,0,0,0,144
+effective-frequency,PPO,2240000,0,0,0,144
+effective-frequency,PPO,2250000,0,0,0,144
+effective-frequency,PPO,2260000,0,0,0,144
+effective-frequency,PPO,2270000,0,0,0,144
+effective-frequency,PPO,2280000,0,0,0,144
+effective-frequency,PPO,2290000,0,0,0,144
+effective-frequency,PPO,2300000,0,0,0,144
+effective-frequency,PPO,2310000,0,0,0,144
+effective-frequency,PPO,2320000,0,0,0,144
+effective-frequency,PPO,2330000,0,0,0,144
+effective-frequency,PPO,2340000,0,0,0,144
+effective-frequency,PPO,2350000,0,0,0,144
+effective-frequency,PPO,2360000,0,0,0,144
+effective-frequency,PPO,2370000,0,0,0,144
+effective-frequency,PPO,2380000,0,0,0,144
+effective-frequency,PPO,2390000,0,0,0,144
+effective-frequency,PPO,2400000,0,0,0,144
+effective-frequency,PPO,2410000,0,0,0,144
+effective-frequency,PPO,2420000,0,0,0,144
+effective-frequency,PPO,2430000,0,0,0,144
+effective-frequency,PPO,2440000,0,0,0,144
+effective-frequency,PPO,2450000,0,0,0,144
+effective-frequency,PPO,2460000,0,0,0,144
+effective-frequency,PPO,2470000,0,0,0,144
+effective-frequency,PPO,2480000,0,0,0,144
+effective-frequency,PPO,2490000,0,0,0,144
+effective-frequency,PPO,2500000,0,0,0,144
+effective-frequency,PPO,2510000,0,0,0,144
+effective-frequency,PPO,2520000,0,0,0,144
+effective-frequency,PPO,2530000,0,0,0,144
+effective-frequency,PPO,2540000,0,0,0,144
+effective-frequency,PPO,2550000,0,0,0,144
+effective-frequency,PPO,2560000,0,0,0,144
+effective-frequency,PPO,2570000,0,0,0,144
+effective-frequency,PPO,2580000,0,0,0,144
+effective-frequency,PPO,2590000,0,0,0,144
+effective-frequency,PPO,2600000,0,0,0,144
+effective-frequency,PPO,2610000,0,0,0,144
+effective-frequency,PPO,2620000,0,0,0,144
+effective-frequency,PPO,2630000,0,0,0,144
+effective-frequency,PPO,2640000,0,0,0,144
+effective-frequency,PPO,2650000,0,0,0,144
+effective-frequency,PPO,2660000,0,0,0,144
+effective-frequency,PPO,2670000,0,0,0,144
+effective-frequency,PPO,2680000,0,0,0,144
+effective-frequency,PPO,2690000,0,0,0,144
+effective-frequency,PPO,2700000,0,0,0,144
+effective-frequency,PPO,2710000,0,0,0,144
+effective-frequency,PPO,2720000,0,0,0,144
+effective-frequency,PPO,2730000,0,0,0,144
+effective-frequency,PPO,2740000,0,0,0,144
+effective-frequency,PPO,2750000,0,0,0,144
+effective-frequency,PPO,2760000,0,0,0,144
+effective-frequency,PPO,2770000,0,0,0,144
+effective-frequency,PPO,2780000,0,0,0,144
+effective-frequency,PPO,2790000,0,0,0,144
+effective-frequency,PPO,2800000,0,0,0,144
+effective-frequency,PPO,2810000,0,0,0,144
+effective-frequency,PPO,2820000,0,0,0,144
+effective-frequency,PPO,2830000,0,0,0,144
+effective-frequency,PPO,2840000,0,0,0,144
+effective-frequency,PPO,2850000,0,0,0,144
+effective-frequency,PPO,2860000,0,0,0,144
+effective-frequency,PPO,2870000,0,0,0,144
+effective-frequency,PPO,2880000,0,0,0,144
+effective-frequency,PPO,2890000,0,0,0,144
+effective-frequency,PPO,2900000,0,0,0,144
+effective-frequency,PPO,2910000,0,0,0,144
+effective-frequency,PPO,2920000,0,0,0,144
+effective-frequency,PPO,2930000,0,0,0,144
+effective-frequency,PPO,2940000,0,0,0,144
+effective-frequency,PPO,2950000,0,0,0,144
+effective-frequency,PPO,2960000,0,0,0,144
+effective-frequency,PPO,2970000,0,0,0,144
+effective-frequency,PPO,2980000,0,0,0,144
+effective-frequency,PPO,2990000,0,0,0,144
+effective-frequency,PPO,3000000,0,0,0,144
+effective-frequency,PPO,3010000,0,0,0,144
+effective-frequency,PPO,3020000,0,0,0,144
+effective-frequency,PPO,3030000,0,0,0,144
+effective-frequency,PPO,3040000,0,0,0,144
+effective-frequency,PPO,3050000,0,0,0,144
+effective-frequency,PPO,3060000,0,0,0,144
+effective-frequency,PPO,3070000,0,0,0,144
+effective-frequency,PPO,3080000,0,0,0,144
+effective-frequency,PPO,3090000,0,0,0,144
+effective-frequency,PPO,3100000,0,0,0,144
+effective-frequency,PPO,3110000,0,0,0,144
+effective-frequency,PPO,3120000,0,0,0,144
+effective-frequency,PPO,3130000,0,0,0,144
+effective-frequency,PPO,3140000,0,0,0,144
+effective-frequency,PPO,3150000,0,0,0,144
+effective-frequency,PPO,3160000,0,0,0,144
+effective-frequency,PPO,3170000,0,0,0,144
+effective-frequency,PPO,3180000,0,0,0,144
+effective-frequency,PPO,3190000,0,0,0,144
+effective-frequency,PPO,3200000,0,0,0,144
+effective-frequency,PPO,3210000,0,0,0,144
+effective-frequency,PPO,3220000,0,0,0,144
+effective-frequency,PPO,3230000,0,0,0,144
+effective-frequency,PPO,3240000,0,0,0,144
+effective-frequency,PPO,3250000,0,0,0,144
+effective-frequency,PPO,3260000,0,0,0,144
+effective-frequency,PPO,3270000,0,0,0,144
+effective-frequency,PPO,3280000,0,0,0,144
+effective-frequency,PPO,3290000,0,0,0,144
+effective-frequency,PPO,3300000,0,0,0,144
+effective-frequency,PPO,3310000,0,0,0,144
+effective-frequency,PPO,3320000,0,0,0,144
+effective-frequency,PPO,3330000,0,0,0,144
+effective-frequency,PPO,3340000,0,0,0,144
+effective-frequency,PPO,3350000,0,0,0,144
+effective-frequency,PPO,3360000,0,0,0,144
+effective-frequency,PPO,3370000,0,0,0,144
+effective-frequency,PPO,3380000,0,0,0,144
+effective-frequency,PPO,3390000,0,0,0,144
+effective-frequency,PPO,3400000,0,0,0,144
+effective-frequency,PPO,3410000,0,0,0,144
+effective-frequency,PPO,3420000,0,0,0,144
+effective-frequency,PPO,3430000,0,0,0,144
+effective-frequency,PPO,3440000,0,0,0,144
+effective-frequency,PPO,3450000,0,0,0,144
+effective-frequency,PPO,3460000,0,0,0,144
+effective-frequency,PPO,3470000,0,0,0,144
+effective-frequency,PPO,3480000,0,0,0,144
+effective-frequency,PPO,3490000,0,0,0,144
+effective-frequency,PPO,3500000,0,0,0,144
+effective-frequency,PPO,3510000,0,0,0,144
+effective-frequency,PPO,3520000,0,0,0,144
+effective-frequency,PPO,3530000,0,0,0,144
+effective-frequency,PPO,3540000,0,0,0,144
+effective-frequency,PPO,3550000,0,0,0,144
+effective-frequency,PPO,3560000,0,0,0,144
+effective-frequency,PPO,3570000,0,0,0,144
+effective-frequency,PPO,3580000,0,0,0,144
+effective-frequency,PPO,3590000,0,0,0,144
+effective-frequency,PPO,3600000,0,0,0,144
+effective-frequency,PPO,3610000,0,0,0,144
+effective-frequency,PPO,3620000,0,0,0,144
+effective-frequency,PPO,3630000,0,0,0,144
+effective-frequency,PPO,3640000,0,0,0,144
+effective-frequency,PPO,3650000,0,0,0,144
+effective-frequency,PPO,3660000,0,0,0,144
+effective-frequency,PPO,3670000,0,0,0,144
+effective-frequency,PPO,3680000,0,0,0,144
+effective-frequency,PPO,3690000,0,0,0,144
+effective-frequency,PPO,3700000,0,0,0,144
+effective-frequency,PPO,3710000,0,0,0,144
+effective-frequency,PPO,3720000,0,0,0,144
+effective-frequency,PPO,3730000,0,0,0,144
+effective-frequency,PPO,3740000,0,0,0,144
+effective-frequency,PPO,3750000,0,0,0,144
+effective-frequency,PPO,3760000,0,0,0,144
+effective-frequency,PPO,3770000,0,0,0,144
+effective-frequency,PPO,3780000,0,0,0,144
+effective-frequency,PPO,3790000,0,0,0,144
+effective-frequency,PPO,3800000,0,0,0,144
+effective-frequency,PPO,3810000,0,0,0,144
+effective-frequency,PPO,3820000,0,0,0,144
+effective-frequency,PPO,3830000,0,0,0,144
+effective-frequency,PPO,3840000,0,0,0,144
+effective-frequency,PPO,3850000,0,0,0,144
+effective-frequency,PPO,3860000,0,0,0,144
+effective-frequency,PPO,3870000,0,0,0,144
+effective-frequency,PPO,3880000,0,0,0,144
+effective-frequency,PPO,3890000,0,0,0,144
+effective-frequency,PPO,3900000,0,0,0,144
+effective-frequency,PPO,3910000,0,0,0,144
+effective-frequency,PPO,3920000,0,0,0,144
+effective-frequency,PPO,3930000,0,0,0,144
+effective-frequency,PPO,3940000,0,0,0,144
+effective-frequency,PPO,3950000,0,0,0,144
+effective-frequency,PPO,3960000,0,0,0,144
+effective-frequency,PPO,3970000,0,0,0,144
+effective-frequency,PPO,3980000,0,0,0,144
+effective-frequency,PPO,3990000,0,0,0,144
+effective-frequency,PPO,4000000,0,0,0,144
+effective-frequency,PPO,4010000,0,0,0,144
+effective-frequency,PPO,4020000,0,0,0,144
+effective-frequency,PPO,4030000,0,0,0,144
+effective-frequency,PPO,4040000,0,0,0,144
+effective-frequency,PPO,4050000,0,0,0,144
+effective-frequency,PPO,4060000,0,0,0,144
+effective-frequency,PPO,4070000,0,0,0,144
+effective-frequency,PPO,4080000,0,0,0,144
+effective-frequency,PPO,4090000,0,0,0,144
+effective-frequency,PPO,4100000,0,0,0,144
+effective-frequency,PPO,4110000,0,0,0,144
+effective-frequency,PPO,4120000,0,0,0,144
+effective-frequency,PPO,4130000,0,0,0,144
+effective-frequency,PPO,4140000,0,0,0,144
+effective-frequency,PPO,4150000,0,0,0,144
+effective-frequency,PPO,4160000,0,0,0,144
+effective-frequency,PPO,4170000,0,0,0,144
+effective-frequency,PPO,4180000,0,0,0,144
+effective-frequency,PPO,4190000,0,0,0,144
+effective-frequency,PPO,4200000,0,0,0,144
+effective-frequency,PPO,4210000,0,0,0,144
+effective-frequency,PPO,4220000,0,0,0,144
+effective-frequency,PPO,4230000,0,0,0,144
+effective-frequency,PPO,4240000,0,0,0,144
+effective-frequency,PPO,4250000,0,0,0,144
+effective-frequency,PPO,4260000,0,0,0,144
+effective-frequency,PPO,4270000,0,0,0,144
+effective-frequency,PPO,4280000,0,0,0,144
+effective-frequency,PPO,4290000,0,0,0,144
+effective-frequency,PPO,4300000,0,0,0,144
+effective-frequency,PPO,4310000,0,0,0,144
+effective-frequency,PPO,4320000,0,0,0,144
+effective-frequency,PPO,4330000,0,0,0,144
+effective-frequency,PPO,4340000,0,0,0,144
+effective-frequency,PPO,4350000,0,0,0,144
+effective-frequency,PPO,4360000,0,0,0,144
+effective-frequency,PPO,4370000,0,0,0,144
+effective-frequency,PPO,4380000,0,0,0,144
+effective-frequency,PPO,4390000,0,0,0,144
+effective-frequency,PPO,4400000,0,0,0,144
+effective-frequency,PPO,4410000,0,0,0,144
+effective-frequency,PPO,4420000,0,0,0,144
+effective-frequency,PPO,4430000,0,0,0,144
+effective-frequency,PPO,4440000,0,0,0,144
+effective-frequency,PPO,4450000,0,0,0,144
+effective-frequency,PPO,4460000,0,0,0,144
+effective-frequency,PPO,4470000,0,0,0,144
+effective-frequency,PPO,4480000,0,0,0,144
+effective-frequency,PPO,4490000,0,0,0,144
+effective-frequency,PPO,4500000,0,0,0,144
+effective-frequency,PPO,4510000,0,0,0,144
+effective-frequency,PPO,4520000,0,0,0,144
+effective-frequency,PPO,4530000,0,0,0,144
+effective-frequency,PPO,4540000,0,0,0,144
+effective-frequency,PPO,4550000,0,0,0,144
+effective-frequency,PPO,4560000,0,0,0,144
+effective-frequency,PPO,4570000,0,0,0,144
+effective-frequency,PPO,4580000,0,0,0,144
+effective-frequency,PPO,4590000,0,0,0,144
+effective-frequency,PPO,4600000,0,0,0,144
+effective-frequency,PPO,4610000,0,0,0,144
+effective-frequency,PPO,4620000,0,0,0,144
+effective-frequency,PPO,4630000,0,0,0,144
+effective-frequency,PPO,4640000,0,0,0,144
+effective-frequency,PPO,4650000,0,0,0,144
+effective-frequency,PPO,4660000,0,0,0,144
+effective-frequency,PPO,4670000,0,0,0,144
+effective-frequency,PPO,4680000,0,0,0,144
+effective-frequency,PPO,4690000,0,0,0,144
+effective-frequency,PPO,4700000,0,0,0,144
+effective-frequency,PPO,4710000,0,0,0,144
+effective-frequency,PPO,4720000,0,0,0,144
+effective-frequency,PPO,4730000,0,0,0,144
+effective-frequency,PPO,4740000,0,0,0,144
+effective-frequency,PPO,4750000,0,0,0,144
+effective-frequency,PPO,4760000,0,0,0,144
+effective-frequency,PPO,4770000,0,0,0,144
+effective-frequency,PPO,4780000,0,0,0,144
+effective-frequency,PPO,4790000,0,0,0,144
+effective-frequency,PPO,4800000,0,0,0,144
+effective-frequency,PPO,4810000,0,0,0,144
+effective-frequency,PPO,4820000,0,0,0,144
+effective-frequency,PPO,4830000,0,0,0,144
+effective-frequency,PPO,4840000,0,0,0,144
+effective-frequency,PPO,4850000,0,0,0,144
+effective-frequency,PPO,4860000,0,0,0,144
+effective-frequency,PPO,4870000,0,0,0,144
+effective-frequency,PPO,4880000,0,0,0,144
+effective-frequency,PPO,4890000,0,0,0,144
+effective-frequency,PPO,4900000,0,0,0,144
+effective-frequency,PPO,4910000,0,0,0,144
+effective-frequency,PPO,4920000,0,0,0,144
+effective-frequency,PPO,4930000,0,0,0,144
+effective-frequency,PPO,4940000,0,0,0,144
+effective-frequency,PPO,4950000,0,0,0,144
+effective-frequency,PPO,4960000,0,0,0,144
+effective-frequency,PPO,4970000,0,0,0,144
+effective-frequency,PPO,4980000,0,0,0,144
+effective-frequency,PPO,4990000,0,0,0,144
+effective-frequency,PPO,5000000,0,0,0,144
+effective-frequency,PPO + V̂0 observation,10000,-2.7299,-3.37839,-1.9398,144
+effective-frequency,PPO + V̂0 observation,20000,-1.16249,-2.34159,-0.0901293,144
+effective-frequency,PPO + V̂0 observation,30000,0.0696464,-0.772629,0.34263,144
+effective-frequency,PPO + V̂0 observation,40000,0.163746,-0.00438096,0.524224,144
+effective-frequency,PPO + V̂0 observation,50000,0.0776123,0,0.374697,144
+effective-frequency,PPO + V̂0 observation,60000,0,0,0.190073,144
+effective-frequency,PPO + V̂0 observation,70000,0,0,0.10594,144
+effective-frequency,PPO + V̂0 observation,80000,0,0,0.0409771,144
+effective-frequency,PPO + V̂0 observation,90000,0,0,0.0205992,144
+effective-frequency,PPO + V̂0 observation,100000,0,0,0.133319,144
+effective-frequency,PPO + V̂0 observation,110000,0,0,0.13421,144
+effective-frequency,PPO + V̂0 observation,120000,0,0,0.146364,144
+effective-frequency,PPO + V̂0 observation,130000,0,0,0.119575,144
+effective-frequency,PPO + V̂0 observation,140000,0,0,0.112218,144
+effective-frequency,PPO + V̂0 observation,150000,0,0,0.0794171,144
+effective-frequency,PPO + V̂0 observation,160000,0,0,0.17047,144
+effective-frequency,PPO + V̂0 observation,170000,0,0,0.155483,144
+effective-frequency,PPO + V̂0 observation,180000,0,0,0.248524,144
+effective-frequency,PPO + V̂0 observation,190000,0,0,0.210935,144
+effective-frequency,PPO + V̂0 observation,200000,0,0,0.259182,144
+effective-frequency,PPO + V̂0 observation,210000,0,0,0.413528,144
+effective-frequency,PPO + V̂0 observation,220000,0,0,0.456516,144
+effective-frequency,PPO + V̂0 observation,230000,0,0,0.514601,144
+effective-frequency,PPO + V̂0 observation,240000,0,0,0.369055,144
+effective-frequency,PPO + V̂0 observation,250000,0,0,0.41108,144
+effective-frequency,PPO + V̂0 observation,260000,0,0,0.430724,144
+effective-frequency,PPO + V̂0 observation,270000,0,0,0.538606,144
+effective-frequency,PPO + V̂0 observation,280000,0,0,0.429842,144
+effective-frequency,PPO + V̂0 observation,290000,0,0,0.37337,144
+effective-frequency,PPO + V̂0 observation,300000,0.00368567,0,0.515997,144
+effective-frequency,PPO + V̂0 observation,310000,0.0028237,0,0.643036,144
+effective-frequency,PPO + V̂0 observation,320000,0.0901912,0,0.642289,144
+effective-frequency,PPO + V̂0 observation,330000,0.0501788,0,0.614771,144
+effective-frequency,PPO + V̂0 observation,340000,0.0354406,0,0.636094,144
+effective-frequency,PPO + V̂0 observation,350000,0.0726526,0,0.540509,144
+effective-frequency,PPO + V̂0 observation,360000,0.0982302,0,0.536397,144
+effective-frequency,PPO + V̂0 observation,370000,0.194063,0,0.639809,144
+effective-frequency,PPO + V̂0 observation,380000,0.158396,0,0.646488,144
+effective-frequency,PPO + V̂0 observation,390000,0.181654,0,0.790303,144
+effective-frequency,PPO + V̂0 observation,400000,0.208689,0,0.654868,144
+effective-frequency,PPO + V̂0 observation,410000,0.154468,0,0.690261,144
+effective-frequency,PPO + V̂0 observation,420000,0.156147,0,0.751719,144
+effective-frequency,PPO + V̂0 observation,430000,0.137017,0,0.736015,144
+effective-frequency,PPO + V̂0 observation,440000,0.205247,0,0.662529,144
+effective-frequency,PPO + V̂0 observation,450000,0.267758,0,0.722344,144
+effective-frequency,PPO + V̂0 observation,460000,0.3522,0,0.746994,144
+effective-frequency,PPO + V̂0 observation,470000,0.211681,0,0.69865,144
+effective-frequency,PPO + V̂0 observation,480000,0.24189,0,0.830479,144
+effective-frequency,PPO + V̂0 observation,490000,0.215397,0,0.737472,144
+effective-frequency,PPO + V̂0 observation,500000,0.30322,0,0.854759,144
+effective-frequency,PPO + V̂0 observation,510000,0.324431,0,0.755485,144
+effective-frequency,PPO + V̂0 observation,520000,0.268599,0,0.752574,144
+effective-frequency,PPO + V̂0 observation,530000,0.329039,0,0.843327,144
+effective-frequency,PPO + V̂0 observation,540000,0.377482,0,0.816349,144
+effective-frequency,PPO + V̂0 observation,550000,0.392736,0,0.734777,144
+effective-frequency,PPO + V̂0 observation,560000,0.286995,0,0.780278,144
+effective-frequency,PPO + V̂0 observation,570000,0.280589,0,0.754102,144
+effective-frequency,PPO + V̂0 observation,580000,0.383799,0,0.819402,144
+effective-frequency,PPO + V̂0 observation,590000,0.403966,0,0.837512,144
+effective-frequency,PPO + V̂0 observation,600000,0.361044,0,0.780656,144
+effective-frequency,PPO + V̂0 observation,610000,0.376863,0,0.884578,144
+effective-frequency,PPO + V̂0 observation,620000,0.409903,0,0.859876,144
+effective-frequency,PPO + V̂0 observation,630000,0.370184,0,0.877086,144
+effective-frequency,PPO + V̂0 observation,640000,0.364536,0,0.778577,144
+effective-frequency,PPO + V̂0 observation,650000,0.41167,0,0.848975,144
+effective-frequency,PPO + V̂0 observation,660000,0.48831,0,0.858996,144
+effective-frequency,PPO + V̂0 observation,670000,0.444852,0,0.758655,144
+effective-frequency,PPO + V̂0 observation,680000,0.512361,0,0.817035,144
+effective-frequency,PPO + V̂0 observation,690000,0.487926,0,0.790089,144
+effective-frequency,PPO + V̂0 observation,700000,0.455784,0,0.823559,144
+effective-frequency,PPO + V̂0 observation,710000,0.460521,0,0.835136,144
+effective-frequency,PPO + V̂0 observation,720000,0.424572,0,0.85411,144
+effective-frequency,PPO + V̂0 observation,730000,0.510086,0,0.867728,144
+effective-frequency,PPO + V̂0 observation,740000,0.519617,0,0.882791,144
+effective-frequency,PPO + V̂0 observation,750000,0.502035,0,0.945527,144
+effective-frequency,PPO + V̂0 observation,760000,0.526359,0,0.941273,144
+effective-frequency,PPO + V̂0 observation,770000,0.402277,0,0.814244,144
+effective-frequency,PPO + V̂0 observation,780000,0.515576,0,0.889712,144
+effective-frequency,PPO + V̂0 observation,790000,0.537416,0,0.872336,144
+effective-frequency,PPO + V̂0 observation,800000,0.416866,0,0.81791,144
+effective-frequency,PPO + V̂0 observation,810000,0.527709,0,0.955009,144
+effective-frequency,PPO + V̂0 observation,820000,0.488639,0,0.936362,144
+effective-frequency,PPO + V̂0 observation,830000,0.53471,0,0.898679,144
+effective-frequency,PPO + V̂0 observation,840000,0.58602,0,0.914714,144
+effective-frequency,PPO + V̂0 observation,850000,0.495188,0,0.937117,144
+effective-frequency,PPO + V̂0 observation,860000,0.566799,0,0.937611,144
+effective-frequency,PPO + V̂0 observation,870000,0.538563,0,0.876554,144
+effective-frequency,PPO + V̂0 observation,880000,0.611948,0,0.960895,144
+effective-frequency,PPO + V̂0 observation,890000,0.538903,0,0.882361,144
+effective-frequency,PPO + V̂0 observation,900000,0.575226,0,0.87223,144
+effective-frequency,PPO + V̂0 observation,910000,0.545673,0,0.868393,144
+effective-frequency,PPO + V̂0 observation,920000,0.549139,0,0.965553,144
+effective-frequency,PPO + V̂0 observation,930000,0.531471,0,0.906531,144
+effective-frequency,PPO + V̂0 observation,940000,0.551056,0,0.89086,144
+effective-frequency,PPO + V̂0 observation,950000,0.545524,0,0.869633,144
+effective-frequency,PPO + V̂0 observation,960000,0.633977,0,0.998002,144
+effective-frequency,PPO + V̂0 observation,970000,0.506232,0,0.791757,144
+effective-frequency,PPO + V̂0 observation,980000,0.593201,0,0.898067,144
+effective-frequency,PPO + V̂0 observation,990000,0.572354,0,1.00249,144
+effective-frequency,PPO + V̂0 observation,1000000,0.501628,0.0340954,0.923565,144
+effective-frequency,PPO + V̂0 observation,1010000,0.627791,0,0.874529,144
+effective-frequency,PPO + V̂0 observation,1020000,0.609672,0,0.925707,144
+effective-frequency,PPO + V̂0 observation,1030000,0.555907,0,0.943413,144
+effective-frequency,PPO + V̂0 observation,1040000,0.533461,0,0.895201,144
+effective-frequency,PPO + V̂0 observation,1050000,0.554951,0,0.845071,144
+effective-frequency,PPO + V̂0 observation,1060000,0.589204,0.0754082,0.957937,144
+effective-frequency,PPO + V̂0 observation,1070000,0.557885,0.0902637,0.846895,144
+effective-frequency,PPO + V̂0 observation,1080000,0.53232,0.00485475,0.845708,144
+effective-frequency,PPO + V̂0 observation,1090000,0.577746,0.0398782,0.898827,144
+effective-frequency,PPO + V̂0 observation,1100000,0.553397,0,0.874968,144
+effective-frequency,PPO + V̂0 observation,1110000,0.65465,0,0.894323,144
+effective-frequency,PPO + V̂0 observation,1120000,0.600892,0,0.901273,144
+effective-frequency,PPO + V̂0 observation,1130000,0.567838,0.00456784,0.849465,144
+effective-frequency,PPO + V̂0 observation,1140000,0.579772,0,0.87076,144
+effective-frequency,PPO + V̂0 observation,1150000,0.578976,0,0.92368,144
+effective-frequency,PPO + V̂0 observation,1160000,0.691742,0,0.973725,144
+effective-frequency,PPO + V̂0 observation,1170000,0.554886,0.0671955,0.89974,144
+effective-frequency,PPO + V̂0 observation,1180000,0.643191,0.00219967,0.982993,144
+effective-frequency,PPO + V̂0 observation,1190000,0.648706,0,1.00275,144
+effective-frequency,PPO + V̂0 observation,1200000,0.678061,0.0463306,0.970693,144
+effective-frequency,PPO + V̂0 observation,1210000,0.631039,0.0388165,0.96391,144
+effective-frequency,PPO + V̂0 observation,1220000,0.631601,0.113186,0.975222,144
+effective-frequency,PPO + V̂0 observation,1230000,0.646055,0.00565485,1.06296,144
+effective-frequency,PPO + V̂0 observation,1240000,0.670277,0.107116,0.989518,144
+effective-frequency,PPO + V̂0 observation,1250000,0.671122,0.0671727,1.06717,144
+effective-frequency,PPO + V̂0 observation,1260000,0.582359,0,0.939917,144
+effective-frequency,PPO + V̂0 observation,1270000,0.66394,0.145536,0.99058,144
+effective-frequency,PPO + V̂0 observation,1280000,0.694888,0.0701881,0.984274,144
+effective-frequency,PPO + V̂0 observation,1290000,0.692776,0,0.931187,144
+effective-frequency,PPO + V̂0 observation,1300000,0.576907,0.0690707,0.970983,144
+effective-frequency,PPO + V̂0 observation,1310000,0.642497,0.0782522,0.95426,144
+effective-frequency,PPO + V̂0 observation,1320000,0.668796,0.114663,0.922258,144
+effective-frequency,PPO + V̂0 observation,1330000,0.609596,0.153846,0.937186,144
+effective-frequency,PPO + V̂0 observation,1340000,0.624384,0.116799,0.995168,144
+effective-frequency,PPO + V̂0 observation,1350000,0.699155,0.0785336,1.02553,144
+effective-frequency,PPO + V̂0 observation,1360000,0.646939,0.18798,0.979307,144
+effective-frequency,PPO + V̂0 observation,1370000,0.612214,0.182347,0.929793,144
+effective-frequency,PPO + V̂0 observation,1380000,0.691971,0.218893,1.03947,144
+effective-frequency,PPO + V̂0 observation,1390000,0.672416,0.156352,0.994561,144
+effective-frequency,PPO + V̂0 observation,1400000,0.774885,0.242151,1.05594,144
+effective-frequency,PPO + V̂0 observation,1410000,0.659224,0.226963,1.02382,144
+effective-frequency,PPO + V̂0 observation,1420000,0.705661,0.21566,1.06874,144
+effective-frequency,PPO + V̂0 observation,1430000,0.702177,0.34265,0.983952,144
+effective-frequency,PPO + V̂0 observation,1440000,0.78076,0.181726,1.02949,144
+effective-frequency,PPO + V̂0 observation,1450000,0.71325,0.235056,0.981257,144
+effective-frequency,PPO + V̂0 observation,1460000,0.715562,0.274503,0.981491,144
+effective-frequency,PPO + V̂0 observation,1470000,0.693093,0.0801923,1.0636,144
+effective-frequency,PPO + V̂0 observation,1480000,0.636019,0.204739,1.07791,144
+effective-frequency,PPO + V̂0 observation,1490000,0.617321,0.264793,0.92217,144
+effective-frequency,PPO + V̂0 observation,1500000,0.730391,0.140147,0.941234,144
+effective-frequency,PPO + V̂0 observation,1510000,0.687096,0.286796,0.951994,144
+effective-frequency,PPO + V̂0 observation,1520000,0.61353,0.222234,0.907706,144
+effective-frequency,PPO + V̂0 observation,1530000,0.651056,0.219374,0.988112,144
+effective-frequency,PPO + V̂0 observation,1540000,0.600669,0.113157,0.917567,144
+effective-frequency,PPO + V̂0 observation,1550000,0.639112,0.281457,0.940265,144
+effective-frequency,PPO + V̂0 observation,1560000,0.607395,0.127341,0.95956,144
+effective-frequency,PPO + V̂0 observation,1570000,0.646275,0.283181,0.932526,144
+effective-frequency,PPO + V̂0 observation,1580000,0.648059,0.233461,0.915508,144
+effective-frequency,PPO + V̂0 observation,1590000,0.713503,0.250618,1.12149,144
+effective-frequency,PPO + V̂0 observation,1600000,0.649973,0.262913,0.877969,144
+effective-frequency,PPO + V̂0 observation,1610000,0.649074,0.265261,1.00087,144
+effective-frequency,PPO + V̂0 observation,1620000,0.635641,0.196605,0.970106,144
+effective-frequency,PPO + V̂0 observation,1630000,0.572819,0.113448,0.920437,144
+effective-frequency,PPO + V̂0 observation,1640000,0.687071,0.264688,0.995784,144
+effective-frequency,PPO + V̂0 observation,1650000,0.676638,0.147133,0.952612,144
+effective-frequency,PPO + V̂0 observation,1660000,0.661115,0.230686,1.0211,144
+effective-frequency,PPO + V̂0 observation,1670000,0.661469,0.18671,0.984477,144
+effective-frequency,PPO + V̂0 observation,1680000,0.696146,0.235308,0.961912,144
+effective-frequency,PPO + V̂0 observation,1690000,0.611359,0.287007,0.98639,144
+effective-frequency,PPO + V̂0 observation,1700000,0.636618,0.209316,0.900987,144
+effective-frequency,PPO + V̂0 observation,1710000,0.628748,0.239983,0.948743,144
+effective-frequency,PPO + V̂0 observation,1720000,0.642157,0.226727,0.879524,144
+effective-frequency,PPO + V̂0 observation,1730000,0.628261,0.275032,0.921323,144
+effective-frequency,PPO + V̂0 observation,1740000,0.636505,0.27151,0.919221,144
+effective-frequency,PPO + V̂0 observation,1750000,0.725121,0.232322,0.964522,144
+effective-frequency,PPO + V̂0 observation,1760000,0.623802,0.137991,0.911876,144
+effective-frequency,PPO + V̂0 observation,1770000,0.664156,0.310141,0.962467,144
+effective-frequency,PPO + V̂0 observation,1780000,0.722217,0.266669,0.959266,144
+effective-frequency,PPO + V̂0 observation,1790000,0.668297,0.275848,0.905111,144
+effective-frequency,PPO + V̂0 observation,1800000,0.623382,0.203787,0.907784,144
+effective-frequency,PPO + V̂0 observation,1810000,0.702054,0.263643,0.989045,144
+effective-frequency,PPO + V̂0 observation,1820000,0.690984,0.29179,0.979352,144
+effective-frequency,PPO + V̂0 observation,1830000,0.657721,0.2144,0.93757,144
+effective-frequency,PPO + V̂0 observation,1840000,0.647188,0.235391,0.942457,144
+effective-frequency,PPO + V̂0 observation,1850000,0.7217,0.334223,0.978615,144
+effective-frequency,PPO + V̂0 observation,1860000,0.660882,0.257832,0.989369,144
+effective-frequency,PPO + V̂0 observation,1870000,0.643779,0.238451,1.00126,144
+effective-frequency,PPO + V̂0 observation,1880000,0.702865,0.327007,1.02184,144
+effective-frequency,PPO + V̂0 observation,1890000,0.711882,0.272917,1.00191,144
+effective-frequency,PPO + V̂0 observation,1900000,0.69267,0.29262,0.95608,144
+effective-frequency,PPO + V̂0 observation,1910000,0.687445,0.326387,1.0042,144
+effective-frequency,PPO + V̂0 observation,1920000,0.604559,0.21323,0.927499,144
+effective-frequency,PPO + V̂0 observation,1930000,0.693854,0.252521,0.97977,144
+effective-frequency,PPO + V̂0 observation,1940000,0.714081,0.231978,1.00832,144
+effective-frequency,PPO + V̂0 observation,1950000,0.657322,0.287154,0.936412,144
+effective-frequency,PPO + V̂0 observation,1960000,0.688778,0.311011,0.988928,144
+effective-frequency,PPO + V̂0 observation,1970000,0.626182,0.315076,0.859012,144
+effective-frequency,PPO + V̂0 observation,1980000,0.667222,0.329703,0.967003,144
+effective-frequency,PPO + V̂0 observation,1990000,0.740922,0.35255,1.00373,144
+effective-frequency,PPO + V̂0 observation,2000000,0.681288,0.198146,0.970138,144
+effective-frequency,PPO + V̂0 observation,2010000,0.690177,0.206659,0.971914,144
+effective-frequency,PPO + V̂0 observation,2020000,0.652518,0.267631,0.94931,144
+effective-frequency,PPO + V̂0 observation,2030000,0.673091,0.23309,1.0271,144
+effective-frequency,PPO + V̂0 observation,2040000,0.630988,0.266462,0.927649,144
+effective-frequency,PPO + V̂0 observation,2050000,0.696754,0.253118,0.985914,144
+effective-frequency,PPO + V̂0 observation,2060000,0.647422,0.299639,0.905013,144
+effective-frequency,PPO + V̂0 observation,2070000,0.628433,0.199984,0.970196,144
+effective-frequency,PPO + V̂0 observation,2080000,0.616615,0.342644,0.945764,144
+effective-frequency,PPO + V̂0 observation,2090000,0.648035,0.252998,0.97862,144
+effective-frequency,PPO + V̂0 observation,2100000,0.66149,0.220716,0.969195,144
+effective-frequency,PPO + V̂0 observation,2110000,0.700217,0.333483,0.992078,144
+effective-frequency,PPO + V̂0 observation,2120000,0.66975,0.32666,0.997366,144
+effective-frequency,PPO + V̂0 observation,2130000,0.681552,0.313017,1.11271,144
+effective-frequency,PPO + V̂0 observation,2140000,0.693635,0.265784,1.02335,144
+effective-frequency,PPO + V̂0 observation,2150000,0.70756,0.294807,0.971107,144
+effective-frequency,PPO + V̂0 observation,2160000,0.682853,0.325766,0.982235,144
+effective-frequency,PPO + V̂0 observation,2170000,0.694533,0.237062,0.947148,144
+effective-frequency,PPO + V̂0 observation,2180000,0.688249,0.338734,1.03084,144
+effective-frequency,PPO + V̂0 observation,2190000,0.685118,0.198492,0.933479,144
+effective-frequency,PPO + V̂0 observation,2200000,0.718449,0.302309,0.885847,144
+effective-frequency,PPO + V̂0 observation,2210000,0.666522,0.307096,0.9663,144
+effective-frequency,PPO + V̂0 observation,2220000,0.747333,0.281247,0.990693,144
+effective-frequency,PPO + V̂0 observation,2230000,0.629305,0.318357,0.959619,144
+effective-frequency,PPO + V̂0 observation,2240000,0.664713,0.263369,0.964475,144
+effective-frequency,PPO + V̂0 observation,2250000,0.680503,0.293755,1.05017,144
+effective-frequency,PPO + V̂0 observation,2260000,0.649587,0.297458,0.8972,144
+effective-frequency,PPO + V̂0 observation,2270000,0.709214,0.302216,1.00066,144
+effective-frequency,PPO + V̂0 observation,2280000,0.742832,0.235809,0.986216,144
+effective-frequency,PPO + V̂0 observation,2290000,0.760958,0.362403,1.04483,144
+effective-frequency,PPO + V̂0 observation,2300000,0.655471,0.301879,1.02845,144
+effective-frequency,PPO + V̂0 observation,2310000,0.719644,0.359165,0.95142,144
+effective-frequency,PPO + V̂0 observation,2320000,0.656619,0.334384,1.03722,144
+effective-frequency,PPO + V̂0 observation,2330000,0.636954,0.3012,1.02419,144
+effective-frequency,PPO + V̂0 observation,2340000,0.72,0.2716,0.961859,144
+effective-frequency,PPO + V̂0 observation,2350000,0.70402,0.261529,1.01783,144
+effective-frequency,PPO + V̂0 observation,2360000,0.736477,0.299163,1.00962,144
+effective-frequency,PPO + V̂0 observation,2370000,0.726509,0.268742,1.00506,144
+effective-frequency,PPO + V̂0 observation,2380000,0.690684,0.32048,0.965526,144
+effective-frequency,PPO + V̂0 observation,2390000,0.678515,0.276911,0.942486,144
+effective-frequency,PPO + V̂0 observation,2400000,0.698705,0.286773,0.972976,144
+effective-frequency,PPO + V̂0 observation,2410000,0.701933,0.320649,1.02121,144
+effective-frequency,PPO + V̂0 observation,2420000,0.651291,0.266851,0.977718,144
+effective-frequency,PPO + V̂0 observation,2430000,0.665578,0.336782,0.970957,144
+effective-frequency,PPO + V̂0 observation,2440000,0.713236,0.299722,1.04111,144
+effective-frequency,PPO + V̂0 observation,2450000,0.661306,0.276042,0.96179,144
+effective-frequency,PPO + V̂0 observation,2460000,0.657191,0.211866,0.978869,144
+effective-frequency,PPO + V̂0 observation,2470000,0.696044,0.286697,0.965258,144
+effective-frequency,PPO + V̂0 observation,2480000,0.722245,0.310851,1.02885,144
+effective-frequency,PPO + V̂0 observation,2490000,0.728823,0.269664,1.00724,144
+effective-frequency,PPO + V̂0 observation,2500000,0.737145,0.312621,1.04891,144
+effective-frequency,PPO + V̂0 observation,2510000,0.715504,0.314976,1.02328,144
+effective-frequency,PPO + V̂0 observation,2520000,0.738809,0.388363,1.04315,144
+effective-frequency,PPO + V̂0 observation,2530000,0.710508,0.240714,0.930371,144
+effective-frequency,PPO + V̂0 observation,2540000,0.684622,0.353068,0.996512,144
+effective-frequency,PPO + V̂0 observation,2550000,0.68795,0.314264,1.17785,144
+effective-frequency,PPO + V̂0 observation,2560000,0.741326,0.372198,1.07924,144
+effective-frequency,PPO + V̂0 observation,2570000,0.677016,0.293369,0.974076,144
+effective-frequency,PPO + V̂0 observation,2580000,0.694354,0.23526,0.998735,144
+effective-frequency,PPO + V̂0 observation,2590000,0.732473,0.317986,1.03171,144
+effective-frequency,PPO + V̂0 observation,2600000,0.681825,0.327261,0.998506,144
+effective-frequency,PPO + V̂0 observation,2610000,0.686487,0.291762,0.991264,144
+effective-frequency,PPO + V̂0 observation,2620000,0.671734,0.32962,0.961526,144
+effective-frequency,PPO + V̂0 observation,2630000,0.723011,0.370909,0.963713,144
+effective-frequency,PPO + V̂0 observation,2640000,0.662194,0.276021,1.0606,144
+effective-frequency,PPO + V̂0 observation,2650000,0.660928,0.243736,0.963708,144
+effective-frequency,PPO + V̂0 observation,2660000,0.708446,0.290325,1.08776,144
+effective-frequency,PPO + V̂0 observation,2670000,0.666403,0.324904,1.01311,144
+effective-frequency,PPO + V̂0 observation,2680000,0.598212,0.310608,0.925057,144
+effective-frequency,PPO + V̂0 observation,2690000,0.754307,0.378572,1.00322,144
+effective-frequency,PPO + V̂0 observation,2700000,0.666795,0.384429,1.02201,144
+effective-frequency,PPO + V̂0 observation,2710000,0.702608,0.357674,1.0009,144
+effective-frequency,PPO + V̂0 observation,2720000,0.827923,0.386192,1.03763,144
+effective-frequency,PPO + V̂0 observation,2730000,0.724867,0.260615,1.01656,144
+effective-frequency,PPO + V̂0 observation,2740000,0.704616,0.30094,0.992239,144
+effective-frequency,PPO + V̂0 observation,2750000,0.755731,0.39304,0.98272,144
+effective-frequency,PPO + V̂0 observation,2760000,0.730892,0.455667,1.02397,144
+effective-frequency,PPO + V̂0 observation,2770000,0.7025,0.320325,0.95092,144
+effective-frequency,PPO + V̂0 observation,2780000,0.730061,0.364097,0.930683,144
+effective-frequency,PPO + V̂0 observation,2790000,0.717045,0.317044,1.02051,144
+effective-frequency,PPO + V̂0 observation,2800000,0.736828,0.277965,1.02269,144
+effective-frequency,PPO + V̂0 observation,2810000,0.756316,0.266273,0.980863,144
+effective-frequency,PPO + V̂0 observation,2820000,0.70434,0.195819,0.93921,144
+effective-frequency,PPO + V̂0 observation,2830000,0.728485,0.223746,1.08468,144
+effective-frequency,PPO + V̂0 observation,2840000,0.694564,0.287184,1.0157,144
+effective-frequency,PPO + V̂0 observation,2850000,0.727408,0.283542,1.05503,144
+effective-frequency,PPO + V̂0 observation,2860000,0.715575,0.314187,1.04273,144
+effective-frequency,PPO + V̂0 observation,2870000,0.717137,0.392499,0.960671,144
+effective-frequency,PPO + V̂0 observation,2880000,0.769683,0.282861,1.06595,144
+effective-frequency,PPO + V̂0 observation,2890000,0.73704,0.348757,1.04194,144
+effective-frequency,PPO + V̂0 observation,2900000,0.690024,0.298163,0.96372,144
+effective-frequency,PPO + V̂0 observation,2910000,0.728824,0.260672,1.0738,144
+effective-frequency,PPO + V̂0 observation,2920000,0.708899,0.300209,1.01218,144
+effective-frequency,PPO + V̂0 observation,2930000,0.616244,0.210025,0.967207,144
+effective-frequency,PPO + V̂0 observation,2940000,0.667664,0.347336,0.99965,144
+effective-frequency,PPO + V̂0 observation,2950000,0.750315,0.401849,1.07516,144
+effective-frequency,PPO + V̂0 observation,2960000,0.676512,0.279234,0.970139,144
+effective-frequency,PPO + V̂0 observation,2970000,0.732979,0.334262,1.06099,144
+effective-frequency,PPO + V̂0 observation,2980000,0.739544,0.401135,1.00069,144
+effective-frequency,PPO + V̂0 observation,2990000,0.733747,0.191981,1.09997,144
+effective-frequency,PPO + V̂0 observation,3000000,0.769058,0.425778,1.10638,144
+effective-frequency,PPO + V̂0 observation,3010000,0.779605,0.303835,1.05193,144
+effective-frequency,PPO + V̂0 observation,3020000,0.6651,0.367684,0.982525,144
+effective-frequency,PPO + V̂0 observation,3030000,0.807182,0.396324,1.04402,144
+effective-frequency,PPO + V̂0 observation,3040000,0.706226,0.264653,1.0277,144
+effective-frequency,PPO + V̂0 observation,3050000,0.675103,0.29577,0.904916,144
+effective-frequency,PPO + V̂0 observation,3060000,0.687703,0.323265,1.00181,144
+effective-frequency,PPO + V̂0 observation,3070000,0.700233,0.367997,1.03064,144
+effective-frequency,PPO + V̂0 observation,3080000,0.691391,0.387297,1.0584,144
+effective-frequency,PPO + V̂0 observation,3090000,0.682654,0.35191,1.00304,144
+effective-frequency,PPO + V̂0 observation,3100000,0.746452,0.349449,1.00468,144
+effective-frequency,PPO + V̂0 observation,3110000,0.686006,0.381714,1.01856,144
+effective-frequency,PPO + V̂0 observation,3120000,0.775788,0.282795,1.07946,144
+effective-frequency,PPO + V̂0 observation,3130000,0.690249,0.32395,1.05058,144
+effective-frequency,PPO + V̂0 observation,3140000,0.724077,0.377198,1.00286,144
+effective-frequency,PPO + V̂0 observation,3150000,0.746392,0.299394,1.03859,144
+effective-frequency,PPO + V̂0 observation,3160000,0.697113,0.398827,1.08108,144
+effective-frequency,PPO + V̂0 observation,3170000,0.738705,0.41447,1.02811,144
+effective-frequency,PPO + V̂0 observation,3180000,0.642485,0.31615,0.916761,144
+effective-frequency,PPO + V̂0 observation,3190000,0.747603,0.310983,0.994243,144
+effective-frequency,PPO + V̂0 observation,3200000,0.673849,0.29764,1.01312,144
+effective-frequency,PPO + V̂0 observation,3210000,0.696976,0.360772,0.955722,144
+effective-frequency,PPO + V̂0 observation,3220000,0.581503,0.336007,0.988804,144
+effective-frequency,PPO + V̂0 observation,3230000,0.758679,0.400676,0.992886,144
+effective-frequency,PPO + V̂0 observation,3240000,0.718058,0.327542,1.02608,144
+effective-frequency,PPO + V̂0 observation,3250000,0.663355,0.355749,0.971251,144
+effective-frequency,PPO + V̂0 observation,3260000,0.663525,0.327685,0.960574,144
+effective-frequency,PPO + V̂0 observation,3270000,0.676386,0.336528,1.01671,144
+effective-frequency,PPO + V̂0 observation,3280000,0.696053,0.289867,0.947966,144
+effective-frequency,PPO + V̂0 observation,3290000,0.724707,0.398126,1.05294,144
+effective-frequency,PPO + V̂0 observation,3300000,0.696459,0.317664,0.965777,144
+effective-frequency,PPO + V̂0 observation,3310000,0.735899,0.399424,1.04548,144
+effective-frequency,PPO + V̂0 observation,3320000,0.698844,0.343011,0.981694,144
+effective-frequency,PPO + V̂0 observation,3330000,0.646712,0.279398,0.938383,144
+effective-frequency,PPO + V̂0 observation,3340000,0.656136,0.327633,0.998993,144
+effective-frequency,PPO + V̂0 observation,3350000,0.729799,0.31099,0.994771,144
+effective-frequency,PPO + V̂0 observation,3360000,0.616914,0.337736,0.934754,144
+effective-frequency,PPO + V̂0 observation,3370000,0.749185,0.416935,1.049,144
+effective-frequency,PPO + V̂0 observation,3380000,0.63977,0.383611,0.986203,144
+effective-frequency,PPO + V̂0 observation,3390000,0.641177,0.327851,0.970835,144
+effective-frequency,PPO + V̂0 observation,3400000,0.695206,0.307632,1.0177,144
+effective-frequency,PPO + V̂0 observation,3410000,0.678206,0.36157,0.997188,144
+effective-frequency,PPO + V̂0 observation,3420000,0.708574,0.351819,0.963717,144
+effective-frequency,PPO + V̂0 observation,3430000,0.693581,0.297613,0.980912,144
+effective-frequency,PPO + V̂0 observation,3440000,0.817918,0.375587,1.09981,144
+effective-frequency,PPO + V̂0 observation,3450000,0.720051,0.335379,0.994603,144
+effective-frequency,PPO + V̂0 observation,3460000,0.746137,0.420538,1.01733,144
+effective-frequency,PPO + V̂0 observation,3470000,0.706858,0.377209,1.03245,144
+effective-frequency,PPO + V̂0 observation,3480000,0.845231,0.427848,1.10085,144
+effective-frequency,PPO + V̂0 observation,3490000,0.743665,0.404061,1.11163,144
+effective-frequency,PPO + V̂0 observation,3500000,0.658742,0.300796,1.05906,144
+effective-frequency,PPO + V̂0 observation,3510000,0.741313,0.345701,0.96336,144
+effective-frequency,PPO + V̂0 observation,3520000,0.742521,0.39423,1.03595,144
+effective-frequency,PPO + V̂0 observation,3530000,0.647619,0.24941,1.01768,144
+effective-frequency,PPO + V̂0 observation,3540000,0.778074,0.322059,1.02663,144
+effective-frequency,PPO + V̂0 observation,3550000,0.62825,0.236776,0.956155,144
+effective-frequency,PPO + V̂0 observation,3560000,0.767113,0.39246,1.09622,144
+effective-frequency,PPO + V̂0 observation,3570000,0.713642,0.318426,0.95408,144
+effective-frequency,PPO + V̂0 observation,3580000,0.757506,0.254485,1.03724,144
+effective-frequency,PPO + V̂0 observation,3590000,0.704095,0.355287,0.949096,144
+effective-frequency,PPO + V̂0 observation,3600000,0.741938,0.327655,1.00857,144
+effective-frequency,PPO + V̂0 observation,3610000,0.680452,0.31513,1.03133,144
+effective-frequency,PPO + V̂0 observation,3620000,0.665534,0.308813,1.04266,144
+effective-frequency,PPO + V̂0 observation,3630000,0.753305,0.381345,1.00808,144
+effective-frequency,PPO + V̂0 observation,3640000,0.7231,0.402892,1.01011,144
+effective-frequency,PPO + V̂0 observation,3650000,0.752334,0.319513,1.06445,144
+effective-frequency,PPO + V̂0 observation,3660000,0.766667,0.33409,1.06494,144
+effective-frequency,PPO + V̂0 observation,3670000,0.71139,0.392206,1.01628,144
+effective-frequency,PPO + V̂0 observation,3680000,0.740275,0.373083,1.06049,144
+effective-frequency,PPO + V̂0 observation,3690000,0.744131,0.373271,1.06403,144
+effective-frequency,PPO + V̂0 observation,3700000,0.734272,0.377663,0.985604,144
+effective-frequency,PPO + V̂0 observation,3710000,0.757263,0.370981,1.06688,144
+effective-frequency,PPO + V̂0 observation,3720000,0.718849,0.306384,1.01552,144
+effective-frequency,PPO + V̂0 observation,3730000,0.692656,0.437134,0.975868,144
+effective-frequency,PPO + V̂0 observation,3740000,0.630127,0.309579,0.999583,144
+effective-frequency,PPO + V̂0 observation,3750000,0.745292,0.283735,1.0261,144
+effective-frequency,PPO + V̂0 observation,3760000,0.730013,0.412433,1.00853,144
+effective-frequency,PPO + V̂0 observation,3770000,0.744322,0.25299,1.02568,144
+effective-frequency,PPO + V̂0 observation,3780000,0.601758,0.309424,0.893531,144
+effective-frequency,PPO + V̂0 observation,3790000,0.673487,0.356478,0.973418,144
+effective-frequency,PPO + V̂0 observation,3800000,0.78665,0.295199,1.10067,144
+effective-frequency,PPO + V̂0 observation,3810000,0.683035,0.406014,0.976358,144
+effective-frequency,PPO + V̂0 observation,3820000,0.775383,0.384231,1.13523,144
+effective-frequency,PPO + V̂0 observation,3830000,0.714004,0.387446,0.98691,144
+effective-frequency,PPO + V̂0 observation,3840000,0.69835,0.315679,1.07798,144
+effective-frequency,PPO + V̂0 observation,3850000,0.733587,0.279774,0.980332,144
+effective-frequency,PPO + V̂0 observation,3860000,0.71956,0.317017,1.02958,144
+effective-frequency,PPO + V̂0 observation,3870000,0.674261,0.344225,1.03434,144
+effective-frequency,PPO + V̂0 observation,3880000,0.742767,0.304893,1.00787,144
+effective-frequency,PPO + V̂0 observation,3890000,0.728409,0.315874,1.0701,144
+effective-frequency,PPO + V̂0 observation,3900000,0.797745,0.365333,1.05925,144
+effective-frequency,PPO + V̂0 observation,3910000,0.750496,0.351095,1.09337,144
+effective-frequency,PPO + V̂0 observation,3920000,0.70645,0.258093,0.965834,144
+effective-frequency,PPO + V̂0 observation,3930000,0.677769,0.358798,1.04422,144
+effective-frequency,PPO + V̂0 observation,3940000,0.732402,0.303423,1.01174,144
+effective-frequency,PPO + V̂0 observation,3950000,0.656106,0.327837,1.01422,144
+effective-frequency,PPO + V̂0 observation,3960000,0.741802,0.331981,1.06672,144
+effective-frequency,PPO + V̂0 observation,3970000,0.665095,0.360844,0.979501,144
+effective-frequency,PPO + V̂0 observation,3980000,0.742456,0.323155,1.02798,144
+effective-frequency,PPO + V̂0 observation,3990000,0.688087,0.366161,1.04979,144
+effective-frequency,PPO + V̂0 observation,4000000,0.74343,0.364251,1.11737,144
+effective-frequency,PPO + V̂0 observation,4010000,0.610953,0.306359,1.05392,144
+effective-frequency,PPO + V̂0 observation,4020000,0.696439,0.329276,1.00331,144
+effective-frequency,PPO + V̂0 observation,4030000,0.614699,0.255346,1.04707,144
+effective-frequency,PPO + V̂0 observation,4040000,0.715546,0.294763,0.969732,144
+effective-frequency,PPO + V̂0 observation,4050000,0.763685,0.379169,1.07728,144
+effective-frequency,PPO + V̂0 observation,4060000,0.768469,0.420255,1.03634,144
+effective-frequency,PPO + V̂0 observation,4070000,0.68187,0.303785,1.05784,144
+effective-frequency,PPO + V̂0 observation,4080000,0.691325,0.370956,0.985823,144
+effective-frequency,PPO + V̂0 observation,4090000,0.71426,0.391046,1.02674,144
+effective-frequency,PPO + V̂0 observation,4100000,0.720314,0.302246,1.0497,144
+effective-frequency,PPO + V̂0 observation,4110000,0.772399,0.462165,0.956955,144
+effective-frequency,PPO + V̂0 observation,4120000,0.774662,0.227565,1.07249,144
+effective-frequency,PPO + V̂0 observation,4130000,0.747575,0.284112,1.03525,144
+effective-frequency,PPO + V̂0 observation,4140000,0.717832,0.348718,1.04671,144
+effective-frequency,PPO + V̂0 observation,4150000,0.728644,0.39676,0.974422,144
+effective-frequency,PPO + V̂0 observation,4160000,0.746592,0.413855,0.998186,144
+effective-frequency,PPO + V̂0 observation,4170000,0.726784,0.367126,1.01832,144
+effective-frequency,PPO + V̂0 observation,4180000,0.759772,0.403803,1.06627,144
+effective-frequency,PPO + V̂0 observation,4190000,0.748286,0.31224,1.04074,144
+effective-frequency,PPO + V̂0 observation,4200000,0.83232,0.357592,1.09645,144
+effective-frequency,PPO + V̂0 observation,4210000,0.819207,0.355324,1.01193,144
+effective-frequency,PPO + V̂0 observation,4220000,0.663808,0.247256,0.979336,144
+effective-frequency,PPO + V̂0 observation,4230000,0.593926,0.298112,0.976548,144
+effective-frequency,PPO + V̂0 observation,4240000,0.810869,0.419338,1.1219,144
+effective-frequency,PPO + V̂0 observation,4250000,0.760709,0.363338,0.97326,144
+effective-frequency,PPO + V̂0 observation,4260000,0.700963,0.34801,0.973459,144
+effective-frequency,PPO + V̂0 observation,4270000,0.744822,0.364059,1.02095,144
+effective-frequency,PPO + V̂0 observation,4280000,0.746112,0.414717,1.061,144
+effective-frequency,PPO + V̂0 observation,4290000,0.76059,0.409646,1.06377,144
+effective-frequency,PPO + V̂0 observation,4300000,0.69095,0.331173,0.944859,144
+effective-frequency,PPO + V̂0 observation,4310000,0.648026,0.397513,1.00848,144
+effective-frequency,PPO + V̂0 observation,4320000,0.733974,0.367066,0.966977,144
+effective-frequency,PPO + V̂0 observation,4330000,0.721908,0.302476,1.01665,144
+effective-frequency,PPO + V̂0 observation,4340000,0.715143,0.317676,1.03879,144
+effective-frequency,PPO + V̂0 observation,4350000,0.685031,0.361768,0.930392,144
+effective-frequency,PPO + V̂0 observation,4360000,0.668379,0.292875,1.0336,144
+effective-frequency,PPO + V̂0 observation,4370000,0.755122,0.350879,1.00023,144
+effective-frequency,PPO + V̂0 observation,4380000,0.678927,0.307183,0.921231,144
+effective-frequency,PPO + V̂0 observation,4390000,0.750712,0.404487,1.04834,144
+effective-frequency,PPO + V̂0 observation,4400000,0.657382,0.310296,0.986077,144
+effective-frequency,PPO + V̂0 observation,4410000,0.712009,0.338144,1.04353,144
+effective-frequency,PPO + V̂0 observation,4420000,0.693097,0.363874,1.05095,144
+effective-frequency,PPO + V̂0 observation,4430000,0.712943,0.332949,0.994997,144
+effective-frequency,PPO + V̂0 observation,4440000,0.730251,0.331546,0.992029,144
+effective-frequency,PPO + V̂0 observation,4450000,0.703992,0.356551,1.03432,144
+effective-frequency,PPO + V̂0 observation,4460000,0.718385,0.277728,0.99192,144
+effective-frequency,PPO + V̂0 observation,4470000,0.717752,0.361975,1.00106,144
+effective-frequency,PPO + V̂0 observation,4480000,0.700339,0.353194,0.988999,144
+effective-frequency,PPO + V̂0 observation,4490000,0.72605,0.373132,1.05168,144
+effective-frequency,PPO + V̂0 observation,4500000,0.749352,0.405814,1.06194,144
+effective-frequency,PPO + V̂0 observation,4510000,0.695491,0.37017,1.058,144
+effective-frequency,PPO + V̂0 observation,4520000,0.617558,0.293192,0.957713,144
+effective-frequency,PPO + V̂0 observation,4530000,0.742326,0.398194,1.05973,144
+effective-frequency,PPO + V̂0 observation,4540000,0.677897,0.281332,1.03546,144
+effective-frequency,PPO + V̂0 observation,4550000,0.735221,0.37257,1.02103,144
+effective-frequency,PPO + V̂0 observation,4560000,0.714826,0.377685,1.00637,144
+effective-frequency,PPO + V̂0 observation,4570000,0.68805,0.28078,0.996957,144
+effective-frequency,PPO + V̂0 observation,4580000,0.703628,0.294344,1.00199,144
+effective-frequency,PPO + V̂0 observation,4590000,0.690358,0.279127,1.00988,144
+effective-frequency,PPO + V̂0 observation,4600000,0.748921,0.388034,1.03052,144
+effective-frequency,PPO + V̂0 observation,4610000,0.699524,0.252637,0.954466,144
+effective-frequency,PPO + V̂0 observation,4620000,0.707531,0.31677,1.02067,144
+effective-frequency,PPO + V̂0 observation,4630000,0.687954,0.347081,1.04252,144
+effective-frequency,PPO + V̂0 observation,4640000,0.634899,0.323723,1.02986,144
+effective-frequency,PPO + V̂0 observation,4650000,0.678522,0.425525,1.0689,144
+effective-frequency,PPO + V̂0 observation,4660000,0.69203,0.327498,0.957071,144
+effective-frequency,PPO + V̂0 observation,4670000,0.637335,0.281181,0.936628,144
+effective-frequency,PPO + V̂0 observation,4680000,0.615889,0.332422,0.902369,144
+effective-frequency,PPO + V̂0 observation,4690000,0.733494,0.322536,1.02114,144
+effective-frequency,PPO + V̂0 observation,4700000,0.63878,0.317543,0.976272,144
+effective-frequency,PPO + V̂0 observation,4710000,0.713562,0.343849,1.01678,144
+effective-frequency,PPO + V̂0 observation,4720000,0.720189,0.297227,1.02534,144
+effective-frequency,PPO + V̂0 observation,4730000,0.709613,0.3641,0.988303,144
+effective-frequency,PPO + V̂0 observation,4740000,0.745283,0.409575,1.06668,144
+effective-frequency,PPO + V̂0 observation,4750000,0.751058,0.445331,1.11158,144
+effective-frequency,PPO + V̂0 observation,4760000,0.704948,0.367378,1.02478,144
+effective-frequency,PPO + V̂0 observation,4770000,0.727364,0.277866,1.019,144
+effective-frequency,PPO + V̂0 observation,4780000,0.668657,0.27985,1.09329,144
+effective-frequency,PPO + V̂0 observation,4790000,0.71824,0.272588,0.985622,144
+effective-frequency,PPO + V̂0 observation,4800000,0.814307,0.412385,1.04542,144
+effective-frequency,PPO + V̂0 observation,4810000,0.63804,0.287184,0.988933,144
+effective-frequency,PPO + V̂0 observation,4820000,0.703288,0.387442,0.970074,144
+effective-frequency,PPO + V̂0 observation,4830000,0.726459,0.337891,1.08178,144
+effective-frequency,PPO + V̂0 observation,4840000,0.695236,0.327697,1.0302,144
+effective-frequency,PPO + V̂0 observation,4850000,0.756663,0.373775,1.08178,144
+effective-frequency,PPO + V̂0 observation,4860000,0.687131,0.347826,0.934175,144
+effective-frequency,PPO + V̂0 observation,4870000,0.703565,0.3485,1.10307,144
+effective-frequency,PPO + V̂0 observation,4880000,0.735326,0.406345,0.986796,144
+effective-frequency,PPO + V̂0 observation,4890000,0.694107,0.309682,0.947776,144
+effective-frequency,PPO + V̂0 observation,4900000,0.681035,0.275024,0.950497,144
+effective-frequency,PPO + V̂0 observation,4910000,0.738153,0.378612,0.998353,144
+effective-frequency,PPO + V̂0 observation,4920000,0.721469,0.356304,1.01794,144
+effective-frequency,PPO + V̂0 observation,4930000,0.683398,0.391291,1.02113,144
+effective-frequency,PPO + V̂0 observation,4940000,0.774476,0.427175,1.11549,144
+effective-frequency,PPO + V̂0 observation,4950000,0.745736,0.411841,1.11444,144
+effective-frequency,PPO + V̂0 observation,4960000,0.689025,0.227268,0.979907,144
+effective-frequency,PPO + V̂0 observation,4970000,0.766016,0.373872,1.05474,144
+effective-frequency,PPO + V̂0 observation,4980000,0.720296,0.386448,0.991793,144
+effective-frequency,PPO + V̂0 observation,4990000,0.682002,0.333945,1.03258,144
+effective-frequency,PPO + V̂0 observation,5000000,0.643909,0.386163,0.938477,144
+reminder,PPO,10000,0,0,0,144
+reminder,PPO,20000,0,0,0,144
+reminder,PPO,30000,0,0,0,144
+reminder,PPO,40000,0,0,0,144
+reminder,PPO,50000,0,0,0,144
+reminder,PPO,60000,0,0,0,144
+reminder,PPO,70000,0,0,0,144
+reminder,PPO,80000,0,0,0,144
+reminder,PPO,90000,0,0,0,144
+reminder,PPO,100000,0,0,0,144
+reminder,PPO,110000,0,0,0,144
+reminder,PPO,120000,0,0,0,144
+reminder,PPO,130000,0,0,0,144
+reminder,PPO,140000,0,0,0,144
+reminder,PPO,150000,0,0,0,144
+reminder,PPO,160000,0,0,0,144
+reminder,PPO,170000,0,0,0,144
+reminder,PPO,180000,0,0,0,144
+reminder,PPO,190000,0,0,0,144
+reminder,PPO,200000,0,0,0,144
+reminder,PPO,210000,0,0,0,144
+reminder,PPO,220000,0,0,0,144
+reminder,PPO,230000,0,0,0,144
+reminder,PPO,240000,0,0,0,144
+reminder,PPO,250000,0,0,0,144
+reminder,PPO,260000,0,0,0,144
+reminder,PPO,270000,0,0,0,144
+reminder,PPO,280000,0,0,0,144
+reminder,PPO,290000,0,0,0,144
+reminder,PPO,300000,0,0,0,144
+reminder,PPO,310000,0,0,0,144
+reminder,PPO,320000,0,0,0,144
+reminder,PPO,330000,0,0,0,144
+reminder,PPO,340000,0,0,0,144
+reminder,PPO,350000,0,0,0,144
+reminder,PPO,360000,0,0,0,144
+reminder,PPO,370000,0,0,0,144
+reminder,PPO,380000,0,0,0,144
+reminder,PPO,390000,0,0,0,144
+reminder,PPO,400000,0,0,0,144
+reminder,PPO,410000,0,0,0,144
+reminder,PPO,420000,0,0,0,144
+reminder,PPO,430000,0,0,0,144
+reminder,PPO,440000,0,0,0,144
+reminder,PPO,450000,0,0,0,144
+reminder,PPO,460000,0,0,0,144
+reminder,PPO,470000,0,0,0,144
+reminder,PPO,480000,0,0,0,144
+reminder,PPO,490000,0,0,0,144
+reminder,PPO,500000,0,0,0,144
+reminder,PPO,510000,0,0,0,144
+reminder,PPO,520000,0,0,0,144
+reminder,PPO,530000,0,0,0,144
+reminder,PPO,540000,0,0,0,144
+reminder,PPO,550000,0,0,0,144
+reminder,PPO,560000,0,0,0,144
+reminder,PPO,570000,0,0,0,144
+reminder,PPO,580000,0,0,0,144
+reminder,PPO,590000,0,0,0,144
+reminder,PPO,600000,0,0,0,144
+reminder,PPO,610000,0,0,0,144
+reminder,PPO,620000,0,0,0,144
+reminder,PPO,630000,0,0,0,144
+reminder,PPO,640000,0,0,0,144
+reminder,PPO,650000,0,0,0,144
+reminder,PPO,660000,0,0,0,144
+reminder,PPO,670000,0,0,0,144
+reminder,PPO,680000,0,0,0,144
+reminder,PPO,690000,0,0,0,144
+reminder,PPO,700000,0,0,0,144
+reminder,PPO,710000,0,0,0,144
+reminder,PPO,720000,0,0,0,144
+reminder,PPO,730000,0,0,0,144
+reminder,PPO,740000,0,0,0,144
+reminder,PPO,750000,0,0,0,144
+reminder,PPO,760000,0,0,0,144
+reminder,PPO,770000,0,0,0,144
+reminder,PPO,780000,0,0,0,144
+reminder,PPO,790000,0,0,0,144
+reminder,PPO,800000,0,0,0,144
+reminder,PPO,810000,0,0,0,144
+reminder,PPO,820000,0,0,0,144
+reminder,PPO,830000,0,0,0,144
+reminder,PPO,840000,0,0,0,144
+reminder,PPO,850000,0,0,0,144
+reminder,PPO,860000,0,0,0,144
+reminder,PPO,870000,0,0,0,144
+reminder,PPO,880000,0,0,0,144
+reminder,PPO,890000,0,0,0,144
+reminder,PPO,900000,0,0,0,144
+reminder,PPO,910000,0,0,0,144
+reminder,PPO,920000,0,0,0,144
+reminder,PPO,930000,0,0,0,144
+reminder,PPO,940000,0,0,0,144
+reminder,PPO,950000,0,0,0,144
+reminder,PPO,960000,0,0,0,144
+reminder,PPO,970000,0,0,0,144
+reminder,PPO,980000,0,0,0,144
+reminder,PPO,990000,0,0,0,144
+reminder,PPO,1000000,0,0,0,144
+reminder,PPO,1010000,0,0,0,144
+reminder,PPO,1020000,0,0,0,144
+reminder,PPO,1030000,0,0,0,144
+reminder,PPO,1040000,0,0,0,144
+reminder,PPO,1050000,0,0,0,144
+reminder,PPO,1060000,0,0,0,144
+reminder,PPO,1070000,0,0,0,144
+reminder,PPO,1080000,0,0,0,144
+reminder,PPO,1090000,0,0,0,144
+reminder,PPO,1100000,0,0,0,144
+reminder,PPO,1110000,0,0,0,144
+reminder,PPO,1120000,0,0,0,144
+reminder,PPO,1130000,0,0,0,144
+reminder,PPO,1140000,0,0,0,144
+reminder,PPO,1150000,0,0,0,144
+reminder,PPO,1160000,0,0,0,144
+reminder,PPO,1170000,0,0,0,144
+reminder,PPO,1180000,0,0,0,144
+reminder,PPO,1190000,0,0,0,144
+reminder,PPO,1200000,0,0,0,144
+reminder,PPO,1210000,0,0,0,144
+reminder,PPO,1220000,0,0,0,144
+reminder,PPO,1230000,0,0,0,144
+reminder,PPO,1240000,0,0,0,144
+reminder,PPO,1250000,0,0,0,144
+reminder,PPO,1260000,0,0,0,144
+reminder,PPO,1270000,0,0,0,144
+reminder,PPO,1280000,0,0,0,144
+reminder,PPO,1290000,0,0,0,144
+reminder,PPO,1300000,0,0,0,144
+reminder,PPO,1310000,0,0,0,144
+reminder,PPO,1320000,0,0,0,144
+reminder,PPO,1330000,0,0,0,144
+reminder,PPO,1340000,0,0,0,144
+reminder,PPO,1350000,0,0,0,144
+reminder,PPO,1360000,0,0,0,144
+reminder,PPO,1370000,0,0,0,144
+reminder,PPO,1380000,0,0,0,144
+reminder,PPO,1390000,0,0,0,144
+reminder,PPO,1400000,0,0,0,144
+reminder,PPO,1410000,0,0,0,144
+reminder,PPO,1420000,0,0,0,144
+reminder,PPO,1430000,0,0,0,144
+reminder,PPO,1440000,0,0,0,144
+reminder,PPO,1450000,0,0,0,144
+reminder,PPO,1460000,0,0,0,144
+reminder,PPO,1470000,0,0,0,144
+reminder,PPO,1480000,0,0,0,144
+reminder,PPO,1490000,0,0,0,144
+reminder,PPO,1500000,0,0,0,144
+reminder,PPO,1510000,0,0,0,144
+reminder,PPO,1520000,0,0,0,144
+reminder,PPO,1530000,0,0,0,144
+reminder,PPO,1540000,0,0,0,144
+reminder,PPO,1550000,0,0,0,144
+reminder,PPO,1560000,0,0,0,144
+reminder,PPO,1570000,0,0,0,144
+reminder,PPO,1580000,0,0,0,144
+reminder,PPO,1590000,0,0,0,144
+reminder,PPO,1600000,0,0,0,144
+reminder,PPO,1610000,0,0,0,144
+reminder,PPO,1620000,0,0,0,144
+reminder,PPO,1630000,0,0,0,144
+reminder,PPO,1640000,0,0,0,144
+reminder,PPO,1650000,0,0,0,144
+reminder,PPO,1660000,0,0,0,144
+reminder,PPO,1670000,0,0,0,144
+reminder,PPO,1680000,0,0,0,144
+reminder,PPO,1690000,0,0,0,144
+reminder,PPO,1700000,0,0,0,144
+reminder,PPO,1710000,0,0,0,144
+reminder,PPO,1720000,0,0,0,144
+reminder,PPO,1730000,0,0,0,144
+reminder,PPO,1740000,0,0,0,144
+reminder,PPO,1750000,0,0,0,144
+reminder,PPO,1760000,0,0,0,144
+reminder,PPO,1770000,0,0,0,144
+reminder,PPO,1780000,0,0,0,144
+reminder,PPO,1790000,0,0,0,144
+reminder,PPO,1800000,0,0,0,144
+reminder,PPO,1810000,0,0,0,144
+reminder,PPO,1820000,0,0,0,144
+reminder,PPO,1830000,0,0,0,144
+reminder,PPO,1840000,0,0,0,144
+reminder,PPO,1850000,0,0,0,144
+reminder,PPO,1860000,0,0,0,144
+reminder,PPO,1870000,0,0,0,144
+reminder,PPO,1880000,0,0,0,144
+reminder,PPO,1890000,0,0,0,144
+reminder,PPO,1900000,0,0,0,144
+reminder,PPO,1910000,0,0,0,144
+reminder,PPO,1920000,0,0,0,144
+reminder,PPO,1930000,0,0,0,144
+reminder,PPO,1940000,0,0,0,144
+reminder,PPO,1950000,0,0,0,144
+reminder,PPO,1960000,0,0,0,144
+reminder,PPO,1970000,0,0,0,144
+reminder,PPO,1980000,0,0,0,144
+reminder,PPO,1990000,0,0,0,144
+reminder,PPO,2000000,0,0,0,144
+reminder,PPO,2010000,0,0,0,144
+reminder,PPO,2020000,0,0,0,144
+reminder,PPO,2030000,0,0,0,144
+reminder,PPO,2040000,0,0,0,144
+reminder,PPO,2050000,0,0,0,144
+reminder,PPO,2060000,0,0,0,144
+reminder,PPO,2070000,0,0,0,144
+reminder,PPO,2080000,0,0,0,144
+reminder,PPO,2090000,0,0,0,144
+reminder,PPO,2100000,0,0,0,144
+reminder,PPO,2110000,0,0,0,144
+reminder,PPO,2120000,0,0,0,144
+reminder,PPO,2130000,0,0,0,144
+reminder,PPO,2140000,0,0,0,144
+reminder,PPO,2150000,0,0,0,144
+reminder,PPO,2160000,0,0,0,144
+reminder,PPO,2170000,0,0,0,144
+reminder,PPO,2180000,0,0,0,144
+reminder,PPO,2190000,0,0,0,144
+reminder,PPO,2200000,0,0,0,144
+reminder,PPO,2210000,0,0,0,144
+reminder,PPO,2220000,0,0,0,144
+reminder,PPO,2230000,0,0,0,144
+reminder,PPO,2240000,0,0,0,144
+reminder,PPO,2250000,0,0,0,144
+reminder,PPO,2260000,0,0,0,144
+reminder,PPO,2270000,0,0,0,144
+reminder,PPO,2280000,0,0,0,144
+reminder,PPO,2290000,0,0,0,144
+reminder,PPO,2300000,0,0,0,144
+reminder,PPO,2310000,0,0,0,144
+reminder,PPO,2320000,0,0,0,144
+reminder,PPO,2330000,0,0,0,144
+reminder,PPO,2340000,0,0,0,144
+reminder,PPO,2350000,0,0,0,144
+reminder,PPO,2360000,0,0,0,144
+reminder,PPO,2370000,0,0,0,144
+reminder,PPO,2380000,0,0,0,144
+reminder,PPO,2390000,0,0,0,144
+reminder,PPO,2400000,0,0,0,144
+reminder,PPO,2410000,0,0,0,144
+reminder,PPO,2420000,0,0,0,144
+reminder,PPO,2430000,0,0,0,144
+reminder,PPO,2440000,0,0,0,144
+reminder,PPO,2450000,0,0,0,144
+reminder,PPO,2460000,0,0,0,144
+reminder,PPO,2470000,0,0,0,144
+reminder,PPO,2480000,0,0,0,144
+reminder,PPO,2490000,0,0,0,144
+reminder,PPO,2500000,0,0,0,144
+reminder,PPO,2510000,0,0,0,144
+reminder,PPO,2520000,0,0,0,144
+reminder,PPO,2530000,0,0,0,144
+reminder,PPO,2540000,0,0,0,144
+reminder,PPO,2550000,0,0,0,144
+reminder,PPO,2560000,0,0,0,144
+reminder,PPO,2570000,0,0,0,144
+reminder,PPO,2580000,0,0,0,144
+reminder,PPO,2590000,0,0,0,144
+reminder,PPO,2600000,0,0,0,144
+reminder,PPO,2610000,0,0,0,144
+reminder,PPO,2620000,0,0,0,144
+reminder,PPO,2630000,0,0,0,144
+reminder,PPO,2640000,0,0,0,144
+reminder,PPO,2650000,0,0,0,144
+reminder,PPO,2660000,0,0,0,144
+reminder,PPO,2670000,0,0,0,144
+reminder,PPO,2680000,0,0,0,144
+reminder,PPO,2690000,0,0,0,144
+reminder,PPO,2700000,0,0,0,144
+reminder,PPO,2710000,0,0,0,144
+reminder,PPO,2720000,0,0,0,144
+reminder,PPO,2730000,0,0,0,144
+reminder,PPO,2740000,0,0,0,144
+reminder,PPO,2750000,0,0,0,144
+reminder,PPO,2760000,0,0,0,144
+reminder,PPO,2770000,0,0,0,144
+reminder,PPO,2780000,0,0,0,144
+reminder,PPO,2790000,0,0,0,144
+reminder,PPO,2800000,0,0,0,144
+reminder,PPO,2810000,0,0,0,144
+reminder,PPO,2820000,0,0,0,144
+reminder,PPO,2830000,0,0,0,144
+reminder,PPO,2840000,0,0,0,144
+reminder,PPO,2850000,0,0,0,144
+reminder,PPO,2860000,0,0,0,144
+reminder,PPO,2870000,0,0,0,144
+reminder,PPO,2880000,0,0,0,144
+reminder,PPO,2890000,0,0,0,144
+reminder,PPO,2900000,0,0,0,144
+reminder,PPO,2910000,0,0,0,144
+reminder,PPO,2920000,0,0,0,144
+reminder,PPO,2930000,0,0,0,144
+reminder,PPO,2940000,0,0,0,144
+reminder,PPO,2950000,0,0,0,144
+reminder,PPO,2960000,0,0,0,144
+reminder,PPO,2970000,0,0,0,144
+reminder,PPO,2980000,0,0,0,144
+reminder,PPO,2990000,0,0,0,144
+reminder,PPO,3000000,0,0,0,144
+reminder,PPO,3010000,0,0,0,144
+reminder,PPO,3020000,0,0,0,144
+reminder,PPO,3030000,0,0,0,144
+reminder,PPO,3040000,0,0,0,144
+reminder,PPO,3050000,0,0,0,144
+reminder,PPO,3060000,0,0,0,144
+reminder,PPO,3070000,0,0,0,144
+reminder,PPO,3080000,0,0,0,144
+reminder,PPO,3090000,0,0,0,144
+reminder,PPO,3100000,0,0,0,144
+reminder,PPO,3110000,0,0,0,144
+reminder,PPO,3120000,0,0,0,144
+reminder,PPO,3130000,0,0,0,144
+reminder,PPO,3140000,0,0,0,144
+reminder,PPO,3150000,0,0,0,144
+reminder,PPO,3160000,0,0,0,144
+reminder,PPO,3170000,0,0,0,144
+reminder,PPO,3180000,0,0,0,144
+reminder,PPO,3190000,0,0,0,144
+reminder,PPO,3200000,0,0,0,144
+reminder,PPO,3210000,0,0,0,144
+reminder,PPO,3220000,0,0,0,144
+reminder,PPO,3230000,0,0,0,144
+reminder,PPO,3240000,0,0,0,144
+reminder,PPO,3250000,0,0,0,144
+reminder,PPO,3260000,0,0,0,144
+reminder,PPO,3270000,0,0,0,144
+reminder,PPO,3280000,0,0,0,144
+reminder,PPO,3290000,0,0,0,144
+reminder,PPO,3300000,0,0,0,144
+reminder,PPO,3310000,0,0,0,144
+reminder,PPO,3320000,0,0,0,144
+reminder,PPO,3330000,0,0,0,144
+reminder,PPO,3340000,0,0,0,144
+reminder,PPO,3350000,0,0,0,144
+reminder,PPO,3360000,0,0,0,144
+reminder,PPO,3370000,0,0,0,144
+reminder,PPO,3380000,0,0,0,144
+reminder,PPO,3390000,0,0,0,144
+reminder,PPO,3400000,0,0,0,144
+reminder,PPO,3410000,0,0,0,144
+reminder,PPO,3420000,0,0,0,144
+reminder,PPO,3430000,0,0,0,144
+reminder,PPO,3440000,0,0,0,144
+reminder,PPO,3450000,0,0,0,144
+reminder,PPO,3460000,0,0,0,144
+reminder,PPO,3470000,0,0,0,144
+reminder,PPO,3480000,0,0,0,144
+reminder,PPO,3490000,0,0,0,144
+reminder,PPO,3500000,0,0,0,144
+reminder,PPO,3510000,0,0,0,144
+reminder,PPO,3520000,0,0,0,144
+reminder,PPO,3530000,0,0,0,144
+reminder,PPO,3540000,0,0,0,144
+reminder,PPO,3550000,0,0,0,144
+reminder,PPO,3560000,0,0,0,144
+reminder,PPO,3570000,0,0,0,144
+reminder,PPO,3580000,0,0,0,144
+reminder,PPO,3590000,0,0,0,144
+reminder,PPO,3600000,0,0,0,144
+reminder,PPO,3610000,0,0,0,144
+reminder,PPO,3620000,0,0,0,144
+reminder,PPO,3630000,0,0,0,144
+reminder,PPO,3640000,0,0,0,144
+reminder,PPO,3650000,0,0,0,144
+reminder,PPO,3660000,0,0,0,144
+reminder,PPO,3670000,0,0,0,144
+reminder,PPO,3680000,0,0,0,144
+reminder,PPO,3690000,0,0,0,144
+reminder,PPO,3700000,0,0,0,144
+reminder,PPO,3710000,0,0,0,144
+reminder,PPO,3720000,0,0,0,144
+reminder,PPO,3730000,0,0,0,144
+reminder,PPO,3740000,0,0,0,144
+reminder,PPO,3750000,0,0,0,144
+reminder,PPO,3760000,0,0,0,144
+reminder,PPO,3770000,0,0,0,144
+reminder,PPO,3780000,0,0,0,144
+reminder,PPO,3790000,0,0,0,144
+reminder,PPO,3800000,0,0,0,144
+reminder,PPO,3810000,0,0,0,144
+reminder,PPO,3820000,0,0,0,144
+reminder,PPO,3830000,0,0,0,144
+reminder,PPO,3840000,0,0,0,144
+reminder,PPO,3850000,0,0,0,144
+reminder,PPO,3860000,0,0,0,144
+reminder,PPO,3870000,0,0,0,144
+reminder,PPO,3880000,0,0,0,144
+reminder,PPO,3890000,0,0,0,144
+reminder,PPO,3900000,0,0,0,144
+reminder,PPO,3910000,0,0,0,144
+reminder,PPO,3920000,0,0,0,144
+reminder,PPO,3930000,0,0,0,144
+reminder,PPO,3940000,0,0,0,144
+reminder,PPO,3950000,0,0,0,144
+reminder,PPO,3960000,0,0,0,144
+reminder,PPO,3970000,0,0,0,144
+reminder,PPO,3980000,0,0,0,144
+reminder,PPO,3990000,0,0,0,144
+reminder,PPO,4000000,0,0,0,144
+reminder,PPO,4010000,0,0,0,144
+reminder,PPO,4020000,0,0,0,144
+reminder,PPO,4030000,0,0,0,144
+reminder,PPO,4040000,0,0,0,144
+reminder,PPO,4050000,0,0,0,144
+reminder,PPO,4060000,0,0,0,144
+reminder,PPO,4070000,0,0,0,144
+reminder,PPO,4080000,0,0,0,144
+reminder,PPO,4090000,0,0,0,144
+reminder,PPO,4100000,0,0,0,144
+reminder,PPO,4110000,0,0,0,144
+reminder,PPO,4120000,0,0,0,144
+reminder,PPO,4130000,0,0,0,144
+reminder,PPO,4140000,0,0,0,144
+reminder,PPO,4150000,0,0,0,144
+reminder,PPO,4160000,0,0,0,144
+reminder,PPO,4170000,0,0,0,144
+reminder,PPO,4180000,0,0,0,144
+reminder,PPO,4190000,0,0,0,144
+reminder,PPO,4200000,0,0,0,144
+reminder,PPO,4210000,0,0,0,144
+reminder,PPO,4220000,0,0,0,144
+reminder,PPO,4230000,0,0,0,144
+reminder,PPO,4240000,0,0,0,144
+reminder,PPO,4250000,0,0,0,144
+reminder,PPO,4260000,0,0,0,144
+reminder,PPO,4270000,0,0,0,144
+reminder,PPO,4280000,0,0,0,144
+reminder,PPO,4290000,0,0,0,144
+reminder,PPO,4300000,0,0,0,144
+reminder,PPO,4310000,0,0,0,144
+reminder,PPO,4320000,0,0,0,144
+reminder,PPO,4330000,0,0,0,144
+reminder,PPO,4340000,0,0,0,144
+reminder,PPO,4350000,0,0,0,144
+reminder,PPO,4360000,0,0,0,144
+reminder,PPO,4370000,0,0,0,144
+reminder,PPO,4380000,0,0,0,144
+reminder,PPO,4390000,0,0,0,144
+reminder,PPO,4400000,0,0,0,144
+reminder,PPO,4410000,0,0,0,144
+reminder,PPO,4420000,0,0,0,144
+reminder,PPO,4430000,0,0,0,144
+reminder,PPO,4440000,0,0,0,144
+reminder,PPO,4450000,0,0,0,144
+reminder,PPO,4460000,0,0,0,144
+reminder,PPO,4470000,0,0,0,144
+reminder,PPO,4480000,0,0,0,144
+reminder,PPO,4490000,0,0,0,144
+reminder,PPO,4500000,0,0,0,144
+reminder,PPO,4510000,0,0,0,144
+reminder,PPO,4520000,0,0,0,144
+reminder,PPO,4530000,0,0,0,144
+reminder,PPO,4540000,0,0,0,144
+reminder,PPO,4550000,0,0,0,144
+reminder,PPO,4560000,0,0,0,144
+reminder,PPO,4570000,0,0,0,144
+reminder,PPO,4580000,0,0,0,144
+reminder,PPO,4590000,0,0,0,144
+reminder,PPO,4600000,0,0,0,144
+reminder,PPO,4610000,0,0,0,144
+reminder,PPO,4620000,0,0,0,144
+reminder,PPO,4630000,0,0,0,144
+reminder,PPO,4640000,0,0,0,144
+reminder,PPO,4650000,0,0,0,144
+reminder,PPO,4660000,0,0,0,144
+reminder,PPO,4670000,0,0,0,144
+reminder,PPO,4680000,0,0,0,144
+reminder,PPO,4690000,0,0,0,144
+reminder,PPO,4700000,0,0,0,144
+reminder,PPO,4710000,0,0,0,144
+reminder,PPO,4720000,0,0,0,144
+reminder,PPO,4730000,0,0,0,144
+reminder,PPO,4740000,0,0,0,144
+reminder,PPO,4750000,0,0,0,144
+reminder,PPO,4760000,0,0,0,144
+reminder,PPO,4770000,0,0,0,144
+reminder,PPO,4780000,0,0,0,144
+reminder,PPO,4790000,0,0,0,144
+reminder,PPO,4800000,0,0,0,144
+reminder,PPO,4810000,0,0,0,144
+reminder,PPO,4820000,0,0,0,144
+reminder,PPO,4830000,0,0,0,144
+reminder,PPO,4840000,0,0,0,144
+reminder,PPO,4850000,0,0,0,144
+reminder,PPO,4860000,0,0,0,144
+reminder,PPO,4870000,0,0,0,144
+reminder,PPO,4880000,0,0,0,144
+reminder,PPO,4890000,0,0,0,144
+reminder,PPO,4900000,0,0,0,144
+reminder,PPO,4910000,0,0,0,144
+reminder,PPO,4920000,0,0,0,144
+reminder,PPO,4930000,0,0,0,144
+reminder,PPO,4940000,0,0,0,144
+reminder,PPO,4950000,0,0,0,144
+reminder,PPO,4960000,0,0,0,144
+reminder,PPO,4970000,0,0,0,144
+reminder,PPO,4980000,0,0,0,144
+reminder,PPO,4990000,0,0,0,144
+reminder,PPO,5000000,0,0,0,144
+reminder,PPO + V̂0 observation,10000,0.312351,-0.057404,0.700055,144
+reminder,PPO + V̂0 observation,20000,1.43393,0.818378,2.01943,144
+reminder,PPO + V̂0 observation,30000,1.82171,1.31607,2.51551,144
+reminder,PPO + V̂0 observation,40000,1.6514,1.18051,2.24332,144
+reminder,PPO + V̂0 observation,50000,1.68022,1.19275,2.22071,144
+reminder,PPO + V̂0 observation,60000,1.46031,1.00863,1.93467,144
+reminder,PPO + V̂0 observation,70000,1.70049,1.22761,2.25058,144
+reminder,PPO + V̂0 observation,80000,1.55267,1.1471,2.07558,144
+reminder,PPO + V̂0 observation,90000,1.59709,1.13277,2.14217,144
+reminder,PPO + V̂0 observation,100000,1.58923,1.11749,2.01446,144
+reminder,PPO + V̂0 observation,110000,1.43664,1.11845,1.97796,144
+reminder,PPO + V̂0 observation,120000,1.38935,1.05809,1.99174,144
+reminder,PPO + V̂0 observation,130000,1.42985,1.01105,1.90804,144
+reminder,PPO + V̂0 observation,140000,1.40942,1.02354,2.01239,144
+reminder,PPO + V̂0 observation,150000,1.42856,1.00271,1.9607,144
+reminder,PPO + V̂0 observation,160000,1.52066,1.00528,1.97739,144
+reminder,PPO + V̂0 observation,170000,1.57676,1.04631,2.02467,144
+reminder,PPO + V̂0 observation,180000,1.55142,1.10285,2.00773,144
+reminder,PPO + V̂0 observation,190000,1.41896,1.02105,1.78984,144
+reminder,PPO + V̂0 observation,200000,1.519,1.09452,2.02817,144
+reminder,PPO + V̂0 observation,210000,1.47296,0.992663,1.9786,144
+reminder,PPO + V̂0 observation,220000,1.42812,1.07795,1.99298,144
+reminder,PPO + V̂0 observation,230000,1.54092,1.08091,2.01758,144
+reminder,PPO + V̂0 observation,240000,1.47351,1.10517,1.91329,144
+reminder,PPO + V̂0 observation,250000,1.4853,1.09131,2.02702,144
+reminder,PPO + V̂0 observation,260000,1.55839,1.11561,1.98007,144
+reminder,PPO + V̂0 observation,270000,1.53679,1.16256,1.98073,144
+reminder,PPO + V̂0 observation,280000,1.46527,1.09639,1.98841,144
+reminder,PPO + V̂0 observation,290000,1.37346,0.921155,1.88336,144
+reminder,PPO + V̂0 observation,300000,1.26434,0.890674,1.78105,144
+reminder,PPO + V̂0 observation,310000,1.36473,0.973261,1.78397,144
+reminder,PPO + V̂0 observation,320000,1.52458,1.15325,1.91617,144
+reminder,PPO + V̂0 observation,330000,1.47651,1.0498,1.88917,144
+reminder,PPO + V̂0 observation,340000,1.38097,1.05142,1.89904,144
+reminder,PPO + V̂0 observation,350000,1.52392,1.03884,1.93103,144
+reminder,PPO + V̂0 observation,360000,1.33208,0.94763,1.7462,144
+reminder,PPO + V̂0 observation,370000,1.48631,0.969069,1.96039,144
+reminder,PPO + V̂0 observation,380000,1.33488,1.02259,2.06462,144
+reminder,PPO + V̂0 observation,390000,1.42137,1.01715,1.90654,144
+reminder,PPO + V̂0 observation,400000,1.51207,1.02952,2.05376,144
+reminder,PPO + V̂0 observation,410000,1.39605,1.0367,1.95668,144
+reminder,PPO + V̂0 observation,420000,1.53589,1.05656,2.15693,144
+reminder,PPO + V̂0 observation,430000,1.47374,1.0687,1.97102,144
+reminder,PPO + V̂0 observation,440000,1.47589,1.11168,2.14916,144
+reminder,PPO + V̂0 observation,450000,1.55359,1.10343,2.05135,144
+reminder,PPO + V̂0 observation,460000,1.50269,1.12991,2.0043,144
+reminder,PPO + V̂0 observation,470000,1.67795,1.30747,2.03057,144
+reminder,PPO + V̂0 observation,480000,1.54569,1.1017,2.05591,144
+reminder,PPO + V̂0 observation,490000,1.51485,1.12541,2.10501,144
+reminder,PPO + V̂0 observation,500000,1.68227,1.14946,2.16538,144
+reminder,PPO + V̂0 observation,510000,1.60917,1.14004,2.23287,144
+reminder,PPO + V̂0 observation,520000,1.52262,1.05535,1.98213,144
+reminder,PPO + V̂0 observation,530000,1.45517,1.04619,1.88173,144
+reminder,PPO + V̂0 observation,540000,1.48396,0.919436,1.93892,144
+reminder,PPO + V̂0 observation,550000,1.4871,1.15308,2.16349,144
+reminder,PPO + V̂0 observation,560000,1.56863,1.18356,1.9681,144
+reminder,PPO + V̂0 observation,570000,1.6662,1.15069,2.1736,144
+reminder,PPO + V̂0 observation,580000,1.49611,1.09199,2.0534,144
+reminder,PPO + V̂0 observation,590000,1.44943,1.10657,1.94071,144
+reminder,PPO + V̂0 observation,600000,1.54457,1.15851,2.25632,144
+reminder,PPO + V̂0 observation,610000,1.62529,1.12829,2.0129,144
+reminder,PPO + V̂0 observation,620000,1.4906,1.1226,1.97302,144
+reminder,PPO + V̂0 observation,630000,1.62028,1.18889,2.20023,144
+reminder,PPO + V̂0 observation,640000,1.64761,1.28475,2.10216,144
+reminder,PPO + V̂0 observation,650000,1.67974,1.24533,2.10138,144
+reminder,PPO + V̂0 observation,660000,1.56574,1.24195,2.057,144
+reminder,PPO + V̂0 observation,670000,1.68028,1.28889,2.22281,144
+reminder,PPO + V̂0 observation,680000,1.79235,1.26651,2.28002,144
+reminder,PPO + V̂0 observation,690000,1.60421,1.18495,2.04493,144
+reminder,PPO + V̂0 observation,700000,1.6133,1.14651,2.19487,144
+reminder,PPO + V̂0 observation,710000,1.5632,1.17511,2.02528,144
+reminder,PPO + V̂0 observation,720000,1.57052,1.138,2.15537,144
+reminder,PPO + V̂0 observation,730000,1.5678,1.08618,2.05164,144
+reminder,PPO + V̂0 observation,740000,1.46427,1.0799,1.98455,144
+reminder,PPO + V̂0 observation,750000,1.70325,1.20043,2.23343,144
+reminder,PPO + V̂0 observation,760000,1.62046,1.13653,2.2415,144
+reminder,PPO + V̂0 observation,770000,1.38645,0.996384,2.03142,144
+reminder,PPO + V̂0 observation,780000,1.63559,1.14165,2.25277,144
+reminder,PPO + V̂0 observation,790000,1.65153,1.155,2.22547,144
+reminder,PPO + V̂0 observation,800000,1.63461,1.22372,2.10077,144
+reminder,PPO + V̂0 observation,810000,1.67326,1.20971,2.23803,144
+reminder,PPO + V̂0 observation,820000,1.70331,1.22119,2.23915,144
+reminder,PPO + V̂0 observation,830000,1.55007,1.08837,2.15513,144
+reminder,PPO + V̂0 observation,840000,1.72273,1.11889,2.21689,144
+reminder,PPO + V̂0 observation,850000,1.65199,1.13867,2.10337,144
+reminder,PPO + V̂0 observation,860000,1.6293,1.27888,2.16281,144
+reminder,PPO + V̂0 observation,870000,1.54109,1.17647,2.09406,144
+reminder,PPO + V̂0 observation,880000,1.52942,1.11941,2.02464,144
+reminder,PPO + V̂0 observation,890000,1.52693,1.12707,2.10523,144
+reminder,PPO + V̂0 observation,900000,1.62506,1.17674,2.11673,144
+reminder,PPO + V̂0 observation,910000,1.51888,1.23301,2.02298,144
+reminder,PPO + V̂0 observation,920000,1.61873,1.12271,2.27323,144
+reminder,PPO + V̂0 observation,930000,1.51826,1.13233,1.94411,144
+reminder,PPO + V̂0 observation,940000,1.57489,1.15237,2.12359,144
+reminder,PPO + V̂0 observation,950000,1.45525,1.12219,2.01115,144
+reminder,PPO + V̂0 observation,960000,1.5907,1.12918,2.18991,144
+reminder,PPO + V̂0 observation,970000,1.57915,1.17926,2.03013,144
+reminder,PPO + V̂0 observation,980000,1.59272,1.23119,2.04173,144
+reminder,PPO + V̂0 observation,990000,1.70923,1.17958,2.32185,144
+reminder,PPO + V̂0 observation,1000000,1.67218,1.16731,2.29067,144
+reminder,PPO + V̂0 observation,1010000,1.66501,1.1347,2.14488,144
+reminder,PPO + V̂0 observation,1020000,1.76809,1.17357,2.30748,144
+reminder,PPO + V̂0 observation,1030000,1.751,1.21286,2.12254,144
+reminder,PPO + V̂0 observation,1040000,1.70241,1.21933,2.24842,144
+reminder,PPO + V̂0 observation,1050000,1.62556,1.20736,2.12432,144
+reminder,PPO + V̂0 observation,1060000,1.66763,1.19111,2.20863,144
+reminder,PPO + V̂0 observation,1070000,1.70364,1.26726,2.32874,144
+reminder,PPO + V̂0 observation,1080000,1.76628,1.28245,2.13271,144
+reminder,PPO + V̂0 observation,1090000,1.66249,1.215,2.16252,144
+reminder,PPO + V̂0 observation,1100000,1.82443,1.36565,2.45677,144
+reminder,PPO + V̂0 observation,1110000,1.51419,1.10488,2.13607,144
+reminder,PPO + V̂0 observation,1120000,1.70074,1.30977,2.17694,144
+reminder,PPO + V̂0 observation,1130000,1.73806,1.20838,2.2809,144
+reminder,PPO + V̂0 observation,1140000,1.75699,1.36692,2.23473,144
+reminder,PPO + V̂0 observation,1150000,1.83005,1.31756,2.24968,144
+reminder,PPO + V̂0 observation,1160000,1.71803,1.14442,2.35425,144
+reminder,PPO + V̂0 observation,1170000,1.79684,1.2419,2.39104,144
+reminder,PPO + V̂0 observation,1180000,1.61365,1.22036,2.15837,144
+reminder,PPO + V̂0 observation,1190000,1.76362,1.24071,2.44613,144
+reminder,PPO + V̂0 observation,1200000,1.8012,1.35316,2.31273,144
+reminder,PPO + V̂0 observation,1210000,1.89822,1.29664,2.42988,144
+reminder,PPO + V̂0 observation,1220000,1.83185,1.38449,2.383,144
+reminder,PPO + V̂0 observation,1230000,1.68965,1.2947,2.18291,144
+reminder,PPO + V̂0 observation,1240000,1.70655,1.20138,2.23647,144
+reminder,PPO + V̂0 observation,1250000,1.65132,1.24591,2.1311,144
+reminder,PPO + V̂0 observation,1260000,1.73361,1.21416,2.20975,144
+reminder,PPO + V̂0 observation,1270000,1.88222,1.43396,2.37887,144
+reminder,PPO + V̂0 observation,1280000,1.66579,1.20361,2.22,144
+reminder,PPO + V̂0 observation,1290000,1.80063,1.39675,2.33305,144
+reminder,PPO + V̂0 observation,1300000,1.73751,1.22757,2.37106,144
+reminder,PPO + V̂0 observation,1310000,1.74368,1.31681,2.38647,144
+reminder,PPO + V̂0 observation,1320000,1.80525,1.36751,2.33051,144
+reminder,PPO + V̂0 observation,1330000,1.82781,1.36129,2.2724,144
+reminder,PPO + V̂0 observation,1340000,1.73716,1.22363,2.13687,144
+reminder,PPO + V̂0 observation,1350000,1.70676,1.24992,2.24031,144
+reminder,PPO + V̂0 observation,1360000,1.82193,1.33855,2.28289,144
+reminder,PPO + V̂0 observation,1370000,1.84334,1.31933,2.66301,144
+reminder,PPO + V̂0 observation,1380000,1.92646,1.45692,2.60543,144
+reminder,PPO + V̂0 observation,1390000,1.92227,1.43523,2.46036,144
+reminder,PPO + V̂0 observation,1400000,1.77945,1.40154,2.32553,144
+reminder,PPO + V̂0 observation,1410000,1.74228,1.22544,2.24,144
+reminder,PPO + V̂0 observation,1420000,1.74752,1.28177,2.43001,144
+reminder,PPO + V̂0 observation,1430000,1.65104,1.26265,2.35515,144
+reminder,PPO + V̂0 observation,1440000,1.82146,1.33413,2.47951,144
+reminder,PPO + V̂0 observation,1450000,1.77014,1.29535,2.24726,144
+reminder,PPO + V̂0 observation,1460000,1.89354,1.23631,2.53249,144
+reminder,PPO + V̂0 observation,1470000,1.8165,1.25527,2.26015,144
+reminder,PPO + V̂0 observation,1480000,1.76619,1.29485,2.47249,144
+reminder,PPO + V̂0 observation,1490000,1.68558,1.22567,2.18143,144
+reminder,PPO + V̂0 observation,1500000,1.87391,1.31007,2.34361,144
+reminder,PPO + V̂0 observation,1510000,1.71515,1.1996,2.16153,144
+reminder,PPO + V̂0 observation,1520000,1.72704,1.24046,2.39304,144
+reminder,PPO + V̂0 observation,1530000,1.71924,1.2293,2.35008,144
+reminder,PPO + V̂0 observation,1540000,1.7965,1.20896,2.20278,144
+reminder,PPO + V̂0 observation,1550000,1.94867,1.23406,2.39373,144
+reminder,PPO + V̂0 observation,1560000,1.69096,1.25653,2.15821,144
+reminder,PPO + V̂0 observation,1570000,1.75122,1.23173,2.25533,144
+reminder,PPO + V̂0 observation,1580000,1.73703,1.11938,2.3561,144
+reminder,PPO + V̂0 observation,1590000,1.85527,1.34537,2.44121,144
+reminder,PPO + V̂0 observation,1600000,1.76537,1.3377,2.08238,144
+reminder,PPO + V̂0 observation,1610000,1.80833,1.27024,2.25115,144
+reminder,PPO + V̂0 observation,1620000,1.77346,1.32087,2.30148,144
+reminder,PPO + V̂0 observation,1630000,1.61996,1.11189,2.20822,144
+reminder,PPO + V̂0 observation,1640000,1.84818,1.32574,2.32034,144
+reminder,PPO + V̂0 observation,1650000,1.75341,1.29242,2.21172,144
+reminder,PPO + V̂0 observation,1660000,1.75982,1.27179,2.29779,144
+reminder,PPO + V̂0 observation,1670000,1.85274,1.36321,2.42301,144
+reminder,PPO + V̂0 observation,1680000,1.81563,1.33292,2.37151,144
+reminder,PPO + V̂0 observation,1690000,1.76957,1.18346,2.40524,144
+reminder,PPO + V̂0 observation,1700000,1.85137,1.4196,2.43439,144
+reminder,PPO + V̂0 observation,1710000,1.69705,1.17298,2.29792,144
+reminder,PPO + V̂0 observation,1720000,1.8075,1.29386,2.14881,144
+reminder,PPO + V̂0 observation,1730000,1.79487,1.33456,2.32678,144
+reminder,PPO + V̂0 observation,1740000,1.77984,1.30705,2.34442,144
+reminder,PPO + V̂0 observation,1750000,1.8299,1.2796,2.31045,144
+reminder,PPO + V̂0 observation,1760000,1.83525,1.385,2.4232,144
+reminder,PPO + V̂0 observation,1770000,1.83411,1.28409,2.37717,144
+reminder,PPO + V̂0 observation,1780000,1.74054,1.34595,2.2426,144
+reminder,PPO + V̂0 observation,1790000,1.71894,1.33412,2.30984,144
+reminder,PPO + V̂0 observation,1800000,1.69492,1.25566,2.19733,144
+reminder,PPO + V̂0 observation,1810000,1.82098,1.25523,2.23714,144
+reminder,PPO + V̂0 observation,1820000,1.8658,1.3401,2.33352,144
+reminder,PPO + V̂0 observation,1830000,1.75522,1.28148,2.21242,144
+reminder,PPO + V̂0 observation,1840000,1.67982,1.24423,2.34818,144
+reminder,PPO + V̂0 observation,1850000,1.79765,1.30363,2.32343,144
+reminder,PPO + V̂0 observation,1860000,1.76211,1.2973,2.24172,144
+reminder,PPO + V̂0 observation,1870000,1.87159,1.41946,2.35567,144
+reminder,PPO + V̂0 observation,1880000,1.80265,1.31677,2.19284,144
+reminder,PPO + V̂0 observation,1890000,1.78989,1.37406,2.4836,144
+reminder,PPO + V̂0 observation,1900000,1.91931,1.49297,2.543,144
+reminder,PPO + V̂0 observation,1910000,1.73015,1.30483,2.15499,144
+reminder,PPO + V̂0 observation,1920000,1.7861,1.36894,2.30494,144
+reminder,PPO + V̂0 observation,1930000,1.74781,1.34744,2.44189,144
+reminder,PPO + V̂0 observation,1940000,1.93297,1.43353,2.28832,144
+reminder,PPO + V̂0 observation,1950000,1.74642,1.2526,2.16895,144
+reminder,PPO + V̂0 observation,1960000,1.76996,1.34433,2.39003,144
+reminder,PPO + V̂0 observation,1970000,1.7796,1.27952,2.18948,144
+reminder,PPO + V̂0 observation,1980000,1.68659,1.17727,2.26213,144
+reminder,PPO + V̂0 observation,1990000,1.63388,1.26011,2.30427,144
+reminder,PPO + V̂0 observation,2000000,1.65824,1.32224,2.1596,144
+reminder,PPO + V̂0 observation,2010000,1.7128,1.17362,2.33752,144
+reminder,PPO + V̂0 observation,2020000,1.71636,1.20475,2.29074,144
+reminder,PPO + V̂0 observation,2030000,1.79861,1.20098,2.37188,144
+reminder,PPO + V̂0 observation,2040000,1.68995,1.3235,2.06867,144
+reminder,PPO + V̂0 observation,2050000,1.77396,1.33752,2.34112,144
+reminder,PPO + V̂0 observation,2060000,1.70374,1.28443,2.32259,144
+reminder,PPO + V̂0 observation,2070000,1.89323,1.29131,2.49667,144
+reminder,PPO + V̂0 observation,2080000,1.78256,1.2972,2.29095,144
+reminder,PPO + V̂0 observation,2090000,1.84476,1.38464,2.33768,144
+reminder,PPO + V̂0 observation,2100000,1.74882,1.25691,2.21167,144
+reminder,PPO + V̂0 observation,2110000,1.7161,1.29728,2.2528,144
+reminder,PPO + V̂0 observation,2120000,1.73008,1.2904,2.25397,144
+reminder,PPO + V̂0 observation,2130000,1.7357,1.25645,2.27139,144
+reminder,PPO + V̂0 observation,2140000,1.93023,1.4104,2.53394,144
+reminder,PPO + V̂0 observation,2150000,1.77513,1.28535,2.40892,144
+reminder,PPO + V̂0 observation,2160000,1.8482,1.34116,2.31046,144
+reminder,PPO + V̂0 observation,2170000,1.79185,1.3579,2.504,144
+reminder,PPO + V̂0 observation,2180000,1.76449,1.27624,2.35169,144
+reminder,PPO + V̂0 observation,2190000,1.79248,1.30189,2.31606,144
+reminder,PPO + V̂0 observation,2200000,1.86739,1.44123,2.3182,144
+reminder,PPO + V̂0 observation,2210000,1.71632,1.30647,2.33685,144
+reminder,PPO + V̂0 observation,2220000,1.84491,1.42794,2.44481,144
+reminder,PPO + V̂0 observation,2230000,1.74624,1.3119,2.18952,144
+reminder,PPO + V̂0 observation,2240000,1.70048,1.31924,2.22555,144
+reminder,PPO + V̂0 observation,2250000,1.85601,1.36406,2.36084,144
+reminder,PPO + V̂0 observation,2260000,1.84901,1.40207,2.38314,144
+reminder,PPO + V̂0 observation,2270000,1.73568,1.27809,2.28602,144
+reminder,PPO + V̂0 observation,2280000,1.96582,1.52198,2.46531,144
+reminder,PPO + V̂0 observation,2290000,1.81286,1.38507,2.32945,144
+reminder,PPO + V̂0 observation,2300000,1.74984,1.25872,2.30957,144
+reminder,PPO + V̂0 observation,2310000,1.87053,1.20331,2.40653,144
+reminder,PPO + V̂0 observation,2320000,1.66955,1.13221,2.12714,144
+reminder,PPO + V̂0 observation,2330000,1.9508,1.37924,2.35122,144
+reminder,PPO + V̂0 observation,2340000,1.8229,1.30658,2.30885,144
+reminder,PPO + V̂0 observation,2350000,1.85374,1.39049,2.33199,144
+reminder,PPO + V̂0 observation,2360000,1.87596,1.40696,2.40985,144
+reminder,PPO + V̂0 observation,2370000,1.75824,1.21229,2.37469,144
+reminder,PPO + V̂0 observation,2380000,1.77099,1.21381,2.29343,144
+reminder,PPO + V̂0 observation,2390000,1.77455,1.34279,2.36989,144
+reminder,PPO + V̂0 observation,2400000,1.64854,1.25692,2.19057,144
+reminder,PPO + V̂0 observation,2410000,1.72369,1.18144,2.32703,144
+reminder,PPO + V̂0 observation,2420000,1.82767,1.31851,2.49439,144
+reminder,PPO + V̂0 observation,2430000,1.92442,1.4011,2.54217,144
+reminder,PPO + V̂0 observation,2440000,1.97967,1.28276,2.44321,144
+reminder,PPO + V̂0 observation,2450000,1.84211,1.40871,2.43512,144
+reminder,PPO + V̂0 observation,2460000,1.83091,1.36858,2.71772,144
+reminder,PPO + V̂0 observation,2470000,1.79462,1.38639,2.31647,144
+reminder,PPO + V̂0 observation,2480000,1.93833,1.37955,2.48919,144
+reminder,PPO + V̂0 observation,2490000,1.90397,1.44834,2.44609,144
+reminder,PPO + V̂0 observation,2500000,1.84328,1.39568,2.49094,144
+reminder,PPO + V̂0 observation,2510000,1.8555,1.29929,2.31461,144
+reminder,PPO + V̂0 observation,2520000,1.82727,1.3262,2.4495,144
+reminder,PPO + V̂0 observation,2530000,1.8502,1.29353,2.19133,144
+reminder,PPO + V̂0 observation,2540000,1.80814,1.37361,2.42361,144
+reminder,PPO + V̂0 observation,2550000,1.81687,1.30387,2.45153,144
+reminder,PPO + V̂0 observation,2560000,1.81182,1.32255,2.33409,144
+reminder,PPO + V̂0 observation,2570000,1.69378,1.28223,2.23731,144
+reminder,PPO + V̂0 observation,2580000,1.67418,1.26648,2.19185,144
+reminder,PPO + V̂0 observation,2590000,1.88622,1.39878,2.37215,144
+reminder,PPO + V̂0 observation,2600000,1.83888,1.2811,2.46513,144
+reminder,PPO + V̂0 observation,2610000,1.7841,1.3625,2.33991,144
+reminder,PPO + V̂0 observation,2620000,1.83521,1.34741,2.34475,144
+reminder,PPO + V̂0 observation,2630000,1.80258,1.3355,2.51227,144
+reminder,PPO + V̂0 observation,2640000,1.83867,1.27545,2.30342,144
+reminder,PPO + V̂0 observation,2650000,1.82887,1.30726,2.27176,144
+reminder,PPO + V̂0 observation,2660000,1.86412,1.35851,2.52677,144
+reminder,PPO + V̂0 observation,2670000,2.01653,1.46323,2.65321,144
+reminder,PPO + V̂0 observation,2680000,1.99661,1.4809,2.67078,144
+reminder,PPO + V̂0 observation,2690000,1.8009,1.3094,2.39864,144
+reminder,PPO + V̂0 observation,2700000,1.89212,1.37874,2.40871,144
+reminder,PPO + V̂0 observation,2710000,1.85728,1.44362,2.42409,144
+reminder,PPO + V̂0 observation,2720000,1.91336,1.36284,2.47466,144
+reminder,PPO + V̂0 observation,2730000,1.92179,1.42485,2.62572,144
+reminder,PPO + V̂0 observation,2740000,1.77184,1.31757,2.35647,144
+reminder,PPO + V̂0 observation,2750000,1.81251,1.36177,2.42101,144
+reminder,PPO + V̂0 observation,2760000,1.84652,1.35485,2.65895,144
+reminder,PPO + V̂0 observation,2770000,1.93042,1.37393,2.37773,144
+reminder,PPO + V̂0 observation,2780000,2.00023,1.36606,2.48116,144
+reminder,PPO + V̂0 observation,2790000,1.83961,1.30479,2.35693,144
+reminder,PPO + V̂0 observation,2800000,1.85762,1.38981,2.62816,144
+reminder,PPO + V̂0 observation,2810000,1.6568,1.27184,2.30522,144
+reminder,PPO + V̂0 observation,2820000,1.86146,1.26499,2.32565,144
+reminder,PPO + V̂0 observation,2830000,1.96659,1.42552,2.50709,144
+reminder,PPO + V̂0 observation,2840000,1.85001,1.35798,2.35658,144
+reminder,PPO + V̂0 observation,2850000,1.9272,1.48708,2.4009,144
+reminder,PPO + V̂0 observation,2860000,1.87879,1.33886,2.2812,144
+reminder,PPO + V̂0 observation,2870000,1.95774,1.45476,2.5277,144
+reminder,PPO + V̂0 observation,2880000,1.79714,1.39077,2.42325,144
+reminder,PPO + V̂0 observation,2890000,1.87891,1.35463,2.41171,144
+reminder,PPO + V̂0 observation,2900000,1.84986,1.42695,2.48453,144
+reminder,PPO + V̂0 observation,2910000,2.01329,1.43466,2.48963,144
+reminder,PPO + V̂0 observation,2920000,1.85296,1.31355,2.44721,144
+reminder,PPO + V̂0 observation,2930000,1.91853,1.32062,2.35154,144
+reminder,PPO + V̂0 observation,2940000,1.88189,1.35501,2.43549,144
+reminder,PPO + V̂0 observation,2950000,1.76142,1.22523,2.27683,144
+reminder,PPO + V̂0 observation,2960000,2.01374,1.38902,2.54652,144
+reminder,PPO + V̂0 observation,2970000,1.91346,1.33404,2.47801,144
+reminder,PPO + V̂0 observation,2980000,1.86323,1.34626,2.43479,144
+reminder,PPO + V̂0 observation,2990000,1.90375,1.32046,2.45434,144
+reminder,PPO + V̂0 observation,3000000,1.83378,1.30074,2.38128,144
+reminder,PPO + V̂0 observation,3010000,1.98705,1.41969,2.68771,144
+reminder,PPO + V̂0 observation,3020000,1.79666,1.23946,2.3663,144
+reminder,PPO + V̂0 observation,3030000,1.90133,1.49603,2.50077,144
+reminder,PPO + V̂0 observation,3040000,1.80989,1.37624,2.29575,144
+reminder,PPO + V̂0 observation,3050000,1.85542,1.34051,2.47423,144
+reminder,PPO + V̂0 observation,3060000,1.89248,1.53882,2.51177,144
+reminder,PPO + V̂0 observation,3070000,1.83721,1.36769,2.26462,144
+reminder,PPO + V̂0 observation,3080000,1.8393,1.39463,2.56018,144
+reminder,PPO + V̂0 observation,3090000,1.76847,1.31729,2.40875,144
+reminder,PPO + V̂0 observation,3100000,1.76023,1.12162,2.39928,144
+reminder,PPO + V̂0 observation,3110000,1.797,1.228,2.24191,144
+reminder,PPO + V̂0 observation,3120000,1.88999,1.32412,2.38128,144
+reminder,PPO + V̂0 observation,3130000,2.00789,1.41092,2.68766,144
+reminder,PPO + V̂0 observation,3140000,1.89152,1.45844,2.53459,144
+reminder,PPO + V̂0 observation,3150000,1.69974,1.13829,2.28704,144
+reminder,PPO + V̂0 observation,3160000,1.83074,1.33883,2.43153,144
+reminder,PPO + V̂0 observation,3170000,1.71129,1.28892,2.34877,144
+reminder,PPO + V̂0 observation,3180000,1.78292,1.34841,2.43536,144
+reminder,PPO + V̂0 observation,3190000,1.85817,1.42367,2.27417,144
+reminder,PPO + V̂0 observation,3200000,1.9368,1.52375,2.45055,144
+reminder,PPO + V̂0 observation,3210000,1.94718,1.46466,2.38563,144
+reminder,PPO + V̂0 observation,3220000,1.96168,1.32042,2.45037,144
+reminder,PPO + V̂0 observation,3230000,1.78123,1.3293,2.53881,144
+reminder,PPO + V̂0 observation,3240000,1.86227,1.36987,2.48167,144
+reminder,PPO + V̂0 observation,3250000,1.83866,1.43228,2.45702,144
+reminder,PPO + V̂0 observation,3260000,1.84115,1.47815,2.38721,144
+reminder,PPO + V̂0 observation,3270000,1.70003,1.22687,2.26053,144
+reminder,PPO + V̂0 observation,3280000,1.80207,1.29961,2.19691,144
+reminder,PPO + V̂0 observation,3290000,1.85478,1.33939,2.45823,144
+reminder,PPO + V̂0 observation,3300000,1.83486,1.35389,2.47134,144
+reminder,PPO + V̂0 observation,3310000,1.79843,1.21505,2.29322,144
+reminder,PPO + V̂0 observation,3320000,1.89237,1.42451,2.42957,144
+reminder,PPO + V̂0 observation,3330000,1.95051,1.39775,2.4297,144
+reminder,PPO + V̂0 observation,3340000,1.76154,1.38693,2.31208,144
+reminder,PPO + V̂0 observation,3350000,1.81283,1.29968,2.30999,144
+reminder,PPO + V̂0 observation,3360000,1.85878,1.24853,2.54843,144
+reminder,PPO + V̂0 observation,3370000,1.8195,1.35009,2.41251,144
+reminder,PPO + V̂0 observation,3380000,1.86079,1.31938,2.3731,144
+reminder,PPO + V̂0 observation,3390000,1.89583,1.4621,2.49618,144
+reminder,PPO + V̂0 observation,3400000,1.80154,1.33995,2.47334,144
+reminder,PPO + V̂0 observation,3410000,1.84792,1.20742,2.38964,144
+reminder,PPO + V̂0 observation,3420000,1.71224,1.26874,2.43782,144
+reminder,PPO + V̂0 observation,3430000,1.90594,1.29784,2.47303,144
+reminder,PPO + V̂0 observation,3440000,1.70397,1.20357,2.34807,144
+reminder,PPO + V̂0 observation,3450000,1.80914,1.27051,2.34414,144
+reminder,PPO + V̂0 observation,3460000,1.91171,1.41774,2.45789,144
+reminder,PPO + V̂0 observation,3470000,1.81839,1.35366,2.46848,144
+reminder,PPO + V̂0 observation,3480000,1.71932,1.23356,2.31918,144
+reminder,PPO + V̂0 observation,3490000,1.78941,1.39671,2.31857,144
+reminder,PPO + V̂0 observation,3500000,1.68495,1.16211,2.21929,144
+reminder,PPO + V̂0 observation,3510000,1.91909,1.30917,2.40386,144
+reminder,PPO + V̂0 observation,3520000,1.92496,1.31197,2.51496,144
+reminder,PPO + V̂0 observation,3530000,1.8556,1.1931,2.43768,144
+reminder,PPO + V̂0 observation,3540000,1.90105,1.42657,2.44399,144
+reminder,PPO + V̂0 observation,3550000,1.8576,1.42474,2.5186,144
+reminder,PPO + V̂0 observation,3560000,1.84127,1.39249,2.37613,144
+reminder,PPO + V̂0 observation,3570000,1.90761,1.32745,2.54891,144
+reminder,PPO + V̂0 observation,3580000,1.95403,1.39933,2.4866,144
+reminder,PPO + V̂0 observation,3590000,1.82856,1.37301,2.3819,144
+reminder,PPO + V̂0 observation,3600000,1.93762,1.44243,2.35752,144
+reminder,PPO + V̂0 observation,3610000,1.79264,1.32557,2.35116,144
+reminder,PPO + V̂0 observation,3620000,1.94873,1.4363,2.51811,144
+reminder,PPO + V̂0 observation,3630000,2.02064,1.48487,2.56706,144
+reminder,PPO + V̂0 observation,3640000,1.75123,1.31388,2.46621,144
+reminder,PPO + V̂0 observation,3650000,1.83157,1.38519,2.30043,144
+reminder,PPO + V̂0 observation,3660000,1.96489,1.37317,2.54682,144
+reminder,PPO + V̂0 observation,3670000,1.85575,1.36476,2.41383,144
+reminder,PPO + V̂0 observation,3680000,1.97855,1.60515,2.50134,144
+reminder,PPO + V̂0 observation,3690000,1.84595,1.34548,2.5139,144
+reminder,PPO + V̂0 observation,3700000,1.82067,1.36272,2.41976,144
+reminder,PPO + V̂0 observation,3710000,1.8931,1.44745,2.37247,144
+reminder,PPO + V̂0 observation,3720000,2.08458,1.55583,2.62007,144
+reminder,PPO + V̂0 observation,3730000,1.79524,1.33238,2.38647,144
+reminder,PPO + V̂0 observation,3740000,1.82565,1.38239,2.26417,144
+reminder,PPO + V̂0 observation,3750000,1.84171,1.26596,2.44659,144
+reminder,PPO + V̂0 observation,3760000,1.74568,1.25076,2.2686,144
+reminder,PPO + V̂0 observation,3770000,2.02101,1.35003,2.59593,144
+reminder,PPO + V̂0 observation,3780000,1.86117,1.41868,2.46745,144
+reminder,PPO + V̂0 observation,3790000,1.89934,1.40597,2.34563,144
+reminder,PPO + V̂0 observation,3800000,1.88164,1.27145,2.4665,144
+reminder,PPO + V̂0 observation,3810000,1.9446,1.38308,2.47641,144
+reminder,PPO + V̂0 observation,3820000,1.83571,1.3916,2.57977,144
+reminder,PPO + V̂0 observation,3830000,1.86597,1.26765,2.39752,144
+reminder,PPO + V̂0 observation,3840000,1.9369,1.40022,2.42312,144
+reminder,PPO + V̂0 observation,3850000,2.011,1.38001,2.6333,144
+reminder,PPO + V̂0 observation,3860000,1.85444,1.35207,2.26984,144
+reminder,PPO + V̂0 observation,3870000,1.68782,1.2625,2.28054,144
+reminder,PPO + V̂0 observation,3880000,1.9303,1.3266,2.52657,144
+reminder,PPO + V̂0 observation,3890000,1.97693,1.38537,2.43296,144
+reminder,PPO + V̂0 observation,3900000,1.82217,1.41473,2.49589,144
+reminder,PPO + V̂0 observation,3910000,1.98699,1.3753,2.5361,144
+reminder,PPO + V̂0 observation,3920000,1.83859,1.23687,2.4846,144
+reminder,PPO + V̂0 observation,3930000,1.87832,1.42745,2.32543,144
+reminder,PPO + V̂0 observation,3940000,1.86022,1.42874,2.48926,144
+reminder,PPO + V̂0 observation,3950000,1.95079,1.36578,2.63717,144
+reminder,PPO + V̂0 observation,3960000,1.69866,1.22699,2.3717,144
+reminder,PPO + V̂0 observation,3970000,1.86263,1.38554,2.38206,144
+reminder,PPO + V̂0 observation,3980000,2.06692,1.48478,2.55036,144
+reminder,PPO + V̂0 observation,3990000,1.77205,1.22996,2.41101,144
+reminder,PPO + V̂0 observation,4000000,1.78483,1.29998,2.34576,144
+reminder,PPO + V̂0 observation,4010000,1.93232,1.43254,2.46519,144
+reminder,PPO + V̂0 observation,4020000,1.83549,1.31527,2.37288,144
+reminder,PPO + V̂0 observation,4030000,1.82147,1.38674,2.50324,144
+reminder,PPO + V̂0 observation,4040000,2.01196,1.53085,2.7363,144
+reminder,PPO + V̂0 observation,4050000,1.76848,1.28229,2.33189,144
+reminder,PPO + V̂0 observation,4060000,1.7617,1.25425,2.49613,144
+reminder,PPO + V̂0 observation,4070000,1.92544,1.33858,2.51726,144
+reminder,PPO + V̂0 observation,4080000,1.83695,1.38405,2.37088,144
+reminder,PPO + V̂0 observation,4090000,1.88353,1.30626,2.60878,144
+reminder,PPO + V̂0 observation,4100000,1.96201,1.54005,2.42345,144
+reminder,PPO + V̂0 observation,4110000,1.7865,1.33819,2.36824,144
+reminder,PPO + V̂0 observation,4120000,1.94714,1.36535,2.3733,144
+reminder,PPO + V̂0 observation,4130000,1.87553,1.38025,2.48664,144
+reminder,PPO + V̂0 observation,4140000,1.8032,1.26007,2.38888,144
+reminder,PPO + V̂0 observation,4150000,1.92568,1.28992,2.46523,144
+reminder,PPO + V̂0 observation,4160000,1.89976,1.48615,2.42732,144
+reminder,PPO + V̂0 observation,4170000,2.02652,1.42882,2.5285,144
+reminder,PPO + V̂0 observation,4180000,1.94965,1.41816,2.51095,144
+reminder,PPO + V̂0 observation,4190000,1.82704,1.27932,2.3851,144
+reminder,PPO + V̂0 observation,4200000,1.81549,1.32208,2.47644,144
+reminder,PPO + V̂0 observation,4210000,1.79771,1.31679,2.24455,144
+reminder,PPO + V̂0 observation,4220000,1.779,1.38296,2.40148,144
+reminder,PPO + V̂0 observation,4230000,1.82189,1.20052,2.34463,144
+reminder,PPO + V̂0 observation,4240000,1.87034,1.26679,2.31958,144
+reminder,PPO + V̂0 observation,4250000,1.75591,1.3802,2.4214,144
+reminder,PPO + V̂0 observation,4260000,1.86329,1.39633,2.25726,144
+reminder,PPO + V̂0 observation,4270000,1.86717,1.21443,2.3205,144
+reminder,PPO + V̂0 observation,4280000,1.83114,1.23724,2.39736,144
+reminder,PPO + V̂0 observation,4290000,1.85311,1.45763,2.45502,144
+reminder,PPO + V̂0 observation,4300000,1.91569,1.33354,2.56521,144
+reminder,PPO + V̂0 observation,4310000,1.86629,1.29184,2.41238,144
+reminder,PPO + V̂0 observation,4320000,1.72596,1.26848,2.32652,144
+reminder,PPO + V̂0 observation,4330000,1.70937,1.31091,2.31852,144
+reminder,PPO + V̂0 observation,4340000,1.77754,1.33566,2.47885,144
+reminder,PPO + V̂0 observation,4350000,1.7862,1.41979,2.29187,144
+reminder,PPO + V̂0 observation,4360000,2.07388,1.43374,2.54946,144
+reminder,PPO + V̂0 observation,4370000,1.84094,1.30452,2.38294,144
+reminder,PPO + V̂0 observation,4380000,1.84331,1.35146,2.48603,144
+reminder,PPO + V̂0 observation,4390000,1.77814,1.29244,2.33026,144
+reminder,PPO + V̂0 observation,4400000,1.97705,1.52523,2.43338,144
+reminder,PPO + V̂0 observation,4410000,1.82523,1.23692,2.43372,144
+reminder,PPO + V̂0 observation,4420000,1.89659,1.38548,2.45395,144
+reminder,PPO + V̂0 observation,4430000,1.84408,1.40279,2.22356,144
+reminder,PPO + V̂0 observation,4440000,1.80163,1.36536,2.4683,144
+reminder,PPO + V̂0 observation,4450000,1.98869,1.49045,2.55589,144
+reminder,PPO + V̂0 observation,4460000,1.8041,1.38152,2.50146,144
+reminder,PPO + V̂0 observation,4470000,1.8535,1.38116,2.40143,144
+reminder,PPO + V̂0 observation,4480000,1.79997,1.41425,2.19492,144
+reminder,PPO + V̂0 observation,4490000,1.76537,1.29274,2.34574,144
+reminder,PPO + V̂0 observation,4500000,1.85186,1.31424,2.34394,144
+reminder,PPO + V̂0 observation,4510000,1.95926,1.39314,2.49723,144
+reminder,PPO + V̂0 observation,4520000,1.89547,1.38594,2.47217,144
+reminder,PPO + V̂0 observation,4530000,1.74849,1.29034,2.39976,144
+reminder,PPO + V̂0 observation,4540000,1.751,1.28665,2.3276,144
+reminder,PPO + V̂0 observation,4550000,2.07749,1.4701,2.66332,144
+reminder,PPO + V̂0 observation,4560000,1.89625,1.35919,2.48069,144
+reminder,PPO + V̂0 observation,4570000,1.99961,1.33809,2.6326,144
+reminder,PPO + V̂0 observation,4580000,1.84832,1.46643,2.3944,144
+reminder,PPO + V̂0 observation,4590000,2.01416,1.44219,2.70746,144
+reminder,PPO + V̂0 observation,4600000,1.83098,1.30735,2.58267,144
+reminder,PPO + V̂0 observation,4610000,1.80249,1.35268,2.40389,144
+reminder,PPO + V̂0 observation,4620000,1.98485,1.47519,2.6234,144
+reminder,PPO + V̂0 observation,4630000,1.8243,1.38298,2.43633,144
+reminder,PPO + V̂0 observation,4640000,1.93435,1.24796,2.35943,144
+reminder,PPO + V̂0 observation,4650000,2.00122,1.45354,2.49387,144
+reminder,PPO + V̂0 observation,4660000,1.93721,1.33614,2.40047,144
+reminder,PPO + V̂0 observation,4670000,1.77888,1.27539,2.3618,144
+reminder,PPO + V̂0 observation,4680000,1.83533,1.41143,2.37035,144
+reminder,PPO + V̂0 observation,4690000,1.79642,1.28464,2.35233,144
+reminder,PPO + V̂0 observation,4700000,1.9293,1.45089,2.53602,144
+reminder,PPO + V̂0 observation,4710000,2.08022,1.44936,2.73267,144
+reminder,PPO + V̂0 observation,4720000,1.80519,1.34221,2.43714,144
+reminder,PPO + V̂0 observation,4730000,1.79174,1.36734,2.44128,144
+reminder,PPO + V̂0 observation,4740000,1.8392,1.33178,2.40396,144
+reminder,PPO + V̂0 observation,4750000,2.03838,1.31025,2.57173,144
+reminder,PPO + V̂0 observation,4760000,1.86274,1.2672,2.43448,144
+reminder,PPO + V̂0 observation,4770000,1.96189,1.39406,2.40934,144
+reminder,PPO + V̂0 observation,4780000,1.81752,1.32935,2.39328,144
+reminder,PPO + V̂0 observation,4790000,1.60422,1.19525,2.32382,144
+reminder,PPO + V̂0 observation,4800000,1.78979,1.29265,2.36793,144
+reminder,PPO + V̂0 observation,4810000,1.89839,1.45676,2.42351,144
+reminder,PPO + V̂0 observation,4820000,1.69568,1.22525,2.26504,144
+reminder,PPO + V̂0 observation,4830000,1.8316,1.37431,2.31769,144
+reminder,PPO + V̂0 observation,4840000,1.86648,1.39687,2.47556,144
+reminder,PPO + V̂0 observation,4850000,1.89561,1.4771,2.59608,144
+reminder,PPO + V̂0 observation,4860000,1.89901,1.41158,2.41186,144
+reminder,PPO + V̂0 observation,4870000,1.86967,1.3286,2.3473,144
+reminder,PPO + V̂0 observation,4880000,1.66877,1.21671,2.23813,144
+reminder,PPO + V̂0 observation,4890000,1.86693,1.40228,2.56025,144
+reminder,PPO + V̂0 observation,4900000,1.90157,1.43695,2.42869,144
+reminder,PPO + V̂0 observation,4910000,1.86906,1.36645,2.40428,144
+reminder,PPO + V̂0 observation,4920000,1.9447,1.56926,2.477,144
+reminder,PPO + V̂0 observation,4930000,1.79302,1.3578,2.25475,144
+reminder,PPO + V̂0 observation,4940000,1.84052,1.38098,2.28142,144
+reminder,PPO + V̂0 observation,4950000,1.90299,1.2463,2.52545,144
+reminder,PPO + V̂0 observation,4960000,1.91812,1.30883,2.47278,144
+reminder,PPO + V̂0 observation,4970000,1.79488,1.27797,2.46869,144
+reminder,PPO + V̂0 observation,4980000,1.85688,1.30331,2.36056,144
+reminder,PPO + V̂0 observation,4990000,1.96523,1.43625,2.47207,144
+reminder,PPO + V̂0 observation,5000000,1.92126,1.37217,2.37147,144

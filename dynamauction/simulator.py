@@ -3,7 +3,6 @@ Scenario dataclass and Simulator.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Callable, List, Any, Dict, Optional, Tuple, Union
 
 import gymnasium as gym
@@ -15,7 +14,6 @@ import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 from dynamauction.types import Scenario
-from dynamauction.primitives.kernel import RewardKernel
 
 class Simulator:
     def __init__(

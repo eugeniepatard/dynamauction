@@ -1,0 +1,82 @@
+scenario,state,value,alpha_star,bid
+saturation-second-price-lognormal,wins before the auction n,0,0.390002,0.375002
+saturation-second-price-lognormal,wins before the auction n,1,0.403767,0.351292
+saturation-second-price-lognormal,wins before the auction n,2,0.41812,0.329161
+saturation-second-price-lognormal,wins before the auction n,3,0.433064,0.308482
+saturation-second-price-lognormal,wins before the auction n,4,0.4486,0.28914
+saturation-second-price-lognormal,wins before the auction n,5,0.464729,0.271031
+saturation-second-price-lognormal,wins before the auction n,6,0.481445,0.25406
+saturation-second-price-lognormal,wins before the auction n,7,0.49874,0.238141
+saturation-second-price-lognormal,wins before the auction n,8,0.516602,0.223196
+saturation-second-price-lognormal,wins before the auction n,9,0.535012,0.209153
+saturation-second-price-lognormal,wins before the auction n,10,0.553947,0.195948
+saturation-second-price-lognormal,wins before the auction n,11,0.573379,0.18352
+saturation-second-price-lognormal,wins before the auction n,12,0.59327,0.171817
+saturation-second-price-lognormal,wins before the auction n,13,0.613576,0.160788
+saturation-second-price-lognormal,wins before the auction n,14,0.634246,0.150388
+saturation-second-price-lognormal,wins before the auction n,15,0.655218,0.140576
+saturation-second-price-lognormal,wins before the auction n,16,0.676422,0.131315
+saturation-second-price-lognormal,wins before the auction n,17,0.697777,0.12257
+saturation-second-price-lognormal,wins before the auction n,18,0.719193,0.114309
+saturation-second-price-lognormal,wins before the auction n,19,0.740568,0.106506
+saturation-second-price-lognormal,wins before the auction n,20,0.761793,0.0991322
+saturation-second-price-lognormal,wins before the auction n,21,0.782746,0.0921657
+saturation-second-price-lognormal,wins before the auction n,22,0.803299,0.0855847
+saturation-second-price-lognormal,wins before the auction n,23,0.823317,0.07937
+saturation-second-price-lognormal,wins before the auction n,24,0.842659,0.0735041
+saturation-second-price-lognormal,wins before the auction n,25,0.861185,0.0679715
+saturation-second-price-lognormal,wins before the auction n,26,0.878757,0.0627581
+saturation-second-price-lognormal,wins before the auction n,27,0.895247,0.0578515
+saturation-second-price-lognormal,wins before the auction n,28,0.910537,0.0532402
+saturation-second-price-lognormal,wins before the auction n,29,0.924531,0.0489141
+saturation-second-price-lognormal,wins before the auction n,30,0.937159,0.0448638
+saturation-second-price-lognormal,wins before the auction n,31,0.948379,0.0410805
+saturation-second-price-lognormal,wins before the auction n,32,0.958188,0.0375556
+saturation-second-price-lognormal,wins before the auction n,33,0.966616,0.0342806
+saturation-second-price-lognormal,wins before the auction n,34,0.973729,0.0312466
+saturation-second-price-lognormal,wins before the auction n,35,0.979622,0.0284443
+saturation-second-price-lognormal,wins before the auction n,36,0.984417,0.0258634
+saturation-second-price-lognormal,wins before the auction n,37,0.988248,0.0234932
+saturation-second-price-lognormal,wins before the auction n,38,0.991255,0.0213222
+saturation-second-price-lognormal,wins before the auction n,39,0.993575,0.0193383
+saturation-second-price-lognormal,wins before the auction n,40,0.995338,0.0175291
+saturation-second-price-lognormal,wins before the auction n,41,0.996657,0.015882
+saturation-second-price-lognormal,wins before the auction n,42,0.99763,0.0143847
+saturation-second-price-lognormal,wins before the auction n,43,0.998338,0.013025
+saturation-second-price-lognormal,wins before the auction n,44,0.998847,0.0117915
+saturation-second-price-lognormal,wins before the auction n,45,0.999208,0.0106733
+saturation-second-price-lognormal,wins before the auction n,46,0.999462,0.00966003
+saturation-second-price-lognormal,wins before the auction n,47,0.999638,0.00874229
+saturation-second-price-lognormal,wins before the auction n,48,0.999759,0.00791131
+saturation-second-price-lognormal,wins before the auction n,49,0.999841,0.00715904
+saturation-second-price-lognormal,wins before the auction n,50,0.999896,0.00647812
+saturation-second-price-lognormal,wins before the auction n,51,0.999933,0.00586186
+saturation-second-price-lognormal,wins before the auction n,52,0.999957,0.00530416
+saturation-second-price-lognormal,wins before the auction n,53,0.999973,0.00479948
+saturation-second-price-lognormal,wins before the auction n,54,0.999983,0.00434279
+saturation-second-price-lognormal,wins before the auction n,55,0.999989,0.00392955
+saturation-second-price-lognormal,wins before the auction n,56,0.999993,0.00355561
+saturation-second-price-lognormal,wins before the auction n,57,0.999996,0.00321726
+saturation-second-price-lognormal,wins before the auction n,58,0.999998,0.0029111
+saturation-second-price-lognormal,wins before the auction n,59,0.999999,0.00263408
+saturation-second-price-lognormal,wins before the auction n,60,0.999999,0.00238341
+recency-second-price-lognormal,time since the last win τ,0.05,0.660974,0.0156918
+recency-second-price-lognormal,time since the last win τ,0.1,0.657082,0.0308137
+recency-second-price-lognormal,time since the last win τ,0.25,0.64405,0.0727672
+recency-second-price-lognormal,time since the last win τ,0.5,0.624938,0.132919
+recency-second-price-lognormal,time since the last win τ,0.75,0.609242,0.183189
+recency-second-price-lognormal,time since the last win τ,1,0.596615,0.225721
+recency-second-price-lognormal,time since the last win τ,1.5,0.577953,0.293218
+recency-second-price-lognormal,time since the last win τ,2,0.565215,0.343542
+recency-second-price-lognormal,time since the last win τ,2.5,0.556232,0.381605
+recency-second-price-lognormal,time since the last win τ,3,0.54974,0.41065
+recency-second-price-lognormal,time since the last win τ,4,0.541395,0.45012
+recency-second-price-lognormal,time since the last win τ,5,0.536667,0.473668
+recency-second-price-lognormal,time since the last win τ,6,0.533911,0.487817
+recency-second-price-lognormal,time since the last win τ,8,0.531304,0.501512
+recency-second-price-lognormal,time since the last win τ,10,0.530363,0.506529
+recency-second-price-lognormal,time since the last win τ,12,0.53002,0.508371
+recency-second-price-lognormal,time since the last win τ,15,0.529865,0.509204
+recency-second-price-lognormal,time since the last win τ,20,0.529824,0.509423
+recency-second-price-lognormal,time since the last win τ,30,0.529821,0.509443
+recency-second-price-lognormal,time since the last win τ,60,0.529821,0.509443

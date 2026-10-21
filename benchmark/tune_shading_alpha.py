@@ -100,7 +100,7 @@ def main() -> None:
     parser.add_argument("--horizon-eta",  type=int,   required=True,
                         help="Exponential horizon parameter η.")
     parser.add_argument("--n-alphas",     type=int,   default=10,
-                        help="Number of α values evenly spaced in [alpha-min, alpha-max] (default: 20).")
+                        help="Number of α values evenly spaced in [alpha-min, alpha-max] (default: 10).")
     parser.add_argument("--alpha-min",    type=float, default=0.1)
     parser.add_argument("--alpha-max",    type=float, default=1.0)
     parser.add_argument("--n-seeds",      type=int,   default=30)
@@ -108,7 +108,7 @@ def main() -> None:
                         help="MC rollouts per decision step inside the estimator.")
     parser.add_argument("--policy-seed",  type=int,   default=0)
     parser.add_argument("--out-dir",      type=Path,  default=None,
-                        help="Directory for CSV output (default: benchmark/shading_alpha_results/).")
+                        help="Directory for CSV output (default: benchmark/benchmark_results/).")
     args = parser.parse_args()
 
     alphas = list(np.linspace(args.alpha_min, args.alpha_max, args.n_alphas))
@@ -123,4 +123,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):   # policy names contain α: Windows pipes default to cp1252
+        sys.stdout.reconfigure(encoding="utf-8")
     main()

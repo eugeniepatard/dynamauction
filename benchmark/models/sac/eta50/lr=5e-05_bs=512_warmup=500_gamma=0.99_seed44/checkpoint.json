@@ -1,0 +1,15 @@
+{
+  "scenario": "survival-second-price-exponential",
+  "algo": "sac",
+  "hyperparameters": {
+    "learning_rate": 5e-05,
+    "off_policy_batch_size": 512,
+    "off_policy_learning_starts": 500,
+    "gamma": 0.99
+  },
+  "training_seed": 44,
+  "timesteps": 10000000,
+  "checkpoint": "final (end of training), chosen on the 200 validation campaigns (seeds 20000-20199)",
+  "validation_mean": 0.18438134193051794,
+  "test_mean_1000_campaigns": 0.4331728400915177
+}

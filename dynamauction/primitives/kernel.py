@@ -13,11 +13,10 @@ Concrete implementations:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Callable, List  
+from typing import Callable  
 
 import numpy as np
 
-from dynamauction.primitives.gamma import Gamma, AdditiveGamma, LastWonTimeGamma, ConstantGamma
 
 # ── Reward kernels ─────────────────────────────────────────────────────────────
 

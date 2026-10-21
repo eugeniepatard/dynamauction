@@ -4,7 +4,6 @@ from __future__ import annotations
 import bisect
 import copy
 import itertools
-from pathlib import Path
 from typing import Dict, Any, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -13,7 +12,6 @@ from dynamauction.baseline.estimators import MLPValuationHead, SimulationEstimat
 from dynamauction.baseline.policies import BiddingPolicy
 from dynamauction.baseline.utils import _resample_remaining_horizon
 from dynamauction.env import AuctionEnv
-from dynamauction.primitives.auctions import SecondPriceAuction
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Planning policies

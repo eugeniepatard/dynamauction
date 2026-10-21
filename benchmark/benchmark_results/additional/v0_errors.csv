@@ -1,0 +1,14 @@
+variant,family,corr_with_oracle_v0,mean_abs_error,mean_error
+exact MLP head (1000 FiPla episodes),reference,0.968889,0.0483066,-0.0147194
+"noisy V0, σ = 0.1",noisy V0,0.953188,0.0689681,-0.0134682
+"noisy V0, σ = 0.25",noisy V0,0.882059,0.121327,-0.0131672
+"noisy V0, σ = 0.5",noisy V0,0.697186,0.223231,-0.0146518
+"noisy V0, σ = 1",noisy V0,0.355753,0.447194,-0.0129728
+MLP on 300 episodes,fewer training episodes,0.943127,0.0813288,-0.0334578
+MLP on 100 episodes,fewer training episodes,0.748948,0.210016,-0.129807
+MLP on 30 episodes,fewer training episodes,0.622286,0.263137,-0.153885
+MLP on 10 episodes,fewer training episodes,0.164856,0.469194,-0.414199
+head ignoring fatigue (S = 1),misspecified head,0.725028,0.18097,0.155795
+V0 × 0.5,misspecified head,0.958831,0.314776,-0.311903
+V0 × 2,misspecified head,0.976071,0.485334,0.483125
+head trained on survival-1,misspecified head,0.978618,0.0381666,-0.00324865

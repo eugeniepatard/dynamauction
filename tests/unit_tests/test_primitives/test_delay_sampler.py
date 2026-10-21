@@ -1,6 +1,5 @@
 """Tests for dynamauction/primitives/delay_sampler.py: SingleConversionSampler, MultiConversionSampler."""
 import numpy as np
-import pytest
 from unittest.mock import MagicMock
 
 from dynamauction.primitives.delay_sampler import MultiConversionSampler, SingleConversionSampler
@@ -31,7 +30,7 @@ class TestSingleConversionSampler:
     def test_delegates_to_probe_sample_one(self):
         probe = _make_probe([1.5])
         sampler = SingleConversionSampler()
-        result = sampler.sample(probe, **_KWARGS)
+        sampler.sample(probe, **_KWARGS)
         probe.sample_one.assert_called_once()
         probe.sample_all.assert_not_called()
 

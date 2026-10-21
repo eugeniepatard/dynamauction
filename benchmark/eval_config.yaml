@@ -5,7 +5,7 @@
 # Only fields in 'overrides' need to be specified — everything else comes from the preset.
 
 scenario:
-  preset: survival-second-price-exponential   # main survival scenario (survival-second-price-exponential-1: competition μ = 0)
+  preset: survival-second-price-exponential   # main survival scenario
   overrides:                 # keyword overrides for dac.make(), underscore paths into the preset (here = the preset values)
     horizon_eta: 50          # mean campaign length η
     gamma_beta: 1.0          # recovery rate β of the fatigue factor ρ(Δ) = 1 − c·exp(−βΔ) (β < 1: longer fatigue)

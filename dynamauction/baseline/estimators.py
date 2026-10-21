@@ -23,7 +23,6 @@ from dynamauction.baseline.policies import BiddingPolicy, FiPlaPolicy
 from dynamauction.baseline.utils import _obs_to_features, _rollout_to_end, _resample_remaining_horizon
 from dynamauction.env import AuctionEnv
 import copy
-import gymnasium as gym
 from typing import Dict, Any
 
 class SimulationEstimator:
@@ -358,7 +357,7 @@ class MLPValuationHead:
         else:
             json_path = p.with_suffix(".json")
             if json_path.exists():
-                meta = _json.loads(json_path.read_text())
+                meta = _json.loads(json_path.read_text(encoding="utf-8"))
                 hidden_dims = meta["hidden_dims"]
             else:
                 # infer from weight tensor shapes

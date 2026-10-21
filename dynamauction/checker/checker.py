@@ -14,7 +14,7 @@ Usage
 from __future__ import annotations
 
 import warnings
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 

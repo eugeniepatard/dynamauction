@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-from typing import Callable
 from dynamauction import (
     SaturationKernel, 
     RecencyDisplayKernel, 

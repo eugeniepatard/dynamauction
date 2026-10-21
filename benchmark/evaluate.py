@@ -5,9 +5,9 @@ Output: per-step DataFrame with columns
     policy, seed, step, t, reward, cum_reward, won, bid, payment,
     ctx, expected_reward, competing_bid, alpha_chosen
 
-    Config file
+Config file
 -----------
-    python -m benchmark.evaluate --config benchmark/eval_config.yaml
+    python -m benchmark.evaluate --config benchmark/eval_config.yaml                 # the paper setup
     python -m benchmark.evaluate --config benchmark/eval_config.yaml --n-seeds 100  # CLI overrides YAML
 
 Python API
@@ -26,14 +26,14 @@ Python API
     # Custom policy
     df = run_full_benchmark(extra_policies={"MyPolicy": MyPolicy()})
 
-    # MPC (requires train_mlp.py first)
+    # MPC (with the MLP valuation head of benchmark/models/mlp_valuation_head/)
     df = run_full_benchmark(algos=[], cfg=EvalConfig(
         include_mpc=True, mpc_planning_horizons=[0.0, 7.0, 15.0],
     ))
 
 CLI (run from repo root)
 ------------------------
-    # Paper experiment: all policies, 1000 seeds, η=50
+    # Every policy family with the CLI defaults (the paper setup is the --config file above)
     python -m benchmark.evaluate --horizon-eta 50 --n-seeds 1000 \
         --sim-policies greedy shading mpc mpc-oracle mpc-timebin
 
@@ -50,7 +50,7 @@ CLI (run from repo root)
     python -m benchmark.evaluate --algos none --sim-policies shading \
         --alphas 0.2 0.4 0.6 0.8 1.0 1.2
 
-    # MPC with several planning horizons (needs train_mlp.py first)
+    # MPC with several planning horizons
     python -m benchmark.evaluate --algos none --sim-policies mpc \
         --mpc-horizons 0 4 7 10 15 25
 
@@ -84,6 +84,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 import pickle
+import sys
 import time
 from pathlib import Path
 from typing import Sequence, Dict, List, Optional, Tuple
@@ -200,9 +201,8 @@ class EvalConfig:
     mpc_tie_alpha:           Optional[float] = None           # None: ties → first candidate
     mpc_timebin_n_rollouts:  Optional[int]  = None
     mpc_timebin_alpha_candidates: Optional[List[float]] = None  # None → mpc_alpha_candidates
+    mpc_timebin_planning_horizons: Optional[List[float]] = None  # None → mpc_planning_horizons
     mpc_timebin_bin_edges:   List[List[float]] = field(default_factory=list)  # extra non-uniform-bin variants
-    # Used by parallel_evaluate.benchmark(); ignored here.
-    n_workers:               Optional[int]  = None
 
 
 def load_eval_config(
@@ -260,7 +260,7 @@ def load_eval_config(
     """
     import yaml
 
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         raw = yaml.safe_load(f)
 
     # ── scenario ──────────────────────────────────────────────────────────────
@@ -322,6 +322,7 @@ def load_eval_config(
     alpha_cont = [float(a) for a in (alpha_cont if isinstance(alpha_cont, (list, tuple)) else [alpha_cont])]
     tie_alpha = mpc_d.get("tie_alpha")
     tb_alphas = tb_d.get("alpha_candidates")
+    tb_horizons = tb_d.get("horizons")
 
     # MPC model path: use from YAML if given, else None (→ default MLP auto-resolution)
     _mpc_model_raw = None
@@ -355,6 +356,7 @@ def load_eval_config(
         mpc_tie_alpha=None if tie_alpha is None else float(tie_alpha),
         mpc_timebin_n_rollouts=_opt_int(mpc_tb_cfg, "n_rollouts"),
         mpc_timebin_alpha_candidates=None if tb_alphas is None else [float(a) for a in tb_alphas],
+        mpc_timebin_planning_horizons=None if tb_horizons is None else [float(h) for h in tb_horizons],
         mpc_timebin_bin_edges=[[float(e) for e in edges] for edges in (tb_d.get("bin_edges") or [])],
     )
     return cfg, algos, model_paths
@@ -518,7 +520,7 @@ def get_simulation_policies(cfg: EvalConfig) -> Dict[str, BiddingPolicy]:
             variants = [(f"K={k}", k, None) for k in cfg.mpc_n_bins]
             variants += [(f"edges={'-'.join(f'{e:g}' for e in edges)}", len(edges) + 1, edges)
                          for edges in cfg.mpc_timebin_bin_edges]
-            for horizon in cfg.mpc_planning_horizons:
+            for horizon in cfg.mpc_timebin_planning_horizons or cfg.mpc_planning_horizons:
                 for tag, k, edges in variants:
                     parts = [f"H={horizon:g}", tag]
                     if n_models > 1:
@@ -671,7 +673,7 @@ def main():
             "  python -m benchmark.evaluate --horizon-eta 50\n"
             "  python -m benchmark.evaluate --algos ppo sac --baselines fipla\n"
             "  python -m benchmark.evaluate --baselines none\n"
-            "  python -m benchmark.evaluate --sim-policies mpc  # needs train_mlp.py first\n"
+            "  python -m benchmark.evaluate --sim-policies mpc\n"
         ),
     )
     # ── Policy selection ──────────────────────────────────────────────────────
@@ -699,7 +701,8 @@ def main():
                         help="Upper bound for RandomPolicy bids.")
 
     # ── Simulation-based policy parameters ───────────────────────────────────
-    parser.add_argument("--policy-seed",  type=int,   default=0)
+    parser.add_argument("--policy-seed",  type=int,   default=None,
+                        help="Seed of the simulation estimators' random numbers (default: 0, or policy_seed of --config).")
     parser.add_argument("--n-rollouts",   type=int,   default=DEFAULT_N_ROLLOUTS,
                         help="Monte Carlo rollouts per decision step.")
     parser.add_argument("--alphas",       type=float, nargs="+", default=DEFAULT_SHADING_ALPHAS,
@@ -737,6 +740,12 @@ def main():
             cfg.baselines = [] if "none" in args.baselines else args.baselines
         if args.no_mask_expected_reward:
             cfg.mask_expected_reward = False
+        if args.constant_bid != DEFAULT_CONSTANT_BID:
+            cfg.constant_bid = args.constant_bid
+        if args.random_max_bid != DEFAULT_RANDOM_MAX_BID:
+            cfg.random_max_bid = args.random_max_bid
+        if args.policy_seed is not None:
+            cfg.policy_seed = args.policy_seed
         if args.n_rollouts != DEFAULT_N_ROLLOUTS:   # the CLI value wins over the per-family YAML values
             cfg.simulation_n_rollouts = args.n_rollouts
             cfg.shading_n_rollouts = cfg.mpc_n_rollouts = cfg.mpc_timebin_n_rollouts = None
@@ -777,7 +786,7 @@ def main():
             baselines=baselines,
             constant_bid=args.constant_bid,
             random_max_bid=args.random_max_bid,
-            policy_seed=args.policy_seed,
+            policy_seed=args.policy_seed if args.policy_seed is not None else 0,
             mask_expected_reward=not args.no_mask_expected_reward,
             simulation_n_rollouts=args.n_rollouts,
             shading_alphas=args.alphas,
@@ -794,4 +803,6 @@ def main():
 
 
 if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):   # policy names contain α: Windows pipes default to cp1252
+        sys.stdout.reconfigure(encoding="utf-8")
     main()

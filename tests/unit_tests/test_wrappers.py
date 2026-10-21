@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from gymnasium import spaces
 from gymnasium.utils.env_checker import check_env
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from dynamauction import AuctionEnv, FlatAuctionObsWrapper, BidScaleWrapper, MaskExpectedRewardWrapper
 from dynamauction.wrappers import SB3PolicyWrapper

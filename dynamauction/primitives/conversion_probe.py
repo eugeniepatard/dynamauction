@@ -6,7 +6,7 @@ primitives needed by ``DelaySampler`` to decide how many conversions a
 display produces and to draw their individual delay times.
 """
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 import numpy as np
 from dynamauction.primitives.kernel import (
     RewardKernel,

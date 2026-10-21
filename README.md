@@ -1,7 +1,6 @@
 # DynamAuction
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 
 **DynamAuction** is a [Gymnasium](https://gymnasium.farama.org/)-compatible reinforcement learning environment for repeated auctions with dynamic display value, the official implementation accompanying the paper:
 
@@ -31,7 +30,7 @@ pip install -e ".[benchmark]"     # + SB3, TensorBoard, Hydra (for the benchmark
 pip install -e ".[dev]"           # + pytest, black, flake8
 ```
 
-**Requirements:** Python 3.9+, pip ≥ 21.3, setuptools ≥ 64.
+**Requirements:** Python 3.10+, pip ≥ 21.3, setuptools ≥ 64.
 
 > `pip install -e .` relies on PEP 660 (editable installs). If it fails with *"missing the `build_editable` hook"*, upgrade first:
 > ```bash
@@ -96,11 +95,11 @@ $$R(T) = \sum_{i:\, t_i \le T} \left[ \kappa(u, x_i, x^{-i}, y(t_i)) + \int_0^{T
 
 The figure below shows $\lambda(s)$ across the main kernel families:
 
-![Delayed conversion intensity across kernels](figures/kernel_intensity.png)
+![Delayed conversion intensity across kernels](images/kernel_intensity.png)
 
 The figure below shows a sample campaign: grey dots are lost auctions, green dots are won displays, and red stars mark delayed conversions reported back to the agent.
 
-![Campaign timeline with delayed conversions](figures/campaign_timeline.png)
+![Campaign timeline with delayed conversions](images/campaign_timeline.png)
 
 ---
 
@@ -108,21 +107,40 @@ The figure below shows a sample campaign: grey dots are lost auctions, green dot
 
 ```
 dynamauction/
-├── primitives/      Auction rules, kernels, competition, arrival, display,
-│                    exogenous process, gamma, user features, probe & delay samplers
-├── baseline/        Bidding policies (FiPla, Constant, Random, GreedyMyopic,
-│                    Shading, MPC variants) and the MLPValuationHead estimator
-├── scenarios/       Preset scenario registry and ScenarioBuilder
-├── checker/         Gymnasium-style environment sanity checker
-├── env.py           Gymnasium-compatible AuctionEnv
-├── simulator.py     Multi-policy repeated auction campaign simulator
-├── wrappers.py      Observation/action wrappers (Flat, BidScale, SB3, Mask)
-└── dataclasses.py   Scenario and AuctionState dataclasses
+├── primitives/         Auction rules, kernels, competition, arrival, display,
+│                       exogenous process, gamma, user features, probe & delay samplers
+├── baseline/           Bidding policies (FiPla, Constant, Random, GreedyMyopic,
+│                       Shading, MPC variants) and the MLPValuationHead estimator
+├── scenarios/          Preset scenario registry and ScenarioBuilder
+├── checker/            Gymnasium-style environment sanity checker
+├── env.py              Gymnasium-compatible AuctionEnv
+├── simulator.py        Multi-policy repeated auction campaign simulator
+├── wrappers.py         Observation/action wrappers (Flat, BidScale, SB3, Mask)
+└── types.py            Scenario and AuctionState dataclasses
 
-benchmark/           Full experimental pipeline (training, evaluation, plotting)
-docs/                API reference and Jupyter tutorials
-figures/             Pre-generated benchmark figures (main survival scenario, η = 50 and 100)
-tests/               Unit test suite
+benchmark/              Full experimental pipeline (training, evaluation, plotting)
+├── conf/               Hydra configuration of the RL trainings (read by train_rl.py):
+│                       train.yaml (scenario, 10M steps, seed, output paths) and
+│                       algo/{ppo,sac,td3}.yaml (hyperparameters selected on validation campaigns)
+├── eval_config.yaml    Evaluation settings (scenario, 1 000 test seeds, models, policy grids)
+├── train_rl.py         PPO / SAC / TD3 training (Stable Baselines3)
+├── train_mlp.py        Training of the MLP valuation head used by MPC
+├── evaluate.py         Evaluation of the policies on the test campaigns
+├── tune_*.py           Grid searches of the constant bid and of the Shading α
+├── plots.py            Figures of the results notebooks
+├── models/             Trained models (MLP valuation head; PPO, SAC, TD3 at η = 50, 3 seeds)
+├── benchmark_results/  Evaluation results read by the notebooks (main/, additional/)
+├── benchmark_results.ipynb
+│                       Main results (η = 50 and 100)
+└── additional_bench_results.ipynb
+                        Additional experiments (decision time, imperfect value estimates,
+                        immediate rewards, other kernels)
+
+docs/                   API reference and Jupyter tutorials
+figures/                Pre-generated benchmark figures (main survival scenario, η = 50 and 100;
+                        additional experiments)
+images/                 Illustrations of this README
+tests/                  Unit test suite
 ```
 
 ---
@@ -132,9 +150,7 @@ tests/               Unit test suite
 | Preset | Kernel | Carry-over context | Probe / sampler | Use case |
 |--------|--------|--------------------|-----------------|----------|
 | `survival-second-price-exponential` | `SurvivalKernel` | multiplicative fatigue (c = 0.9, β = 1) | Bernoulli / single | **Main survival scenario.** Single-purchase e-commerce — Cox-style model, competition LogNormal(−1, 1): winning often makes fatigue matter |
-| `survival-second-price-exponential-1` | `SurvivalKernel` | multiplicative fatigue (c = 0.9, β = 1) | Bernoulli / single | Same with higher competition (LogNormal(0, 1)) |
 | `survival-second-price-exponential-immediate` | `ImmediateSurvivalKernel` | multiplicative fatigue | none / single | Main survival scenario with the reward at bid time (credit-assignment ablation) |
-| `survival-second-price-exponential-1-immediate` | `ImmediateSurvivalKernel` | multiplicative fatigue | none / single | Same for `survival-second-price-exponential-1` |
 | `saturation-second-price-lognormal` | `SaturationKernel` | number of wins | Bernoulli / single | Display retargeting — audience fatigue |
 | `recency-second-price-lognormal` | `RecencyDisplayKernel` | time of last win | Bernoulli / single | Email / push — freshness of last touch |
 | `effective-frequency-second-price-lognormal` | `EffectiveFrequencyKernel` | number of wins | Bernoulli / single | Brand / awareness — user/display relevance × wear-in over the first exposures, then wear-out |
@@ -163,14 +179,16 @@ See [docs/API_REFERENCE.md](docs/API_REFERENCE.md#carry-over-context-γ).
 The `benchmark/` directory contains the full pipeline for reproducing the paper results on the main survival scenario
 `survival-second-price-exponential` (η = 50; the results notebook also reports η = 100):
 
-1. **Train RL agents** (PPO, SAC, TD3) via Stable Baselines3 + Hydra, with the hyperparameters selected on validation
-   campaigns (pretrained models are provided).
+1. **Train RL agents** (PPO, SAC, TD3) via Stable Baselines3 + Hydra (configuration in
+   [`benchmark/conf/`](benchmark/conf/)), with the hyperparameters selected on validation campaigns (pretrained models
+   are provided).
 2. **Train the MLP valuation head** used by the MPC policy family (a trained head is provided).
 3. **Run evaluation** on 1 000 test campaigns (`benchmark/eval_config.yaml`).
 4. **Explore the results** in `benchmark/benchmark_results.ipynb` (main results) and
    `benchmark/additional_bench_results.ipynb` (decision time, imperfect value estimates, immediate rewards, other kernels).
 
-Pre-generated figures are available in [`figures/eta50/`](figures/eta50/) and [`figures/eta100/`](figures/eta100/).
+Pre-generated figures are available in [`figures/eta50/`](figures/eta50/), [`figures/eta100/`](figures/eta100/) and
+[`figures/additional-exp/`](figures/additional-exp/) (additional experiments).
 See [benchmark/BENCHMARK.md](benchmark/BENCHMARK.md) for the complete reproduction guide.
 
 ---
@@ -190,10 +208,28 @@ pytest tests/ -m "not slow"   # skip long-running tests
 If you use DynamAuction in your research, please cite:
 
 ```bibtex
-@article{anonymous2025dynamauction,
-  title   = {DynamAuction: a reinforcement learning environment for repeated auction with dynamic value},
-  author  = {Anonymous Authors},
-  year    = {2025},
-  note    = {Under review}
+@inproceedings{heymann2026dynamauction,
+  title     = {{DynamAuction}: a reinforcement learning environment for repeated auction with dynamic value},
+  author    = {Heymann, Benjamin and Patard, Eug{\'e}nie and Pla, Corentin and Loiseau, Patrick},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2026}
 }
 ```
+
+---
+
+## Authors
+
+DynamAuction is developed by **Benjamin Heymann**, **Eugénie Patard**, **Corentin Pla** and **Patrick Loiseau**, members of
+[FairPlay](https://team.inria.fr/fairplay/), a joint research team of [Inria](https://www.inria.fr),
+[CREST](https://crest.science) ([ENSAE Paris](https://www.ensae.fr), Institut Polytechnique de Paris) and
+[Criteo](https://www.criteo.com). FairPlay studies fairness, privacy and incentives in auctions and matching
+markets, with tools from game theory and machine learning.
+
+<p align="center">
+  <a href="https://www.inria.fr"><img src="images/inria-logo.png" alt="Inria" height="45"></a>
+  &emsp;&emsp;
+  <a href="https://crest.science"><img src="images/Logo-Crest-color.png" alt="CREST" height="64"></a>
+  &emsp;&emsp;
+  <a href="https://www.criteo.com"><img src="images/criteo-logo.jpeg" alt="Criteo" height="80"></a>
+</p>

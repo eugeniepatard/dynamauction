@@ -153,6 +153,7 @@ def train_mlp(
         "n_episodes":        n_episodes,
         "val_frac":          val_frac,
         "hidden_dims":       hidden_dims,
+        "activation":        activation,
         "n_epochs":          n_epochs,
         "lr":                lr,
         "batch_size":        batch_size,
@@ -163,7 +164,7 @@ def train_mlp(
         "final_val_loss":    mlp.history_["val"][-1] if mlp.history_["val"] else None,
         "trained_at":        datetime.now().isoformat(timespec="seconds"),
     }
-    (out_dir / f"{stem}.json").write_text(json.dumps(meta, indent=2))
+    (out_dir / f"{stem}.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(f"  Saved metadata       -> {out_dir / f'{stem}.json'}")
 
     _plot_loss_curves(mlp.history_, out_dir / f"{stem}_loss.pdf")
@@ -196,7 +197,7 @@ def load_mlp(scenario_id: str = SCENARIO_ID, path: Optional[str] = None) -> MLPV
             listing = "\n  ".join(str(c) for c in candidates)
             raise FileNotFoundError(
                 f"Multiple MLPValuationHead models found for '{scenario_id}':\n  {listing}\n"
-                "Pass --mpc-model <path> to select one."
+                "Pass --mpc-models <path> to select one."
             )
         p = candidates[0]
 
@@ -220,7 +221,7 @@ def _start_tensorboard(log_dir: Path, port: int) -> subprocess.Popen:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train MLPValuationHead for MPCPolicy.")
     parser.add_argument("--n-episodes",  type=int,   default=500,         help="Rollout episodes for data collection (default: 500).")
-    parser.add_argument("--val-frac",    type=float, default=0.2,         help="Fraction of samples held out for validation (default: 0.15).")
+    parser.add_argument("--val-frac",    type=float, default=0.15,        help="Fraction of samples held out for validation (default: 0.15).")
     parser.add_argument("--hidden-dims", type=int,   nargs="+", default=[64, 64], help="Hidden layer widths (default: 64 64).")
     parser.add_argument("--activation",  type=str,   default="tanh",
                         choices=["tanh", "relu", "leaky_relu"],

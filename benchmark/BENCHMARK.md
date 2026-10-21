@@ -30,8 +30,6 @@ This scenario features:
   Winning shortly after a previous win permanently lowers the value of the user's later displays.
 - **Myopic value** of a display: $V_0 = f\,(1 - e^{-(T - t)})$ (`expected_reward` in the observation; only FiPla uses it).
 
-`survival-second-price-exponential-1` is the same scenario with higher competition ($B \sim \mathrm{LogNormal}(0, 1)$).
-
 ---
 
 ## Evaluation Protocol
@@ -220,6 +218,8 @@ df = run_full_benchmark(
 
 ## Results
 
+MPC uses $\alpha_{\rm cont} = 1$ unless stated (see [Planning Policies](#planning-policies)).
+
 ### η = 50
 
 | Policy | Mean reward (1 000 campaigns) |
@@ -309,8 +309,9 @@ Results are written to `benchmark/benchmark_results/`.
 ### 5. Results and plots
 
 Open [`benchmark_results.ipynb`](benchmark_results.ipynb) and
-[`additional_bench_results.ipynb`](additional_bench_results.ipynb). Output PDFs are written to `benchmark/plots/`
-(gitignored — generated on demand).
+[`additional_bench_results.ipynb`](additional_bench_results.ipynb). The first writes its PDFs to `benchmark/plots/`
+(gitignored; the figures of the paper are copied to `figures/eta50/` and `figures/eta100/`), the second to
+`figures/additional-exp/`.
 
 ---
 
@@ -327,9 +328,9 @@ benchmark/models/
 │   └── checkpoint.json   # hyperparameters, training seed, checkpoint, validation and test means
 ├── sac/eta50/lr=5e-05_bs=512_warmup=500_gamma=0.99_seed{42,43,44}/
 ├── td3/eta50/lr=0.001_bs=512_noise=0.2_warmup=500_gamma=0.99_seed{42,43,44}/
-├── mlp_valuation_head/
-│   └── survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.pt
-└── survival-second-price-exponential-1/   # models of the original setup on survival-second-price-exponential-1
+└── mlp_valuation_head/
+    ├── survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.pt
+    └── survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.json   # its training settings
 ```
 
 `best_model.zip` is the checkpoint of each training selected on the validation campaigns (the best evaluation during

@@ -1,0 +1,16 @@
+{
+  "scenario": "survival-second-price-exponential",
+  "algo": "ppo",
+  "hyperparameters": {
+    "learning_rate": 5e-05,
+    "ppo_n_steps": 256,
+    "ppo_n_epochs": 10,
+    "ppo_ent_coef": 0.0,
+    "gamma": 0.99
+  },
+  "training_seed": 44,
+  "timesteps": 10000000,
+  "checkpoint": "best (best 20-campaign evaluation during training), chosen on the 200 validation campaigns (seeds 20000-20199)",
+  "validation_mean": 1.3960930420107678,
+  "test_mean_1000_campaigns": 1.837193571048661
+}

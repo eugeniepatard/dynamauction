@@ -7,14 +7,12 @@ payment computation, delayed reward accumulation, and context update.
 The observation space is a Dict of named arrays; the action space is a
 scalar bid clipped to ``[0, 1e12]``.
 """
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
-from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Tuple
 from gymnasium import Env
 from gymnasium import spaces
 
 import numpy as np
-from numpy.random import seed, Generator
+from numpy.random import Generator
 
 from dynamauction.types import AuctionState, Scenario
 from dynamauction.primitives import RewardKernel
@@ -72,7 +70,7 @@ class AuctionEnv(Env):
         self.matured_conversions_times: List[float] = []
         self.t_past_won_auctions: List[float] = []
 
-    def reset(self, seed: Optional[int] = None, options: dict[str, Any] | None = None) -> Tuple[Any, dict[str, Any]]:
+    def reset(self, seed: Optional[int] = None, options: Optional[Dict[str, Any]] = None) -> Tuple[Any, Dict[str, Any]]:
         # ---- Gym reset() logic -----
         super().reset(seed=seed)
         if seed is not None:
@@ -99,7 +97,7 @@ class AuctionEnv(Env):
         
         infos = {
             "horizon": self.horizon,
-            "auction_times": self.auction_times,
+            "auction_times": np.array(self.auction_times, dtype=float),   # a copy: the caller may keep or modify it
         }
 
         return self._get_obs(), infos
@@ -235,7 +233,6 @@ class AuctionEnv(Env):
         assert self.state is not None, "Call reset() first"
 
         t_previous = self.state.t
-        ctx = self.state.ctx
         y_func = self.state.y_func
         u = self.user_features
         x = self.state.display_features

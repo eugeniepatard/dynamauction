@@ -46,9 +46,7 @@ Available presets (all second price, Poisson arrivals of rate 1, campaign length
 | Preset | Kernel | Carry-over context γ | Competition | Probe / sampler |
 |--------|--------|----------------------|-------------|-----------------|
 | `"survival-second-price-exponential"` (main) | `survival` | `multiplicative` (c = 0.9, β = 1) | LogNormal(−1, 1) | Bernoulli / single |
-| `"survival-second-price-exponential-1"` | `survival` | `multiplicative` (c = 0.9, β = 1) | LogNormal(0, 1) (higher competition) | Bernoulli / single |
 | `"survival-second-price-exponential-immediate"` | `immediate-survival` (reward at bid time) | `multiplicative` (c = 0.9, β = 1) | LogNormal(−1, 1) | none / single (κ ~ Bernoulli) |
-| `"survival-second-price-exponential-1-immediate"` | `immediate-survival` (reward at bid time) | `multiplicative` (c = 0.9, β = 1) | LogNormal(0, 1) | none / single (κ ~ Bernoulli) |
 | `"saturation-second-price-lognormal"` | `saturation` | `additive` (number of wins) | LogNormal(−1, 1) | Bernoulli / single |
 | `"recency-second-price-lognormal"` | `recency` | `last-won-time` (−1000 before the first win) | LogNormal(−1, 1) | Bernoulli / single |
 | `"effective-frequency-second-price-lognormal"` | `effective-frequency` (relevance clip((1ᵀu)(1ᵀx), 0, 1) × wear-in then wear-out) | `additive` (number of wins) | LogNormal(−1, 1) | Bernoulli / single |
@@ -57,7 +55,6 @@ Available presets (all second price, Poisson arrivals of rate 1, campaign length
 
 `survival-second-price-exponential` is the main survival scenario: with competition LogNormal(−1, 1) the agent can win
 often, so the fatigue of winning shortly after a previous win (see [Carry-over context](#carry-over-context-γ)) matters.
-`survival-second-price-exponential-1` is the same scenario with higher competition (LogNormal(0, 1)).
 
 ```python
 print(dac.list_scenarios())       # list all preset IDs
@@ -250,6 +247,7 @@ import dynamauction as dac
 
 scenario = dac.make("survival-second-price-exponential")
 env = gym.make("DynamAuction-v0", scenario=scenario)
+policy = dac.FiPlaPolicy()
 
 obs, info = env.reset(seed=42)
 done = False
@@ -319,11 +317,17 @@ Replicates `FlatAuctionObsWrapper` internally and optionally applies `VecNormali
 
 ```python
 import pickle
-with open("models/ppo/obs_rms.pkl", "rb") as f:
+from stable_baselines3 import PPO
+
+# PPO of the benchmark (training seed 42), shipped in benchmark/models/
+run = "benchmark/models/ppo/eta50/lr=5e-05_ent=0_steps=256_gamma=0.99_epochs=10_seed42"
+model = PPO.load(f"{run}/best_model")
+with open(f"{run}/obs_rms.pkl", "rb") as f:
     obs_rms = pickle.load(f)
 
 raw_env = gym.make("DynamAuction-v0", scenario=scenario)
-policy  = SB3PolicyWrapper(model, raw_env.observation_space, obs_rms=obs_rms)
+policy  = SB3PolicyWrapper(model, raw_env.observation_space, obs_rms=obs_rms,
+                           exclude_keys=["expected_reward"])   # trained without expected_reward, see below
 bid     = policy.bid(obs)
 ```
 
@@ -381,8 +385,14 @@ from dynamauction.baseline.estimators import MLPValuationHead  # requires torch
 All planning policies expose a `set_env(env)` hook that must be called once after each `env.reset()` to bind the live environment for planning rollouts:
 
 ```python
-obs, _ = env.reset(seed=seed)
+import numpy as np
+
+env    = gym.make("DynamAuction-v0", scenario=scenario)
+policy = ShadingPolicy(SimulationEstimator(n_rollouts=5), alpha=0.4)   # any planning policy
+
+obs, _ = env.reset(seed=42)
 policy.set_env(env)
+done = False
 while not done:
     bid = policy.bid(obs)
     obs, reward, done, _, info = env.step(np.array([bid]))
@@ -398,7 +408,7 @@ Monte Carlo estimator of the incremental display value Δ(s_t, x) = V¹(s_t, x) 
 
 ```python
 estimator = SimulationEstimator(
-    pi0=FiPlaPolicy(),  # continuation policy
+    pi0=dac.FiPlaPolicy(),  # continuation policy
     n_rollouts=20,
 )
 ```
@@ -490,7 +500,9 @@ the real future auction schedule and horizon in its rollouts (privileged informa
 
 ### Plugging into the benchmark
 
-Planning policies cannot be selected via the CLI — pass them via `extra_policies`:
+The planning policies of the benchmark are selected with `--sim-policies` or the configuration file (see
+[`benchmark/BENCHMARK.md`](../benchmark/BENCHMARK.md)); other configurations, or your own policies, are passed via
+`extra_policies`:
 
 ```python
 from benchmark.evaluate import run_full_benchmark

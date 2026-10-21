@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 from unittest.mock import MagicMock
 
-from dynamauction import AuctionEnv, FlatAuctionObsWrapper
+from dynamauction import FlatAuctionObsWrapper
 from dynamauction.baseline.policies import ConstantPolicy
 from dynamauction.baseline.utils import _obs_to_features, _resample_remaining_horizon, _rollout_to_end
 

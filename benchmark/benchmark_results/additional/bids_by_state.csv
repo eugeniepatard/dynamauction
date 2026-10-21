@@ -1,0 +1,186 @@
+experiment,policy,state,bin,x,n,mean_bid,bid_over_v0,win_rate,alpha_mean,alpha_q25,alpha_q75
+saturation,"MPC(H=25, M=60)",wins before the auction n,"(-0.5, 0.5]",0,779,0.489471,0.508992,0.554557,0.503851,0.3,0.7
+saturation,"MPC(H=25, M=60)",wins before the auction n,"(0.5, 1.5]",1,1849,0.436557,0.503657,0.503515,0.514711,0.3,0.7
+saturation,"MPC(H=25, M=60)",wins before the auction n,"(1.5, 2.5]",2,1877,0.395833,0.501465,0.475226,0.52211,0.3,0.7
+saturation,"MPC(H=25, M=60)",wins before the auction n,"(2.5, 4.5]",3.50841,3804,0.357023,0.527508,0.442429,0.54285,0.3,0.8
+saturation,"MPC(H=25, M=60)",wins before the auction n,"(4.5, 7.5]",6.01361,5879,0.283646,0.535355,0.375404,0.561694,0.3,0.8
+saturation,"MPC(H=25, M=60)",wins before the auction n,"(7.5, 10.5]",9.00601,6319,0.213135,0.54404,0.284064,0.580345,0.3,0.8
+saturation,"MPC(H=25, M=60)",wins before the auction n,"(10.5, 15.5]",12.9874,10934,0.151729,0.57025,0.185842,0.60492,0.4,0.9
+saturation,"MPC(H=25, M=60)",wins before the auction n,"(15.5, 20.5]",17.9422,9393,0.0959863,0.589635,0.0959225,0.601011,0.4,0.9
+saturation,"MPC(H=25, M=60)",wins before the auction n,"(20.5, 30.5]",22.7586,5115,0.0573563,0.560021,0.0428152,0.521193,0.1,0.8
+saturation,"MPC(H=25, M=2000)",wins before the auction n,"(-0.5, 0.5]",0,616,0.486997,0.506712,0.607143,0.505195,0.4,0.6
+saturation,"MPC(H=25, M=2000)",wins before the auction n,"(0.5, 1.5]",1,1661,0.448033,0.517492,0.565322,0.534437,0.4,0.6
+saturation,"MPC(H=25, M=2000)",wins before the auction n,"(1.5, 2.5]",2,1654,0.420899,0.535527,0.545345,0.549637,0.5,0.6
+saturation,"MPC(H=25, M=2000)",wins before the auction n,"(2.5, 4.5]",3.50694,3458,0.377427,0.55643,0.49306,0.57111,0.5,0.7
+saturation,"MPC(H=25, M=2000)",wins before the auction n,"(4.5, 7.5]",6.00811,5180,0.31774,0.59883,0.440734,0.622104,0.5,0.7
+saturation,"MPC(H=25, M=2000)",wins before the auction n,"(7.5, 10.5]",9.006,5497,0.252931,0.644751,0.356376,0.680298,0.6,0.8
+saturation,"MPC(H=25, M=2000)",wins before the auction n,"(10.5, 15.5]",13.0024,9683,0.183584,0.692469,0.244862,0.730838,0.6,0.9
+saturation,"MPC(H=25, M=2000)",wins before the auction n,"(15.5, 20.5]",17.9496,9813,0.119605,0.734794,0.132274,0.762937,0.6,0.9
+saturation,"MPC(H=25, M=2000)",wins before the auction n,"(20.5, 30.5]",23.5775,8215,0.0702482,0.739315,0.0539257,0.746975,0.6,1
+saturation,Shading (best α = 0.5),wins before the auction n,"(-0.5, 0.5]",0,624,0.470633,0.489689,0.594551,0.5,0.5,0.5
+saturation,Shading (best α = 0.5),wins before the auction n,"(0.5, 1.5]",1,1628,0.425614,0.491273,0.577396,0.5,0.5,0.5
+saturation,Shading (best α = 0.5),wins before the auction n,"(1.5, 2.5]",2,1671,0.3867,0.492401,0.539198,0.5,0.5,0.5
+saturation,Shading (best α = 0.5),wins before the auction n,"(2.5, 4.5]",3.51476,3761,0.331288,0.488685,0.450944,0.5,0.5,0.5
+saturation,Shading (best α = 0.5),wins before the auction n,"(4.5, 7.5]",6.02722,6173,0.258084,0.488935,0.357363,0.5,0.5,0.5
+saturation,Shading (best α = 0.5),wins before the auction n,"(7.5, 10.5]",9.02308,7020,0.191795,0.48762,0.25698,0.5,0.5,0.5
+saturation,Shading (best α = 0.5),wins before the auction n,"(10.5, 15.5]",13.0079,12555,0.129904,0.490048,0.156352,0.5,0.5,0.5
+saturation,Shading (best α = 0.5),wins before the auction n,"(15.5, 20.5]",17.6847,9392,0.0820113,0.49117,0.0716567,0.5,0.5,0.5
+saturation,Shading (best α = 0.5),wins before the auction n,"(20.5, 30.5]",22.8148,3488,0.0486454,0.47897,0.0338303,0.5,0.5,0.5
+saturation,FiPla,wins before the auction n,"(-0.5, 0.5]",0,175,0.923629,1,0.794286,,,
+saturation,FiPla,wins before the auction n,"(0.5, 1.5]",1,1169,0.863013,1,0.802395,,,
+saturation,FiPla,wins before the auction n,"(1.5, 2.5]",2,1193,0.786849,1,0.76865,,,
+saturation,FiPla,wins before the auction n,"(2.5, 4.5]",3.50021,2425,0.676353,1,0.724124,,,
+saturation,FiPla,wins before the auction n,"(4.5, 7.5]",6.0096,3855,0.530495,1,0.630091,,,
+saturation,FiPla,wins before the auction n,"(7.5, 10.5]",9.0195,4153,0.3912,1,0.523236,,,
+saturation,FiPla,wins before the auction n,"(10.5, 15.5]",13.0479,8039,0.264689,1,0.3692,,,
+saturation,FiPla,wins before the auction n,"(15.5, 20.5]",18.1031,9848,0.160457,1,0.202275,,,
+saturation,FiPla,wins before the auction n,"(20.5, 30.5]",24.2848,13910,0.0891102,1,0.0797268,,,
+saturation,PPO,wins before the auction n,"(-0.5, 0.5]",0,2733,0.376409,0.392031,0.483718,,,
+saturation,PPO,wins before the auction n,"(0.5, 1.5]",1,5693,0.369869,0.426636,0.489022,,,
+saturation,PPO,wins before the auction n,"(1.5, 2.5]",2,5614,0.345845,0.441175,0.473994,,,
+saturation,PPO,wins before the auction n,"(2.5, 4.5]",3.50961,11864,0.312633,0.460495,0.416049,,,
+saturation,PPO,wins before the auction n,"(4.5, 7.5]",6.01497,18306,0.260678,0.492306,0.354255,,,
+saturation,PPO,wins before the auction n,"(7.5, 10.5]",9.02871,19435,0.204775,0.522677,0.274813,,,
+saturation,PPO,wins before the auction n,"(10.5, 15.5]",12.9648,33183,0.142489,0.535631,0.175813,,,
+saturation,PPO,wins before the auction n,"(15.5, 20.5]",17.8691,31646,0.0762632,0.464424,0.0707514,,,
+saturation,PPO,wins before the auction n,"(20.5, 30.5]",22.7427,10373,0.0491772,0.479721,0.0356695,,,
+recency,"MPC(H=25, M=60)",time since the last win τ,cold,,2258,0.356996,0.549324,0.418512,0.545128,0.3,0.8
+recency,"MPC(H=25, M=60)",time since the last win τ,"(0.0, 0.5]",0.302643,5994,0.0685449,0.505587,0.0613947,0.539389,0.1,0.9
+recency,"MPC(H=25, M=60)",time since the last win τ,"(0.5, 1.0]",0.747273,7199,0.160958,0.53827,0.206556,0.565092,0.3,0.8
+recency,"MPC(H=25, M=60)",time since the last win τ,"(1.0, 1.5]",1.2451,6243,0.244206,0.549659,0.324844,0.562614,0.3,0.8
+recency,"MPC(H=25, M=60)",time since the last win τ,"(1.5, 2.0]",1.74365,5144,0.305665,0.545992,0.394051,0.558631,0.3,0.8
+recency,"MPC(H=25, M=60)",time since the last win τ,"(2.0, 3.0]",2.45794,7463,0.367709,0.542564,0.462147,0.558703,0.3,0.8
+recency,"MPC(H=25, M=60)",time since the last win τ,"(3.0, 4.0]",3.45154,4470,0.422848,0.535152,0.519239,0.554452,0.4,0.8
+recency,"MPC(H=25, M=60)",time since the last win τ,"(4.0, 6.0]",4.82247,4109,0.46435,0.533176,0.528839,0.558311,0.4,0.8
+recency,"MPC(H=25, M=60)",time since the last win τ,"(6.0, 8.0]",6.797,1218,0.498278,0.536829,0.563218,0.558703,0.4,0.7
+recency,"MPC(H=25, M=60)",time since the last win τ,"(8.0, 12.0]",9.34517,512,0.507998,0.538182,0.576172,0.538281,0.4,0.7
+recency,"MPC(H=25, M=60)",time since the last win τ,"(12.0, 20.0]",13.4324,42,0.514329,0.550779,0.714286,0.57619,0.4,0.8
+recency,"MPC(H=25, M=2000)",time since the last win τ,cold,,2086,0.36455,0.584897,0.452061,0.590796,0.5,0.7
+recency,"MPC(H=25, M=2000)",time since the last win τ,"(0.0, 0.5]",0.30298,6529,0.0790521,0.583379,0.0739776,0.641247,0.4,0.9
+recency,"MPC(H=25, M=2000)",time since the last win τ,"(0.5, 1.0]",0.743883,7758,0.182067,0.610655,0.23421,0.64398,0.5,0.8
+recency,"MPC(H=25, M=2000)",time since the last win τ,"(1.0, 1.5]",1.24193,6639,0.273765,0.615877,0.384245,0.633394,0.5,0.8
+recency,"MPC(H=25, M=2000)",time since the last win τ,"(1.5, 2.0]",1.74319,5343,0.33501,0.599846,0.452368,0.613288,0.5,0.7
+recency,"MPC(H=25, M=2000)",time since the last win τ,"(2.0, 3.0]",2.45192,7302,0.39869,0.587571,0.526979,0.607573,0.5,0.7
+recency,"MPC(H=25, M=2000)",time since the last win τ,"(3.0, 4.0]",3.44973,4090,0.452871,0.575246,0.563325,0.594034,0.5,0.7
+recency,"MPC(H=25, M=2000)",time since the last win τ,"(4.0, 6.0]",4.78595,3461,0.491471,0.565409,0.595204,0.591968,0.5,0.7
+recency,"MPC(H=25, M=2000)",time since the last win τ,"(6.0, 8.0]",6.8035,998,0.519267,0.560244,0.61022,0.589379,0.5,0.7
+recency,"MPC(H=25, M=2000)",time since the last win τ,"(8.0, 12.0]",9.20733,314,0.550602,0.58534,0.684713,0.589809,0.5,0.7
+recency,"MPC(H=25, M=2000)",time since the last win τ,"(12.0, 20.0]",13.7762,21,0.550108,0.610022,0.571429,0.542857,0.5,0.6
+recency,Shading (best α = 0.6),time since the last win τ,cold,,2094,0.360759,0.587394,0.448902,0.6,0.6,0.6
+recency,Shading (best α = 0.6),time since the last win τ,"(0.0, 0.5]",0.301992,6583,0.0792724,0.586209,0.0735227,0.6,0.6,0.6
+recency,Shading (best α = 0.6),time since the last win τ,"(0.5, 1.0]",0.746125,7747,0.175884,0.588498,0.225894,0.6,0.6,0.6
+recency,Shading (best α = 0.6),time since the last win τ,"(1.0, 1.5]",1.24553,6592,0.261999,0.588676,0.359982,0.6,0.6,0.6
+recency,Shading (best α = 0.6),time since the last win τ,"(1.5, 2.0]",1.74327,5436,0.328648,0.587268,0.448492,0.6,0.6,0.6
+recency,Shading (best α = 0.6),time since the last win τ,"(2.0, 3.0]",2.44913,7370,0.397893,0.58898,0.528765,0.6,0.6,0.6
+recency,Shading (best α = 0.6),time since the last win τ,"(3.0, 4.0]",3.45145,4106,0.462611,0.586225,0.585485,0.6,0.6,0.6
+recency,Shading (best α = 0.6),time since the last win τ,"(4.0, 6.0]",4.76339,3360,0.511598,0.588162,0.623512,0.6,0.6,0.6
+recency,Shading (best α = 0.6),time since the last win τ,"(6.0, 8.0]",6.78188,887,0.544803,0.592643,0.650507,0.6,0.6,0.6
+recency,Shading (best α = 0.6),time since the last win τ,"(8.0, 12.0]",9.16954,295,0.556881,0.588178,0.647458,0.6,0.6,0.6
+recency,Shading (best α = 0.6),time since the last win τ,"(12.0, 20.0]",13.3813,26,0.572308,0.624501,0.730769,0.6,0.6,0.6
+recency,FiPla,time since the last win τ,cold,,1723,0.487871,1,0.54556,,,
+recency,FiPla,time since the last win τ,"(0.0, 0.5]",0.301096,8505,0.135366,1,0.167313,,,
+recency,FiPla,time since the last win τ,"(0.5, 1.0]",0.741058,9644,0.298436,1,0.422439,,,
+recency,FiPla,time since the last win τ,"(1.0, 1.5]",1.23781,7327,0.442521,1,0.567217,,,
+recency,FiPla,time since the last win τ,"(1.5, 2.0]",1.73644,5305,0.553683,1,0.661263,,,
+recency,FiPla,time since the last win τ,"(2.0, 3.0]",2.43499,6386,0.668062,1,0.719856,,,
+recency,FiPla,time since the last win τ,"(3.0, 4.0]",3.43049,2918,0.774638,1,0.745031,,,
+recency,FiPla,time since the last win τ,"(4.0, 6.0]",4.72098,1810,0.852208,1,0.803867,,,
+recency,FiPla,time since the last win τ,"(6.0, 8.0]",6.6754,326,0.898969,1,0.785276,,,
+recency,FiPla,time since the last win τ,"(8.0, 12.0]",9.14907,62,0.943206,1,0.870968,,,
+recency,PPO,time since the last win τ,cold,,6122,0.342474,0.530097,0.442339,,,
+recency,PPO,time since the last win τ,"(0.0, 0.5]",0.298707,18507,0.270525,2.0232,0.371319,,,
+recency,PPO,time since the last win τ,"(0.5, 1.0]",0.73805,20344,0.273275,0.924554,0.376032,,,
+recency,PPO,time since the last win τ,"(1.0, 1.5]",1.24244,16652,0.276913,0.624872,0.383077,,,
+recency,PPO,time since the last win τ,"(1.5, 2.0]",1.74252,13478,0.279409,0.500129,0.394346,,,
+recency,PPO,time since the last win τ,"(2.0, 3.0]",2.46293,20235,0.282851,0.416784,0.387695,,,
+recency,PPO,time since the last win τ,"(3.0, 4.0]",3.46691,13391,0.287365,0.363805,0.396236,,,
+recency,PPO,time since the last win τ,"(4.0, 6.0]",4.8471,14390,0.295351,0.337869,0.407783,,,
+recency,PPO,time since the last win τ,"(6.0, 8.0]",6.84261,6107,0.306711,0.329183,0.404126,,,
+recency,PPO,time since the last win τ,"(8.0, 12.0]",9.421,3573,0.318738,0.335986,0.437448,,,
+recency,PPO,time since the last win τ,"(12.0, 20.0]",13.9603,603,0.334338,0.35463,0.457711,,,
+recency,PPO + time since last win,time since the last win τ,cold,,6925,0.319246,0.495433,0.406209,,,
+recency,PPO + time since last win,time since the last win τ,"(0.0, 0.5]",0.30186,18011,0.0271301,0.200831,0.0243185,,,
+recency,PPO + time since last win,time since the last win τ,"(0.5, 1.0]",0.748637,22144,0.112892,0.377057,0.134529,,,
+recency,PPO + time since last win,time since the last win τ,"(1.0, 1.5]",1.2453,19821,0.225002,0.506766,0.305837,,,
+recency,PPO + time since last win,time since the last win τ,"(1.5, 2.0]",1.74146,16272,0.309931,0.554421,0.417466,,,
+recency,PPO + time since last win,time since the last win τ,"(2.0, 3.0]",2.45253,22727,0.38075,0.561805,0.510978,,,
+recency,PPO + time since last win,time since the last win τ,"(3.0, 4.0]",3.44918,12772,0.434606,0.551378,0.561776,,,
+recency,PPO + time since last win,time since the last win τ,"(4.0, 6.0]",4.7907,10998,0.470412,0.54071,0.584743,,,
+recency,PPO + time since last win,time since the last win τ,"(6.0, 8.0]",6.79861,3255,0.500103,0.53923,0.601843,,,
+recency,PPO + time since last win,time since the last win τ,"(8.0, 12.0]",9.26826,1138,0.511723,0.535152,0.610721,,,
+recency,PPO + time since last win,time since the last win τ,"(12.0, 20.0]",13.4643,94,0.524126,0.555791,0.62766,,,
+effective-frequency,"MPC(H=25, M=80)",wins before the auction n,"(-0.5, 0.5]",0,1482,0.225562,4.17796,0.313765,4.40675,5,5
+effective-frequency,"MPC(H=25, M=80)",wins before the auction n,"(0.5, 1.5]",1,1108,0.50284,3.38761,0.594765,3.47996,2,5
+effective-frequency,"MPC(H=25, M=80)",wins before the auction n,"(1.5, 2.5]",2,1413,0.404831,1.25789,0.444444,1.35605,0.7,2
+effective-frequency,"MPC(H=25, M=80)",wins before the auction n,"(2.5, 3.5]",3,1335,0.364223,0.801923,0.421723,0.867566,0.5,1
+effective-frequency,"MPC(H=25, M=80)",wins before the auction n,"(3.5, 5.5]",4.49167,2341,0.350588,0.739631,0.42076,0.814396,0.5,1
+effective-frequency,"MPC(H=25, M=80)",wins before the auction n,"(5.5, 10.5]",7.88615,4708,0.2853,0.771024,0.349618,0.829992,0.5,1
+effective-frequency,"MPC(H=25, M=80)",wins before the auction n,"(10.5, 30.5]",15.4791,5314,0.165555,0.861075,0.199473,0.960049,0.4,1.5
+effective-frequency,Shading (best α = 1.25),wins before the auction n,"(-0.5, 0.5]",0,5065,0.0627098,1.16034,0.0614018,1.25,1.25,1.25
+effective-frequency,Shading (best α = 1.25),wins before the auction n,"(0.5, 1.5]",1,1628,0.17844,1.20383,0.231572,1.25,1.25,1.25
+effective-frequency,Shading (best α = 1.25),wins before the auction n,"(1.5, 2.5]",2,703,0.390381,1.2166,0.500711,1.25,1.25,1.25
+effective-frequency,Shading (best α = 1.25),wins before the auction n,"(2.5, 3.5]",3,536,0.564949,1.23549,0.625,1.25,1.25,1.25
+effective-frequency,Shading (best α = 1.25),wins before the auction n,"(3.5, 5.5]",4.50707,990,0.583649,1.22846,0.620202,1.25,1.25,1.25
+effective-frequency,Shading (best α = 1.25),wins before the auction n,"(5.5, 10.5]",7.94364,2147,0.450483,1.23857,0.545412,1.25,1.25,1.25
+effective-frequency,Shading (best α = 1.25),wins before the auction n,"(10.5, 30.5]",16.8428,3938,0.210338,1.2165,0.272473,1.25,1.25,1.25
+effective-frequency,FiPla,wins before the auction n,"(-0.5, 0.5]",0,7539,0.0540511,1,0.0290489,,,
+effective-frequency,FiPla,wins before the auction n,"(0.5, 1.5]",1,1130,0.150178,1,0.180531,,,
+effective-frequency,FiPla,wins before the auction n,"(1.5, 2.5]",2,384,0.347392,1,0.505208,,,
+effective-frequency,FiPla,wins before the auction n,"(2.5, 3.5]",3,310,0.494281,1,0.596774,,,
+effective-frequency,FiPla,wins before the auction n,"(3.5, 5.5]",4.48812,547,0.50065,1,0.612431,,,
+effective-frequency,FiPla,wins before the auction n,"(5.5, 10.5]",7.97508,1244,0.373773,1,0.484727,,,
+effective-frequency,FiPla,wins before the auction n,"(10.5, 30.5]",15.9805,2159,0.185791,1,0.235294,,,
+effective-frequency,PPO,wins before the auction n,"(-0.5, 0.5]",0,32376,0.00162352,0.0300371,0.00154435,,,
+effective-frequency,PPO,wins before the auction n,"(0.5, 1.5]",1,827,0.0568433,0.383984,0.0689238,,,
+effective-frequency,PPO,wins before the auction n,"(1.5, 2.5]",2,486,0.0762356,0.237865,0.0987654,,,
+effective-frequency,PPO,wins before the auction n,"(2.5, 3.5]",3,369,0.0724321,0.156403,0.0894309,,,
+effective-frequency,PPO,wins before the auction n,"(3.5, 5.5]",4.36224,588,0.0704482,0.147924,0.0833333,,,
+effective-frequency,PPO,wins before the auction n,"(5.5, 10.5]",8.24335,526,0.0981905,0.265367,0.129278,,,
+effective-frequency,PPO,wins before the auction n,"(10.5, 30.5]",17.0887,203,0.184209,1.03186,0.256158,,,
+effective-frequency,PPO + V̂0 observation,wins before the auction n,"(-0.5, 0.5]",0,1600,0.236776,4.38117,0.315625,,,
+effective-frequency,PPO + V̂0 observation,wins before the auction n,"(0.5, 1.5]",1,4039,0.244968,1.65464,0.330032,,,
+effective-frequency,PPO + V̂0 observation,wins before the auction n,"(1.5, 2.5]",2,4432,0.295436,0.985023,0.401625,,,
+effective-frequency,PPO + V̂0 observation,wins before the auction n,"(2.5, 3.5]",3,4962,0.285202,0.681427,0.381298,,,
+effective-frequency,PPO + V̂0 observation,wins before the auction n,"(3.5, 5.5]",4.50429,10712,0.249542,0.590611,0.326643,,,
+effective-frequency,PPO + V̂0 observation,wins before the auction n,"(5.5, 10.5]",7.75917,19047,0.198755,0.578463,0.268914,,,
+effective-frequency,PPO + V̂0 observation,wins before the auction n,"(10.5, 30.5]",14.0202,15510,0.106799,0.491975,0.138556,,,
+reminder,"MPC(H=25, M=80)",time since the last win τ,cold,,1301,0.423682,2.25557,0.51422,3.89593,3,5
+reminder,"MPC(H=25, M=80)",time since the last win τ,"(0.0, 0.5]",0.257033,2488,0.253362,1.0118,0.309486,0.914148,0.4,1
+reminder,"MPC(H=25, M=80)",time since the last win τ,"(0.5, 1.0]",0.743082,2503,0.440248,0.954782,0.490611,0.964203,0.6,1
+reminder,"MPC(H=25, M=80)",time since the last win τ,"(1.0, 1.5]",1.23817,2009,0.570876,0.990088,0.591339,1.00777,0.6,1.5
+reminder,"MPC(H=25, M=80)",time since the last win τ,"(1.5, 2.5]",1.97058,3300,0.664964,1.0697,0.632424,1.15318,0.7,1.5
+reminder,"MPC(H=25, M=80)",time since the last win τ,"(2.5, 4.0]",3.18164,3250,0.727623,1.31623,0.664,1.45705,0.9,2
+reminder,"MPC(H=25, M=80)",time since the last win τ,"(4.0, 8.0]",5.54014,3379,0.699749,2.067,0.647825,2.40627,1.5,3
+reminder,"MPC(H=25, M=80)",time since the last win τ,"(8.0, 20.0]",11.1349,1113,0.517275,3.94083,0.571429,3.95058,3,5
+reminder,Shading (best α = 1.5),time since the last win τ,cold,,3783,0.143557,1.43321,0.163098,1.5,1.5,1.5
+reminder,Shading (best α = 1.5),time since the last win τ,"(0.0, 0.5]",0.247987,1919,0.366011,1.45953,0.454924,1.5,1.5,1.5
+reminder,Shading (best α = 1.5),time since the last win τ,"(0.5, 1.0]",0.740063,1767,0.686205,1.46461,0.679117,1.5,1.5,1.5
+reminder,Shading (best α = 1.5),time since the last win τ,"(1.0, 1.5]",1.2403,1491,0.854024,1.46856,0.73776,1.5,1.5,1.5
+reminder,Shading (best α = 1.5),time since the last win τ,"(1.5, 2.5]",1.97382,2242,0.93091,1.47052,0.751115,1.5,1.5,1.5
+reminder,Shading (best α = 1.5),time since the last win τ,"(2.5, 4.0]",3.18688,2146,0.829194,1.46828,0.728332,1.5,1.5,1.5
+reminder,Shading (best α = 1.5),time since the last win τ,"(4.0, 8.0]",5.59285,2329,0.510187,1.48354,0.562044,1.5,1.5,1.5
+reminder,Shading (best α = 1.5),time since the last win τ,"(8.0, 20.0]",12.4009,1620,0.180741,1.46884,0.224691,1.5,1.5,1.5
+reminder,FiPla,time since the last win τ,cold,,5928,0.0942128,1,0.0880567,,,
+reminder,FiPla,time since the last win τ,"(0.0, 0.5]",0.253761,1164,0.263673,1,0.345361,,,
+reminder,FiPla,time since the last win τ,"(0.5, 1.0]",0.739858,1033,0.473032,1,0.570184,,,
+reminder,FiPla,time since the last win τ,"(1.0, 1.5]",1.24621,939,0.595425,1,0.631523,,,
+reminder,FiPla,time since the last win τ,"(1.5, 2.5]",1.96869,1387,0.632429,1,0.671233,,,
+reminder,FiPla,time since the last win τ,"(2.5, 4.0]",3.18003,1438,0.571822,1,0.621001,,,
+reminder,FiPla,time since the last win τ,"(4.0, 8.0]",5.64393,1738,0.350195,1,0.420023,,,
+reminder,FiPla,time since the last win τ,"(8.0, 20.0]",12.9556,1859,0.123013,1,0.135019,,,
+reminder,PPO,time since the last win τ,cold,,40446,0.00786549,0.0850419,0.00556297,,,
+reminder,PPO,time since the last win τ,"(0.0, 0.5]",0.23716,272,0.185843,0.723139,0.275735,,,
+reminder,PPO,time since the last win τ,"(0.5, 1.0]",0.720447,248,0.200764,0.432597,0.193548,,,
+reminder,PPO,time since the last win τ,"(1.0, 1.5]",1.24412,245,0.183494,0.305751,0.228571,,,
+reminder,PPO,time since the last win τ,"(1.5, 2.5]",1.96135,421,0.159924,0.244637,0.19715,,,
+reminder,PPO,time since the last win τ,"(2.5, 4.0]",3.18681,488,0.139282,0.252733,0.165984,,,
+reminder,PPO,time since the last win τ,"(4.0, 8.0]",5.80306,876,0.0967265,0.289154,0.140411,,,
+reminder,PPO,time since the last win τ,"(8.0, 20.0]",13.1372,1310,0.0508302,0.416882,0.0541985,,,
+reminder,PPO + V̂0 observation,time since the last win τ,cold,,3836,0.316231,1.33433,0.411366,,,
+reminder,PPO + V̂0 observation,time since the last win τ,"(0.0, 0.5]",0.254431,6234,0.335491,1.33557,0.455566,,,
+reminder,PPO + V̂0 observation,time since the last win τ,"(0.5, 1.0]",0.74157,5970,0.42307,0.917004,0.532328,,,
+reminder,PPO + V̂0 observation,time since the last win τ,"(1.0, 1.5]",1.24028,5157,0.468408,0.813868,0.565445,,,
+reminder,PPO + V̂0 observation,time since the last win τ,"(1.5, 2.5]",1.97692,8211,0.474633,0.764384,0.577762,,,
+reminder,PPO + V̂0 observation,time since the last win τ,"(2.5, 4.0]",3.19961,8388,0.449132,0.816049,0.546137,,,
+reminder,PPO + V̂0 observation,time since the last win τ,"(4.0, 8.0]",5.66162,10291,0.338453,1.01834,0.441745,,,
+reminder,PPO + V̂0 observation,time since the last win τ,"(8.0, 20.0]",12.0764,6902,0.216726,1.71785,0.26572,,,

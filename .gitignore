@@ -1,24 +1,34 @@
+# Python and tooling
 __pycache__/
 *.pyc
 *.pyo
-.DS_Store
-.venv/
 *.egg-info/
+build/
+dist/
+.venv/
 .pytest_cache/
-docs/outputs/
-outputs/*
+.ipynb_checkpoints/
+.DS_Store
+
+# Outputs of the scripts (TensorBoard logs, Hydra runs, figures of the results notebook)
 benchmark/logs/*
-benchmark/models/
 benchmark/outputs/*
-benchmark/params_search/results/*
-NOTES.txt
-Pseudo-code.md
-benchmark/benchmark_results
 benchmark/plots
-benchmark/retrain_best.py
-A_kernel_causal_model_for_repeated_auctions_with_dynamic_values.pdf
-camera-ready-exp/
-DynamAuction Models.pdf
-benchmark/models/
-A_kernel_causal_model_for_repeated_auctions_with_dynamic_values_camera_ready/
-benchmark/models/survival-second-price-exponential-1/
+
+# Evaluation results: only the data read by the results notebooks is tracked
+benchmark/benchmark_results/*
+!benchmark/benchmark_results/main/
+!benchmark/benchmark_results/additional/
+
+# Trained models: only the models of the paper are tracked
+# (MLP valuation head; PPO, SAC and TD3 at eta = 50, training seeds 42-44)
+benchmark/models/*
+!benchmark/models/*/
+benchmark/models/*/*
+!benchmark/models/*/eta50/
+benchmark/models/*/eta50/*
+!benchmark/models/ppo/eta50/lr=5e-05_ent=0_steps=256_gamma=0.99_epochs=10_seed4[234]/
+!benchmark/models/sac/eta50/lr=5e-05_bs=512_warmup=500_gamma=0.99_seed4[234]/
+!benchmark/models/td3/eta50/lr=0.001_bs=512_noise=0.2_warmup=500_gamma=0.99_seed4[234]/
+!benchmark/models/mlp_valuation_head/survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.pt
+!benchmark/models/mlp_valuation_head/survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.json
