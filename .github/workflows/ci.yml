@@ -15,14 +15,14 @@ jobs:
       fail-fast: false   # run all matrix jobs even if one fails
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -32,3 +32,83 @@ jobs:
 
       - name: Run tests
         run: pytest tests/ -q --tb=short -m "not slow"
+
+  # ── The package as a user installs it: built, installed from the wheel (not editable), used outside the repo ──
+  packaging:
+    name: Package install (${{ matrix.os }} / Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10", "3.14"]   # oldest and newest supported versions
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Build the sdist and the wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Install the wheel with every extra
+        shell: bash
+        run: |
+          pip install "$(ls dist/*.whl)[benchmark,dev]"
+          pip check
+
+      - name: Use the installed package from outside the repository
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: |
+          python - <<'PY'
+          import gymnasium as gym
+
+          import dynamauction as dac
+
+          print("dynamauction", dac.__version__, "from", dac.__file__)
+          assert "site-packages" in dac.__file__, "the source tree was imported instead of the installed package"
+          for scenario_id in dac.list_scenarios():
+              env = gym.make("DynamAuction-v0", scenario=dac.make(scenario_id))
+              obs, _ = env.reset(seed=1)
+              policy, done, steps = dac.FiPlaPolicy(), False, 0
+              while not done and steps < 20:
+                  obs, reward, done, truncated, info = env.step(policy.bid(obs))
+                  steps += 1
+              print(f"  {scenario_id}: {steps} steps")
+          import hydra, seaborn, stable_baselines3, submitit, tensorboard  # the [benchmark] extra
+          print("ok")
+          PY
+
+  # ── The oldest dependency versions allowed by pyproject.toml ─────────────────
+  minimum-versions:
+    name: Minimum dependency versions (ubuntu-latest / Python 3.10)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.10"
+
+      - name: Install the lowest versions of the direct dependencies
+        run: |
+          python -m pip install uv
+          printf 'pytest>=8\nblack>=24\nflake8>=7\n' > "$RUNNER_TEMP/dev-tools.txt"   # dev tools without a lower bound
+          uv pip install --system --resolution lowest-direct --torch-backend cpu \
+            -c "$RUNNER_TEMP/dev-tools.txt" -e ".[dev]"
+          uv pip list --system | grep -iE "^(numpy|pandas|scipy|scikit-learn|matplotlib|gymnasium|torch|stable.baselines3) "
+
+      - name: Run tests
+        run: pytest tests/ -q --tb=short
