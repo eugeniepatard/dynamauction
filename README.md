@@ -157,10 +157,6 @@ tests/                  Unit test suite
 | `reminder-second-price-lognormal` | `ReminderKernel` | time of last win | Bernoulli / single | Retargeting — user/display relevance × a reminder converting best some time after the previous contact |
 | `mixed-second-price-exponential` | `MixedKernel` | number of wins | Poisson / multi | Rich-media — immediate click-through + delayed view-through |
 
-In the survival presets the fatigue factor at an auction at time $t$ is $S(t^-) = S(t_{\rm last}^-)\,(1 - c\,e^{-\beta(t - t_{\rm last})})$
-(no factor before the first win); `beta` (recovery rate) can be overridden with `dac.make(..., gamma_beta=...)`.
-See [docs/API_REFERENCE.md](docs/API_REFERENCE.md#carry-over-context-γ).
-
 ---
 
 ## Documentation
