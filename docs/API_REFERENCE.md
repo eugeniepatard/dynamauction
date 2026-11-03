@@ -47,6 +47,8 @@ Available presets (all second price, Poisson arrivals of rate 1, campaign length
 |--------|--------|----------------------|-------------|-----------------|
 | `"survival-second-price-exponential"` (main) | `survival` | `multiplicative` (c = 0.9, β = 1) | LogNormal(−1, 1) | Bernoulli / single |
 | `"survival-second-price-exponential-immediate"` | `immediate-survival` (reward at bid time) | `multiplicative` (c = 0.9, β = 1) | LogNormal(−1, 1) | none / single (κ ~ Bernoulli) |
+| `"survival-second-price-exponential-decaying-arrivals"` | `survival` | `multiplicative` (c = 0.9, β = 1) | LogNormal(−1, 1); arrival `decaypoisson`, $\lambda(t) = 0.5^{\lfloor t/10 \rfloor}$ | Bernoulli / single |
+| `"survival-second-price-exponential-decaying-arrivals-beta0.1"` | `survival` | `multiplicative` (c = 0.9, β = 0.1) | LogNormal(−1, 1); arrival `decaypoisson`, $\lambda(t) = 0.5^{\lfloor t/10 \rfloor}$ | Bernoulli / single |
 | `"saturation-second-price-lognormal"` | `saturation` | `additive` (number of wins) | LogNormal(−1, 1) | Bernoulli / single |
 | `"recency-second-price-lognormal"` | `recency` | `last-won-time` (−1000 before the first win) | LogNormal(−1, 1) | Bernoulli / single |
 | `"effective-frequency-second-price-lognormal"` | `effective-frequency` (relevance clip((1ᵀu)(1ᵀx), 0, 1) × wear-in then wear-out) | `additive` (number of wins) | LogNormal(−1, 1) | Bernoulli / single |
@@ -95,7 +97,7 @@ Available components:
 | Carry-over context (γ) | `"additive"`, `"multiplicative"`, `"last-won-time"`, `"constant"` |
 | Auctions | `"first-price"`, `"second-price"` |
 | Competition | `"uniform"`, `"lognormal"`, `"exponential"` |
-| Arrival | `"pwpoisson"`, `"cstpoisson"` |
+| Arrival | `"pwpoisson"`, `"cstpoisson"`, `"decaypoisson"` |
 | Display | `"iid"`, `"catalogue"`, `"fixed"`, `"normal"` |
 | User features | `"uniform"`, `"normal"`, `"fixed"` |
 | Horizon | `"fixed"`, `"exponential"` |
