@@ -1,5 +1,6 @@
 """Carry-over context primitives x^{-i} = aggregate_{i'<i}[gamma(xi', ti', ti)]"""
 
+import math
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -35,28 +36,29 @@ class AdditiveGamma(Gamma):
         return ctx + 1.0
 
 class MultiplicativeGamma(Gamma):
-    """S(t_{i+1}⁻) = S(t_i⁻) · (1 − c·exp(−beta·(t_{i+1} − t_i))), S(0⁻) = initial_value.
+    """S(t⁻) = Π_{i: t_i < t} (1 − c·exp(−beta·(t − t_i))) over the past wins t_i, 1 before the first win.
 
-    At an auction at time t: S(t⁻) = stored · (1 − c·exp(−beta·(t − t_last))) with t_last the
-    last won auction, and no factor before the first win. A win stores S(t_display⁻).
-    beta is the recovery rate: beta < 1 makes the fatigue of a win last longer, beta > 1 shorter.
+    Eq. (carry-over) with the monoid ([0, 1], ×, 1) and gamma(x_i, t_i, t) = 1 − c·exp(−beta·(t − t_i)):
+    each win contributes its own factor, 1 − c right after the win, which recovers towards 1 as time
+    passes. beta is the recovery rate: beta < 1 makes the fatigue of a win last longer, beta > 1 shorter.
+    The context only depends on the win times: the stored context is not used and stays 1.
     """
 
-    def __init__(self, c : float, initial_value: float = 1.0, beta: float = 1.0):
+    def __init__(self, c : float, beta: float = 1.0):
         self.c = c
-        self.initial_value = initial_value
         self.beta = beta
 
     def initiate_context(self) -> float:
-        return self.initial_value
+        return 1.0
 
     def current_context(self, ctx: float, t: float, t_past_won_auctions: List[float]) -> float:
-        if not t_past_won_auctions:
-            return ctx
-        return ctx * (1.0 - self.c * np.exp(-self.beta * (t - max(t_past_won_auctions))))
+        s = 1.0   # empty product: no factor before the first win
+        for t_i in t_past_won_auctions:
+            s *= 1.0 - self.c * math.exp(-self.beta * (t - t_i))
+        return s
 
     def update_context(self, ctx: float, x: np.ndarray, u: np.ndarray, t_display: float, t_past_won_auctions: List[float]) -> float:
-        return self.current_context(ctx, t_display, t_past_won_auctions)
+        return ctx
 
 class LastWonTimeGamma(Gamma):
     """Context is the time of the last won auction."""

@@ -131,11 +131,12 @@ The context `ctx` summarises the past won auctions and enters the conversion ker
 | `additive` | number of won auctions | same |
 | `last-won-time(initial_value=-1e6)` | time of the last won auction (`initial_value` before any win) | same |
 | `constant` | a constant | same |
-| `multiplicative(c, initial_value=1, beta=1)` | $S(t_{\rm last}^-)$ at the last win | $S(t^-) = S(t_{\rm last}^-)\,\big(1 - c\,e^{-\beta (t - t_{\rm last})}\big)$ |
+| `multiplicative(c, beta=1)` | 1 (not used) | $S(t^-) = \prod_{i:\, t_i < t} \big(1 - c\,e^{-\beta (t - t_i)}\big)$ over the past wins $t_i$ |
 
-For `multiplicative` (survival presets), $S(0^-) = $ `initial_value` and there is **no factor before the first win**.
-A win at time $t$ stores $S(t^-)$, so a win shortly after the previous one locks a small factor
-$\rho(\Delta) = 1 - c\,e^{-\beta\Delta}$ ($\Delta = t - t_{\rm last}$) into the context for the rest of the campaign.
+For `multiplicative` (survival presets), $S = 1$ before the first win (empty product). This is
+the carry-over context $S_u(t) = \bigoplus_{i} \gamma(x_i, t_i, t)$ with the monoid $([0,1], \times, 1)$: each past win
+contributes its own factor $\rho(t - t_i)$, $\rho(\Delta) = 1 - c\,e^{-\beta\Delta}$, equal to $1 - c$ right after the win and
+recovering towards 1; the factors are recomputed from the win times at every auction.
 `beta` is the recovery rate: $\beta < 1$ makes the fatigue of a win last longer, $\beta > 1$ shorter. The environment
 values every auction (expected reward, conversion probability, conversion draw) with `current_context`.
 
@@ -144,7 +145,7 @@ from dynamauction.primitives import MultiplicativeGamma
 g = MultiplicativeGamma(c=0.9, beta=1.0)
 ctx = g.initiate_context()                                    # 1.0
 g.current_context(ctx, t=2.0, t_past_won_auctions=[])         # 1.0   (no factor before the first win)
-g.current_context(0.5, t=4.0, t_past_won_auctions=[1.0, 3.0]) # 0.5 · (1 − 0.9 e^{−1}) ≈ 0.334
+g.current_context(ctx, t=4.0, t_past_won_auctions=[1.0, 3.0]) # (1 − 0.9 e^{−3})(1 − 0.9 e^{−1}) ≈ 0.639
 ```
 
 > **Note — `last-won-time` before the first win: adapt `initial_value` to your scenario.** With the `recency`

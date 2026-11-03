@@ -25,9 +25,9 @@ This scenario features:
 - **Value kernel** (survival): a won display converts at most once, with probability
   $f = \mathrm{clip}(S\,(\mathbf 1^\top u)(\mathbf 1^\top x), 0, 1)$, after a delay $\mathrm{Exp}(1)$; a conversion is
   worth 1 if it happens before $T$.
-- **User fatigue** (multiplicative carry-over context): $S(t^-) = S(t_{\rm last}^-)\,\rho(\Delta)$,
-  $\rho(\Delta) = 1 - 0.9\,e^{-\Delta}$, with $\Delta$ the time since the last won auction; $S = 1$ before the first win.
-  Winning shortly after a previous win permanently lowers the value of the user's later displays.
+- **User fatigue** (multiplicative carry-over context): $S(t^-) = \prod_{i:\, t_i < t} \rho(t - t_i)$ over the past wins $t_i$,
+  $\rho(\Delta) = 1 - 0.9\,e^{-\Delta}$; $S = 1$ before the first win. Each win lowers the value of the user's next displays
+  (by a factor 0.1 right after the win), and its effect fades as time passes; close wins compound.
 - **Myopic value** of a display: $V_0 = f\,(1 - e^{-(T - t)})$ (`expected_reward` in the observation; only FiPla uses it).
 
 ---

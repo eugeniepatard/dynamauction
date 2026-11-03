@@ -144,9 +144,9 @@ def test_poisson_probe_statistical_properties():
     assert 95 <= mean_samples <= 105
 
 
-def test_multiplicative_context_follows_paper_recursion():
-    """Survival preset, always winning: the context used at each auction (observation and
-    auction record) is S(t_{k+1}⁻) = S(t_k⁻)·(1 − c·exp(−(t_{k+1} − t_k))), S = 1 before the first win."""
+def test_multiplicative_context_follows_eq_carry_over():
+    """Survival preset, always winning: the context used at each auction (observation and auction record) is
+    S(t⁻) = Π_{i: t_i < t} (1 − c·exp(−(t − t_i))) over all the past wins, S = 1 before the first win."""
     import dynamauction as dac
 
     scenario = dac.make("survival-second-price-exponential")
@@ -154,13 +154,13 @@ def test_multiplicative_context_follows_paper_recursion():
     env = AuctionEnv(scenario)
     for seed in range(5):
         obs, _ = env.reset(seed=seed)
-        s_prev, t_last, done = 1.0, None, False
+        wins, done = [], False
         while not done:
             t = env.state.t
-            s_now = 1.0 if t_last is None else s_prev * (1.0 - c * np.exp(-(t - t_last)))
+            s_now = float(np.prod([1.0 - c * np.exp(-(t - t_i)) for t_i in wins])) if wins else 1.0
             assert obs["ctx"][0] == pytest.approx(s_now, rel=1e-5, abs=1e-7)
             assert s_now >= 0.0
             obs, _, done, _, info = env.step(np.array([1e9], dtype=np.float32))
             assert info["auction"]["won"]
             assert info["auction"]["context"] == pytest.approx(s_now)
-            s_prev, t_last = s_now, t
+            wins.append(t)
