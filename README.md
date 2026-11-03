@@ -151,6 +151,8 @@ tests/                  Unit test suite
 |--------|--------|--------------------|-----------------|----------|
 | `survival-second-price-exponential` | `SurvivalKernel` | multiplicative fatigue (c = 0.9, β = 1) | Bernoulli / single | **Main survival scenario.** Single-purchase e-commerce — Cox-style model, competition LogNormal(−1, 1): winning often makes fatigue matter |
 | `survival-second-price-exponential-immediate` | `ImmediateSurvivalKernel` | multiplicative fatigue | none / single | Main survival scenario with the reward at bid time (credit-assignment ablation) |
+| `survival-second-price-exponential-decaying-arrivals` | `SurvivalKernel` | multiplicative fatigue (c = 0.9, β = 1) | Bernoulli / single | Main survival scenario with a decaying arrival rate $\lambda(t) = 0.5^{\lfloor t/10 \rfloor}$: opportunities become scarcer during the campaign |
+| `survival-second-price-exponential-decaying-arrivals-beta0.1` | `SurvivalKernel` | multiplicative fatigue (c = 0.9, β = 0.1) | Bernoulli / single | Same, with a slow recovery of the fatigue (β = 0.1) |
 | `saturation-second-price-lognormal` | `SaturationKernel` | number of wins | Bernoulli / single | Display retargeting — audience fatigue |
 | `recency-second-price-lognormal` | `RecencyDisplayKernel` | time of last win | Bernoulli / single | Email / push — freshness of last touch |
 | `effective-frequency-second-price-lognormal` | `EffectiveFrequencyKernel` | number of wins | Bernoulli / single | Brand / awareness — user/display relevance × wear-in over the first exposures, then wear-out |

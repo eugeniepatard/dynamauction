@@ -4,7 +4,7 @@ from __future__ import annotations
 import bisect
 import copy
 import itertools
-from typing import Dict, Any, List, Optional, Sequence, Tuple
+from typing import Dict, Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import gymnasium as gym
@@ -201,8 +201,11 @@ class MPCPolicy(BiddingPolicy):
         Pre-trained valuation head; bids are always of the form α · V₀(s, x).
     alpha_candidates : sequence of float
         Discrete set A₀ of first-step multipliers to evaluate.
-    alpha_cont : float
-        Multiplier used for all continuation steps beyond t.
+    alpha_cont : float or sequence of (float, float)
+        Multiplier used for all continuation steps beyond t. A sequence of ``(t_from, alpha)`` pairs makes it depend
+        on the (absolute) time of the continuation auction: the ``alpha`` of the last pair with ``t_from <= t``
+        (the first pair's before its ``t_from``), e.g. ``[(0, 0.2), (10, 0.7)]`` for an arrival rate that changes at
+        t = 10.
     n_rollouts : int
         Number of CRN rollout pairs M per decision step.
     planning_horizon : float
@@ -221,7 +224,7 @@ class MPCPolicy(BiddingPolicy):
         self,
         v0: MLPValuationHead,
         alpha_candidates: Sequence[float] = (0.6, 0.8, 1.0, 1.2, 1.5),
-        alpha_cont: float = 1.0,
+        alpha_cont: Union[float, Sequence[Tuple[float, float]]] = 1.0,
         n_rollouts: int = 10,
         planning_horizon: float = 7.0,
         seed: int = 0,
@@ -229,6 +232,10 @@ class MPCPolicy(BiddingPolicy):
     ) -> None:
         self.v0 = v0
         self.alpha_candidates = list(alpha_candidates)
+        if not isinstance(alpha_cont, (int, float)):
+            alpha_cont = tuple(sorted((float(t), float(a)) for t, a in alpha_cont))
+            if not alpha_cont:
+                raise ValueError("alpha_cont schedule must have at least one (t_from, alpha) pair")
         self.alpha_cont = alpha_cont
         self.n_rollouts = n_rollouts
         self.planning_horizon = planning_horizon
@@ -279,6 +286,16 @@ class MPCPolicy(BiddingPolicy):
         self.alpha_log.append(alpha_star)
         return float(max(0.0, alpha_star * v0_now))
 
+    def _alpha_cont_at(self, t: float) -> float:
+        """Continuation multiplier of an auction at time t (``alpha_cont`` or its schedule)."""
+        if isinstance(self.alpha_cont, (int, float)):
+            return self.alpha_cont
+        alpha = self.alpha_cont[0][1]
+        for t_from, a in self.alpha_cont:
+            if t >= t_from:
+                alpha = a
+        return alpha
+
     def _select_alpha(self, q_hat: Dict[float, float]) -> float:
         """argmax of Q̂; ties go to the first candidate, or to the one closest to ``tie_alpha``."""
         alpha_star = max(q_hat, key=q_hat.get)
@@ -298,7 +315,7 @@ class MPCPolicy(BiddingPolicy):
         Simulate one trajectory from the current state.
 
         Step t  : bid = alpha_first · V₀(s_t, x_t)  (the candidate being evaluated)
-        Step t+k: bid = alpha_cont  · V₀(s_k,  x_k)  (default continuation)
+        Step t+k: bid = alpha_cont  · V₀(s_k,  x_k)  (default continuation; alpha_cont at the time of step k)
 
         Stops at the natural episode end or when the elapsed time exceeds
         ``planning_horizon``.
@@ -311,7 +328,7 @@ class MPCPolicy(BiddingPolicy):
             t_now = float(obs["t"].ravel()[0])
             if t_now - t_start > self.planning_horizon:
                 break
-            bid_k = self.alpha_cont * self.v0.predict(obs)
+            bid_k = self._alpha_cont_at(t_now) * self.v0.predict(obs)
             obs, reward, done, _trunc, _ = env.step(
                 np.array([bid_k], dtype=np.float32)
             )

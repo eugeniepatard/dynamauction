@@ -59,6 +59,7 @@ from dynamauction.primitives import (
     # Arrival
     PiecewiseConstantPoisson,
     ConstantPoisson,
+    StepDecayPoisson,
     # Kernels
     SaturationKernel,
     RecencyDisplayKernel,
@@ -160,6 +161,8 @@ def create_arrival(name: str, **kwargs) -> ArrivalProcess:
         return PiecewiseConstantPoisson(**kwargs)
     elif name == "cstpoisson":
         return ConstantPoisson(**kwargs)
+    elif name == "decaypoisson":
+        return StepDecayPoisson(**kwargs)
     else:
         raise ValueError(f"Unknown arrival: {name!r}")
 

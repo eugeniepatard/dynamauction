@@ -501,3 +501,47 @@ class TestNoOracleAccess:
         policy.bid(obs)
 
         assert np.array_equal(env.unwrapped.auction_times, original_times)
+
+
+class TestMPCAlphaContSchedule:
+    """alpha_cont as a (t_from, alpha) schedule: the continuation multiplier depends on the time of the auction."""
+
+    class _FakeEnv:
+        """Steps through the given auction times and records the bids."""
+
+        def __init__(self, times):
+            self.times, self.k, self.bids = list(times), 0, []
+
+        def step(self, action):
+            self.bids.append(float(action[0]))
+            self.k += 1
+            done = self.k >= len(self.times)
+            t = self.times[min(self.k, len(self.times) - 1)]
+            return {"t": np.array([t], dtype=np.float32)}, 0.0, done, False, {}
+
+    def test_schedule_lookup(self, mock_mlp):
+        policy = MPCPolicy(v0=mock_mlp, alpha_cont=[(10.0, 0.7), (0.0, 0.2)])   # unsorted on purpose
+        assert [policy._alpha_cont_at(t) for t in (0.0, 5.0, 9.99, 10.0, 50.0)] == [0.2, 0.2, 0.2, 0.7, 0.7]
+        assert MPCPolicy(v0=mock_mlp, alpha_cont=[(5.0, 0.3)])._alpha_cont_at(1.0) == 0.3   # before the first t_from
+        assert MPCPolicy(v0=mock_mlp, alpha_cont=0.4)._alpha_cont_at(123.0) == 0.4
+
+    def test_rollout_continuation_follows_the_schedule(self, mock_mlp):
+        mock_mlp.predict.return_value = 1.0
+        policy = MPCPolicy(v0=mock_mlp, alpha_cont=[(0.0, 0.2), (10.0, 0.7)], planning_horizon=100.0)
+        env = self._FakeEnv([0.0, 4.0, 9.0, 11.0, 30.0])
+        policy._mpc_rollout(env, alpha_first=0.5, v0_now=1.0, t_start=0.0)
+        assert env.bids == pytest.approx([0.5, 0.2, 0.2, 0.7, 0.7])
+
+    def test_empty_schedule_raises(self, mock_mlp):
+        with pytest.raises(ValueError):
+            MPCPolicy(v0=mock_mlp, alpha_cont=[])
+
+    def test_constant_schedule_matches_the_float(self, mock_mlp, live_env):
+        env, obs = live_env
+        mock_mlp.predict.return_value = 0.3
+        kwargs = dict(v0=mock_mlp, alpha_candidates=[0.2, 0.6, 1.0], n_rollouts=3, planning_horizon=5.0, seed=7)
+        a, b = MPCPolicy(alpha_cont=0.6, **kwargs), MPCPolicy(alpha_cont=[(0.0, 0.6)], **kwargs)
+        a.set_env(env)
+        b.set_env(env)
+        assert a.bid(obs) == b.bid(obs)
+        assert a.alpha_log == b.alpha_log

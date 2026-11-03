@@ -35,8 +35,8 @@ def _resample_remaining_horizon(env: gym.Env, rng: np.random.Generator) -> None:
 
     unwrapped.horizon = new_horizon
 
-    # Keep already-processed times + current auction; resample future ones.
-    future_times = unwrapped.scenario.arrival.sample_times(T_remaining, rng) + t_current
+    # Keep already-processed times + current auction; resample future ones (with the rate at the absolute time).
+    future_times = unwrapped.scenario.arrival.sample_times_from(t_current, T_remaining, rng)
     unwrapped.auction_times = np.concatenate([
         unwrapped.auction_times[:step_idx + 1],
         future_times,

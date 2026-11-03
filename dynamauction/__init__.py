@@ -39,6 +39,7 @@ from dynamauction.primitives import (
     ConstantCompetition,
     # Arrival processes
     PiecewiseConstantPoisson,
+    StepDecayPoisson,
     # Reward kernels
     SaturationKernel,
     RecencyDisplayKernel,
@@ -88,6 +89,7 @@ __all__ = [
     "ExponentialCompetition",
     "ConstantCompetition",
     "PiecewiseConstantPoisson",
+    "StepDecayPoisson",
     "SaturationKernel",
     "RecencyDisplayKernel",
     "CompetitorExtinctionKernel",
