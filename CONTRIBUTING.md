@@ -71,8 +71,8 @@ on purpose, say so in the pull request.
 4. Open a pull request against `main` and describe what it changes and why.
 
 CI runs the test suite on Linux, macOS and Windows and several Python versions, executes the tutorial notebooks, and
-runs the paper check. For a first-time contributor, a maintainer has to approve the first run of the workflows. A
-maintainer reviews every pull request before it is merged.
+runs the paper check. CI starts only once a maintainer has approved the run, on every push to the pull request. A
+maintainer reviews every pull request, and `main` only changes by merging an approved pull request.
 
 ## License
 

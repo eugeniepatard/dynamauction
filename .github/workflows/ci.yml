@@ -7,9 +7,25 @@ on:
     branches: [main]
 
 jobs:
+  # ── Maintainer approval: a pull request from a collaborator's branch waits here until the maintainer approves it in
+  #    the pr-approval environment. Pull requests from forks are held by GitHub's own approval setting instead, and
+  #    the maintainer's own pull requests and pushes to main run straight away. ─────────────────────────────────────
+  approval:
+    name: Maintainer approval
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != github.repository_owner
+    runs-on: ubuntu-latest
+    environment: pr-approval
+    steps:
+      - run: echo "Approved by the maintainer"
+
   test:
     name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
+    needs: approval
+    if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
 
     strategy:
       fail-fast: false   # run all matrix jobs even if one fails
@@ -37,6 +53,8 @@ jobs:
   packaging:
     name: Package install (${{ matrix.os }} / Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+    needs: approval
+    if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
 
     strategy:
       fail-fast: false
@@ -92,6 +110,8 @@ jobs:
   shipped-models:
     name: Shipped models (${{ matrix.os }} / Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+    needs: approval
+    if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
 
     strategy:
       fail-fast: false
@@ -119,6 +139,8 @@ jobs:
   paper-results:
     name: Paper results (ubuntu-latest / Python 3.12)
     runs-on: ubuntu-latest
+    needs: approval
+    if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
 
     steps:
       - name: Checkout repository
@@ -150,6 +172,8 @@ jobs:
   minimum-versions:
     name: Minimum dependency versions (ubuntu-latest / Python 3.10)
     runs-on: ubuntu-latest
+    needs: approval
+    if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
 
     steps:
       - name: Checkout repository
