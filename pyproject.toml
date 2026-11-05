@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,6 +7,8 @@ name = "dynamauction"
 version = "0.1.0"
 description = "Kernel causal models for repeated auctions with dynamic values"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 
 dependencies = [

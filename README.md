@@ -1,6 +1,7 @@
 # DynamAuction
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **DynamAuction** is a [Gymnasium](https://gymnasium.farama.org/)-compatible reinforcement learning environment for repeated auctions with dynamic display value, the official implementation accompanying the paper:
 
@@ -229,3 +230,11 @@ markets, with tools from game theory and machine learning.
   &emsp;&emsp;
   <a href="https://www.criteo.com"><img src="images/criteo-logo.jpeg" alt="Criteo" height="80"></a>
 </p>
+
+
+## License
+
+This project is licensed under the MIT License.
+See the [LICENSE](LICENSE) file for details.
+Contributions are accepted under the same MIT License.
+
