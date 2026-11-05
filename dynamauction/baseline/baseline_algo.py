@@ -55,13 +55,26 @@ class ShadingPolicy(BiddingPolicy):
     ----------
     estimator : SimulationEstimator
         Provides the Monte Carlo Δ estimates.
-    alpha : float
-        Shading factor in (0, ∞).
+    alpha : float or sequence of (float, float)
+        Shading factor in (0, ∞). A sequence of ``(t_from, alpha)`` pairs makes it depend on the time of the auction,
+        as ``MPCPolicy.alpha_cont``: the ``alpha`` of the last pair with ``t_from <= t`` (the first pair's before its
+        ``t_from``), e.g. ``[(0, 0.3), (10, 0.7)]`` for an arrival rate that changes at t = 10.
     """
 
-    def __init__(self, estimator: SimulationEstimator, alpha: float = 1.0) -> None:
-        if alpha <= 0:
-            raise ValueError(f"alpha must be positive, got {alpha}")
+    def __init__(
+        self,
+        estimator: SimulationEstimator,
+        alpha: Union[float, Sequence[Tuple[float, float]]] = 1.0,
+    ) -> None:
+        if isinstance(alpha, (int, float)):
+            if alpha <= 0:
+                raise ValueError(f"alpha must be positive, got {alpha}")
+        else:
+            alpha = tuple(sorted((float(t), float(a)) for t, a in alpha))
+            if not alpha:
+                raise ValueError("alpha schedule must have at least one (t_from, alpha) pair")
+            if any(a <= 0 for _, a in alpha):
+                raise ValueError(f"alpha must be positive, got {alpha}")
         self.estimator = estimator
         self.alpha = alpha
 
@@ -69,9 +82,22 @@ class ShadingPolicy(BiddingPolicy):
         """Bind the live env.  Must be called once after each ``env.reset()``."""
         self.estimator.set_env(env)
 
+    def _alpha_at(self, t: float) -> float:
+        """Shading factor of an auction at time t (``alpha`` or its schedule)."""
+        if isinstance(self.alpha, (int, float)):
+            return self.alpha
+        alpha = self.alpha[0][1]
+        for t_from, a in self.alpha:
+            if t >= t_from:
+                alpha = a
+        return alpha
+
     def bid(self, observations: Dict[str, Any]) -> float:
         delta = self.estimator.estimate(observations)
-        return float(max(0.0, self.alpha * delta))
+        if isinstance(self.alpha, (int, float)):
+            return float(max(0.0, self.alpha * delta))
+        alpha = self._alpha_at(float(np.asarray(observations["t"]).ravel()[0]))
+        return float(max(0.0, alpha * delta))
 
 
 class MPCOraclePolicy(BiddingPolicy):
@@ -201,11 +227,17 @@ class MPCPolicy(BiddingPolicy):
         Pre-trained valuation head; bids are always of the form α · V₀(s, x).
     alpha_candidates : sequence of float
         Discrete set A₀ of first-step multipliers to evaluate.
-    alpha_cont : float or sequence of (float, float)
+    alpha_cont : float, sequence of (float, float), or "candidate"
         Multiplier used for all continuation steps beyond t. A sequence of ``(t_from, alpha)`` pairs makes it depend
         on the (absolute) time of the continuation auction: the ``alpha`` of the last pair with ``t_from <= t``
         (the first pair's before its ``t_from``), e.g. ``[(0, 0.2), (10, 0.7)]`` for an arrival rate that changes at
-        t = 10.
+        t = 10. ``"candidate"`` uses the candidate being evaluated for every bid of its rollouts (one α shared over
+        the planning horizon): a receding-horizon constant shading that re-picks its α at every auction.
+        ``"near_far"`` optimises a pair (α_near, α_far): in each rollout the auctions less than ``near_horizon`` after
+        the decision time bid α_near · V₀ (the first one included), the later ones up to the planning horizon bid
+        α_far · V₀, with α_near ∈ ``alpha_candidates`` and α_far ∈ ``far_candidates``; the policy bids α_near · V₀ now.
+        The rollouts of one α_near share their near segment (same CRN seeds and bids), so it is simulated once and
+        branched for every α_far: exactly the Q̂ of full rollouts, at a fraction of the cost.
     n_rollouts : int
         Number of CRN rollout pairs M per decision step.
     planning_horizon : float
@@ -218,21 +250,34 @@ class MPCPolicy(BiddingPolicy):
         second-price auction, candidates that produce the same first-step outcome
         in every rollout get identical Q̂), pick the tied candidate closest to
         ``tie_alpha``.  ``None`` keeps the first candidate in ``alpha_candidates``.
+        With ``alpha_cont="near_far"`` ties go to the first pair (α_near, then α_far, in candidate order).
+    near_horizon : float
+        ``alpha_cont="near_far"`` only: length of the near segment of the rollouts.
+    far_candidates : sequence of float, optional
+        ``alpha_cont="near_far"`` only: candidates for α_far (default: ``alpha_candidates``).
     """
 
     def __init__(
         self,
         v0: MLPValuationHead,
         alpha_candidates: Sequence[float] = (0.6, 0.8, 1.0, 1.2, 1.5),
-        alpha_cont: Union[float, Sequence[Tuple[float, float]]] = 1.0,
+        alpha_cont: Union[float, Sequence[Tuple[float, float]], str] = 1.0,
         n_rollouts: int = 10,
         planning_horizon: float = 7.0,
         seed: int = 0,
         tie_alpha: Optional[float] = None,
+        near_horizon: float = 5.0,
+        far_candidates: Optional[Sequence[float]] = None,
     ) -> None:
         self.v0 = v0
         self.alpha_candidates = list(alpha_candidates)
-        if not isinstance(alpha_cont, (int, float)):
+        if isinstance(alpha_cont, str):
+            if alpha_cont not in ("candidate", "near_far"):
+                raise ValueError(f"alpha_cont must be a float, a (t_from, alpha) schedule, 'candidate' or 'near_far', "
+                                 f"got {alpha_cont!r}")
+            if alpha_cont == "near_far" and tie_alpha is not None:
+                raise ValueError("tie_alpha is not supported with alpha_cont='near_far'")
+        elif not isinstance(alpha_cont, (int, float)):
             alpha_cont = tuple(sorted((float(t), float(a)) for t, a in alpha_cont))
             if not alpha_cont:
                 raise ValueError("alpha_cont schedule must have at least one (t_from, alpha) pair")
@@ -240,9 +285,12 @@ class MPCPolicy(BiddingPolicy):
         self.n_rollouts = n_rollouts
         self.planning_horizon = planning_horizon
         self.tie_alpha = tie_alpha
+        self.near_horizon = near_horizon
+        self.far_candidates = list(alpha_candidates if far_candidates is None else far_candidates)
         self._env: Optional[AuctionEnv] = None
         self._rng = np.random.default_rng(seed)
         self.alpha_log: List[float] = []
+        self.alpha_far_log: List[float] = []   # alpha_cont="near_far": α_far of the selected pair
 
     def set_env(self, env: AuctionEnv) -> None:
         """Bind the live env.  Must be called once after each ``env.reset()``."""
@@ -269,6 +317,8 @@ class MPCPolicy(BiddingPolicy):
             (int(self._rng.integers(0, 2**31 - 1)), int(self._rng.integers(0, 2**31 - 1)))
             for _ in range(self.n_rollouts)
         ]
+        if self.alpha_cont == "near_far":
+            return self._bid_near_far(crn_seeds, v0_now, t_start)
 
         q_hat: Dict[float, float] = {}
         for alpha in self.alpha_candidates:
@@ -285,6 +335,58 @@ class MPCPolicy(BiddingPolicy):
         alpha_star = self._select_alpha(q_hat)
         self.alpha_log.append(alpha_star)
         return float(max(0.0, alpha_star * v0_now))
+
+    def _bid_near_far(self, crn_seeds: List[Tuple[int, int]], v0_now: float, t_start: float) -> float:
+        """alpha_cont="near_far": the pair (α_near, α_far) maximising Q̂ over the same CRN rollouts; bid α_near · V₀."""
+        q_hat: Dict[Tuple[float, float], float] = {}
+        for alpha_near in self.alpha_candidates:
+            sums = [0.0] * len(self.far_candidates)
+            for scenario_seed, noise_seed in crn_seeds:
+                env_copy = copy.deepcopy(self._env)
+                _resample_remaining_horizon(env_copy, np.random.default_rng(scenario_seed))
+                env_copy.unwrapped.rng = np.random.default_rng(noise_seed)
+                for k, total in enumerate(self._mpc_rollout_near_far(env_copy, alpha_near, v0_now, t_start)):
+                    sums[k] += total
+            for k, alpha_far in enumerate(self.far_candidates):
+                q_hat[(alpha_near, alpha_far)] = sums[k] / self.n_rollouts
+        alpha_near, alpha_far = max(q_hat, key=q_hat.get)
+        self.alpha_log.append(alpha_near)
+        self.alpha_far_log.append(alpha_far)
+        return float(max(0.0, alpha_near * v0_now))
+
+    def _mpc_rollout_near_far(self, env: AuctionEnv, alpha_near: float, v0_now: float, t_start: float) -> List[float]:
+        """
+        One rollout per α_far, sharing the near segment: bids α_near · V₀ while t − t_start < ``near_horizon``,
+        then the env is copied once per α_far and each copy bids α_far · V₀ up to the planning horizon.
+        Returns the cumulative reward of every branch, in the order of ``far_candidates``.
+        """
+        obs, reward, done, _trunc, _ = env.step(np.array([alpha_near * v0_now], dtype=np.float32))
+        near_total = float(reward)
+        while not done:
+            t_now = float(obs["t"].ravel()[0])
+            if t_now - t_start > self.planning_horizon:
+                return [near_total] * len(self.far_candidates)
+            if t_now - t_start >= self.near_horizon:
+                break
+            obs, reward, done, _trunc, _ = env.step(np.array([alpha_near * self.v0.predict(obs)], dtype=np.float32))
+            near_total += float(reward)
+        if done:
+            return [near_total] * len(self.far_candidates)
+
+        v0_far = self.v0.predict(obs)   # first auction of the far segment, the same in every branch
+        totals = []
+        for alpha_far in self.far_candidates:
+            branch = copy.deepcopy(env)
+            obs_k, reward, done_k, _trunc, _ = branch.step(np.array([alpha_far * v0_far], dtype=np.float32))
+            total = near_total + float(reward)
+            while not done_k:
+                if float(obs_k["t"].ravel()[0]) - t_start > self.planning_horizon:
+                    break
+                obs_k, reward, done_k, _trunc, _ = branch.step(
+                    np.array([alpha_far * self.v0.predict(obs_k)], dtype=np.float32))
+                total += float(reward)
+            totals.append(total)
+        return totals
 
     def _alpha_cont_at(self, t: float) -> float:
         """Continuation multiplier of an auction at time t (``alpha_cont`` or its schedule)."""
@@ -315,7 +417,8 @@ class MPCPolicy(BiddingPolicy):
         Simulate one trajectory from the current state.
 
         Step t  : bid = alpha_first · V₀(s_t, x_t)  (the candidate being evaluated)
-        Step t+k: bid = alpha_cont  · V₀(s_k,  x_k)  (default continuation; alpha_cont at the time of step k)
+        Step t+k: bid = alpha_cont  · V₀(s_k,  x_k)  (default continuation; alpha_cont at the time of step k,
+                                                     alpha_first for alpha_cont = "candidate")
 
         Stops at the natural episode end or when the elapsed time exceeds
         ``planning_horizon``.
@@ -328,7 +431,8 @@ class MPCPolicy(BiddingPolicy):
             t_now = float(obs["t"].ravel()[0])
             if t_now - t_start > self.planning_horizon:
                 break
-            bid_k = self._alpha_cont_at(t_now) * self.v0.predict(obs)
+            alpha_k = alpha_first if self.alpha_cont == "candidate" else self._alpha_cont_at(t_now)
+            bid_k = alpha_k * self.v0.predict(obs)
             obs, reward, done, _trunc, _ = env.step(
                 np.array([bid_k], dtype=np.float32)
             )

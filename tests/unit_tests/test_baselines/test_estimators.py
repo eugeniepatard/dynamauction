@@ -212,3 +212,26 @@ class TestMLPValuationHead:
         mlp = MLPValuationHead(input_dim=self.D, hidden_dims=(16,), activation=activation)
         mlp.fit(X, y, n_epochs=3)
         assert isinstance(mlp.history_["train"][-1], float)
+
+
+class TestOracleV0:
+    """OracleV0: the exact V0 (obs["expected_reward"], FiPla's bid) as a drop-in valuation head."""
+
+    def test_predict_returns_expected_reward(self):
+        from dynamauction.baseline.estimators import OracleV0
+        assert OracleV0().predict({"expected_reward": np.array([0.37], dtype=np.float32)}) == pytest.approx(0.37)
+
+    def test_predict_on_a_live_observation(self, base_env):
+        from dynamauction.baseline.estimators import OracleV0
+        obs, _ = base_env.reset(seed=0)
+        assert OracleV0().predict(obs) == float(obs["expected_reward"].ravel()[0])
+
+    def test_mpc_bids_alpha_star_times_the_exact_value(self, base_env):
+        from dynamauction.baseline.baseline_algo import MPCPolicy
+        from dynamauction.baseline.estimators import OracleV0
+        obs, _ = base_env.reset(seed=0)
+        policy = MPCPolicy(v0=OracleV0(), alpha_candidates=[0.2, 0.6, 1.0], alpha_cont="candidate", n_rollouts=3,
+                           planning_horizon=5.0, seed=3)
+        policy.set_env(base_env)
+        bid = policy.bid(obs)
+        assert bid == pytest.approx(max(0.0, policy.alpha_log[-1] * float(obs["expected_reward"].ravel()[0])))

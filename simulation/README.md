@@ -59,7 +59,7 @@ The script runs, in order:
 4. MPC, one run per planning horizon (`--mpc-horizons`) and per rollout continuation (`--alpha-cont`);
 5. a summary table.
 
-**Outputs** go to `simulation/results/<scenario>[_<overrides>]/`, a folder git ignores:
+**Outputs** go to `simulation/results/<scenario>[_<overrides>]_seeds<first>-<last>/`, a folder git ignores:
 - **`summary.csv`**: the table, also printed. It gives each policy's mean reward ± 95% CI, its paired difference with
   FiPla and with the best Shading, and its win rate.
 - **One CSV per policy**, with one row per campaign.
@@ -129,9 +129,13 @@ fatigue that fades in a few time units, bidding close to the myopic value is nea
   `survival-second-price-exponential-burst-arrivals-beta0.3`): **the most promising scenario.**
   - The dense burst and the long normal phase need very different bids: α ≈ 0.3 during the burst, ≈ 0.7 after. A constant
     α must compromise between them.
-  - First MPC results: with H = 5 and a continuation of 0.3 then 0.7, **+0.37 ± 0.26 over the best Shading**, on 121 of
-    200 campaigns.
-  - Still to confirm on all campaigns, then on 1000.
+  - **Result, all 200 campaigns:** MPC whose rollouts continue at 0.3 during the burst and 0.7 after beats the best
+    Shading (α = 0.6, 6.09) by **+0.41 ± 0.26 (H = 5), +0.41 ± 0.26 (H = 15) and +0.38 ± 0.27 (H = 25)**. That's about
+    +7% over Shading and +20% over FiPla, close to the old scenario's advantage.
+  - With a single continuation at the best Shading α (0.6), the gain is smaller and not significant (+0.15 to
+    +0.19 ± 0.26), so the continuation per phase is what matters.
+  - The continuation values were read from the screening of campaigns 0–199, the same campaigns as these runs. They
+    still have to be confirmed on fresh campaigns.
 
 **How "planning room" was measured cheaply.** Before running MPC, a scenario was screened with an oracle shading that
 uses a different α in each time period. Its α were chosen on 200 campaigns, and it was evaluated on 400 others against
@@ -147,8 +151,8 @@ found.
 - `MPCPolicy(alpha_cont=...)` now also accepts a time schedule `[(t_from, alpha), ...]`.
 
 **Open points:**
-- **Confirm the burst results:** all 200 campaigns, then 1000 campaigns, and other burst sizes; a burst of 20 seemed to
-  leave as much room.
+- **Confirm the burst result on fresh campaigns:** `--first-seed 1000`, then 1000 campaigns. Also try other burst sizes; a
+  burst of 20 seemed to leave as much room.
 - **Known high-value windows** (for example a sale period where conversions are worth ×5): an idea that is not
   implemented yet. It needs a time-dependent conversion value in the survival kernel.
 - **A latent bug:** the planning rollouts resample the remaining horizon as if it were exponential, which is wrong for a

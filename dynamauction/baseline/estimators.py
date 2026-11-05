@@ -159,6 +159,19 @@ class _MLPNet(nn.Module):
         return self.net(x).squeeze(-1)
 
 
+class OracleV0:
+    """
+    Valuation head returning the exact myopic value V₀ = ``obs["expected_reward"]``, the value FiPla bids: a drop-in
+    replacement of :class:`MLPValuationHead` for diagnostics, e.g. ``MPCPolicy(v0=OracleV0())`` to measure what the
+    valuation error of the MLP costs MPC. It reads the oracle signal, which uses the campaign end T of the env it is
+    given (the realised T for the live bid, the resampled T′ inside MPC's rollouts).
+    """
+
+    def predict(self, obs: Dict[str, Any]) -> float:
+        """Return V₀(s, x) = ``obs["expected_reward"]`` as a scalar."""
+        return float(np.asarray(obs["expected_reward"]).ravel()[0])
+
+
 class MLPValuationHead:
     """
     MLP trained offline to approximate the per-display value:

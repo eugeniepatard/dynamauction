@@ -123,6 +123,41 @@ class TestShadingPolicy:
         assert ShadingPolicy(mock_estimator, alpha=alpha).bid({}) >= 0.0
 
 
+class TestShadingPolicySchedule:
+    """alpha as a (t_from, alpha) schedule: the shading factor depends on the time of the auction."""
+
+    def test_bid_follows_the_auction_time(self, mock_estimator):
+        mock_estimator.estimate.return_value = 0.6
+        policy = ShadingPolicy(mock_estimator, alpha=[(10.0, 0.7), (0.0, 0.3)])   # unsorted on purpose
+        bids = [policy.bid({"t": np.array([t], dtype=np.float32)}) for t in (0.0, 5.0, 9.99, 10.0, 50.0)]
+        assert bids == pytest.approx([0.18, 0.18, 0.18, 0.42, 0.42])
+
+    def test_schedule_lookup(self, mock_estimator):
+        policy = ShadingPolicy(mock_estimator, alpha=[(0.0, 0.3), (10.0, 0.7)])
+        assert [policy._alpha_at(t) for t in (0.0, 9.99, 10.0, 50.0)] == [0.3, 0.3, 0.7, 0.7]
+        assert ShadingPolicy(mock_estimator, alpha=[(5.0, 0.3)])._alpha_at(1.0) == 0.3   # before the first t_from
+        assert ShadingPolicy(mock_estimator, alpha=0.4)._alpha_at(123.0) == 0.4
+
+    def test_negative_delta_clips_to_zero(self, mock_estimator):
+        mock_estimator.estimate.return_value = -1.0
+        policy = ShadingPolicy(mock_estimator, alpha=[(0.0, 0.3), (10.0, 0.7)])
+        assert policy.bid({"t": np.array([12.0], dtype=np.float32)}) == 0.0
+
+    def test_invalid_schedule_raises(self, mock_estimator):
+        with pytest.raises(ValueError):
+            ShadingPolicy(mock_estimator, alpha=[])
+        with pytest.raises(ValueError, match="alpha must be positive"):
+            ShadingPolicy(mock_estimator, alpha=[(0.0, 0.3), (10.0, 0.0)])
+
+    def test_constant_schedule_matches_the_float(self, live_env):
+        env, obs = live_env
+        a = ShadingPolicy(SimulationEstimator(ConstantPolicy(0.0), n_rollouts=3, seed=7), alpha=0.6)
+        b = ShadingPolicy(SimulationEstimator(ConstantPolicy(0.0), n_rollouts=3, seed=7), alpha=[(0.0, 0.6)])
+        a.set_env(env)
+        b.set_env(env)
+        assert a.bid(obs) == b.bid(obs)
+
+
 class TestMPCPolicy:
 
     def test_bid_raises_without_set_env(self, mock_mlp):
@@ -545,3 +580,89 @@ class TestMPCAlphaContSchedule:
         b.set_env(env)
         assert a.bid(obs) == b.bid(obs)
         assert a.alpha_log == b.alpha_log
+
+
+class TestMPCSharedAlpha:
+    """alpha_cont = "candidate": the candidate being evaluated is used for every bid of its rollouts."""
+
+    def test_rollout_uses_the_candidate_for_every_bid(self, mock_mlp):
+        mock_mlp.predict.return_value = 1.0
+        policy = MPCPolicy(v0=mock_mlp, alpha_cont="candidate", planning_horizon=100.0)
+        env = TestMPCAlphaContSchedule._FakeEnv([0.0, 4.0, 9.0, 11.0, 30.0])
+        policy._mpc_rollout(env, alpha_first=0.5, v0_now=1.0, t_start=0.0)
+        assert env.bids == pytest.approx([0.5, 0.5, 0.5, 0.5, 0.5])
+
+    def test_one_candidate_matches_the_constant_continuation(self, mock_mlp, live_env):
+        env, obs = live_env
+        mock_mlp.predict.return_value = 0.3
+        kwargs = dict(v0=mock_mlp, alpha_candidates=[0.6], n_rollouts=3, planning_horizon=5.0, seed=7)
+        a, b = MPCPolicy(alpha_cont=0.6, **kwargs), MPCPolicy(alpha_cont="candidate", **kwargs)
+        a.set_env(env)
+        b.set_env(env)
+        assert a.bid(obs) == b.bid(obs)
+
+    def test_bid_is_alpha_star_times_v0(self, mock_mlp, live_env):
+        env, obs = live_env
+        mock_mlp.predict.return_value = 0.4
+        policy = MPCPolicy(v0=mock_mlp, alpha_candidates=[0.2, 0.6, 1.0], alpha_cont="candidate", n_rollouts=3,
+                           planning_horizon=5.0, seed=3)
+        policy.set_env(env)
+        bid = policy.bid(obs)
+        assert policy.alpha_log[-1] in (0.2, 0.6, 1.0)
+        assert bid == pytest.approx(policy.alpha_log[-1] * 0.4)
+
+    def test_unknown_string_raises(self, mock_mlp):
+        with pytest.raises(ValueError, match="candidate"):
+            MPCPolicy(v0=mock_mlp, alpha_cont="shared")
+
+
+class TestMPCNearFar:
+    """alpha_cont = "near_far": a pair (α_near, α_far), α_near for the auctions less than near_horizon after the
+    decision, α_far for the later ones up to the planning horizon; the near segment is shared by the α_far branches."""
+
+    class _PayBidEnv:
+        """Steps through the given auction times; the reward of a step is its bid (so a rollout's total = sum of bids)."""
+
+        def __init__(self, times):
+            self.times, self.k = list(times), 0
+
+        def step(self, action):
+            self.k += 1
+            done = self.k >= len(self.times)
+            t = self.times[min(self.k, len(self.times) - 1)]
+            return {"t": np.array([t], dtype=np.float32)}, float(action[0]), done, False, {}
+
+    def test_rollout_bids_follow_the_segments(self, mock_mlp):
+        mock_mlp.predict.return_value = 1.0
+        policy = MPCPolicy(v0=mock_mlp, alpha_cont="near_far", near_horizon=5.0, far_candidates=[0.5, 0.7],
+                           planning_horizon=10.0)
+        totals = policy._mpc_rollout_near_far(self._PayBidEnv([0.0, 2.0, 4.0, 6.0, 8.0, 30.0]), alpha_near=0.3,
+                                              v0_now=1.0, t_start=0.0)
+        # near: t = 0, 2, 4 at 0.3; far: t = 6, 8 at α_far; t = 30 is beyond the horizon
+        assert totals == pytest.approx([0.9 + 2 * 0.5, 0.9 + 2 * 0.7])
+
+    def test_long_near_segment_equals_shared_alpha(self, mock_mlp, live_env):
+        env, obs = live_env
+        mock_mlp.predict.return_value = 0.3
+        kwargs = dict(v0=mock_mlp, alpha_candidates=[0.2, 0.6, 1.0], n_rollouts=3, planning_horizon=5.0, seed=7)
+        a = MPCPolicy(alpha_cont="near_far", near_horizon=100.0, **kwargs)
+        b = MPCPolicy(alpha_cont="candidate", **kwargs)
+        a.set_env(env)
+        b.set_env(env)
+        assert a.bid(obs) == b.bid(obs)
+        assert a.alpha_log == b.alpha_log
+
+    def test_zero_near_segment_with_one_far_candidate_equals_the_constant_continuation(self, mock_mlp, live_env):
+        env, obs = live_env
+        mock_mlp.predict.return_value = 0.3
+        kwargs = dict(v0=mock_mlp, alpha_candidates=[0.2, 0.6, 1.0], n_rollouts=3, planning_horizon=5.0, seed=7)
+        a = MPCPolicy(alpha_cont="near_far", near_horizon=0.0, far_candidates=[0.6], **kwargs)
+        b = MPCPolicy(alpha_cont=0.6, **kwargs)
+        a.set_env(env)
+        b.set_env(env)
+        assert a.bid(obs) == b.bid(obs)
+        assert a.alpha_log == b.alpha_log and a.alpha_far_log == [0.6]
+
+    def test_tie_alpha_is_not_supported(self, mock_mlp):
+        with pytest.raises(ValueError, match="tie_alpha"):
+            MPCPolicy(v0=mock_mlp, alpha_cont="near_far", tie_alpha=0.5)

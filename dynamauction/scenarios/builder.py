@@ -74,6 +74,7 @@ from dynamauction.primitives import (
     AdditiveGamma,
     MultiplicativeGamma,
     LastWonTimeGamma,
+    TimeSinceLastWinGamma,
     ConstantGamma,
     # Display samplers
     IIDUniformSampler,
@@ -103,6 +104,8 @@ def create_gamma(name: str, **kwargs) -> Gamma:
         return MultiplicativeGamma(**kwargs)
     elif name == "last-won-time":
         return LastWonTimeGamma(**kwargs)
+    elif name == "time-since-last-win":
+        return TimeSinceLastWinGamma(**kwargs)
     elif name == "constant":
         return ConstantGamma(**kwargs)
     else:

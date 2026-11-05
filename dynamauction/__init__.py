@@ -53,6 +53,7 @@ from dynamauction.primitives import (
     AdditiveGamma,
     MultiplicativeGamma,
     LastWonTimeGamma,
+    TimeSinceLastWinGamma,
     ConstantGamma,
     # Display samplers
     IIDUniformSampler,
@@ -101,6 +102,7 @@ __all__ = [
     "AdditiveGamma",
     "MultiplicativeGamma",
     "LastWonTimeGamma",
+    "TimeSinceLastWinGamma",
     "ConstantGamma",
     "IIDUniformSampler",
     "CatalogueSampler",

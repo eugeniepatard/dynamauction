@@ -7,6 +7,7 @@ from dynamauction.primitives.gamma import (
     ConstantGamma,
     LastWonTimeGamma,
     MultiplicativeGamma,
+    TimeSinceLastWinGamma,
 )
 
 _X = np.array([0.1, 0.2, 0.3], dtype=np.float32)
@@ -137,6 +138,27 @@ class TestLastWonTimeGamma:
         ctx1 = g.update_context(0.0, _X, _U, t_display=4.0, t_past_won_auctions=[])
         ctx2 = g.update_context(0.0, _X, _U, t_display=4.0, t_past_won_auctions=[1.0, 2.0, 3.0])
         assert ctx1 == pytest.approx(ctx2)
+
+
+class TestTimeSinceLastWinGamma:
+    """S(t⁻) = t − t_last (the min over the past wins of t − t_i), t − initial_value before the first win."""
+
+    def test_before_the_first_win(self):
+        g = TimeSinceLastWinGamma()
+        assert g.initiate_context() == pytest.approx(-1000.0)
+        assert g.current_context(g.initiate_context(), 3.0, []) == pytest.approx(1003.0)
+
+    def test_time_since_the_last_win(self):
+        g = TimeSinceLastWinGamma()
+        ctx = g.update_context(g.initiate_context(), _X, _U, 2.0, [])
+        ctx = g.update_context(ctx, _X, _U, 5.0, [2.0])
+        assert ctx == pytest.approx(5.0)   # the stored context is the last win time
+        assert g.current_context(ctx, 7.5, [2.0, 5.0]) == pytest.approx(2.5)
+        assert g.current_context(ctx, 7.5, [2.0, 5.0]) == pytest.approx(min(7.5 - t for t in (2.0, 5.0)))
+
+    def test_custom_initial_value(self):
+        g = TimeSinceLastWinGamma(initial_value=-50.0)
+        assert g.current_context(g.initiate_context(), 1.0, []) == pytest.approx(51.0)
 
 
 class TestConstantGamma:

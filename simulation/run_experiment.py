@@ -69,7 +69,7 @@ Parameters to adapt
                         when auctions are dense: with 1, the rollouts over-estimate how cheap a win is.
   --mpc-v0              mlp (the paper's valuation head, trained here; default) or oracle (exact V0, no training)
   --mlp-episodes / --mlp-epochs   MLP training size (default 1000 FiPla episodes, 500 epochs)
-  --out                 output folder (default simulation/results/<scenario>[_<overrides>])
+  --out                 output folder (default simulation/results/<scenario>[_<overrides>]_seeds<first>-<last>)
 
 Outputs, in --out
   config.json                     the command line of the run
@@ -198,6 +198,10 @@ def run_policy(pool, out: Path, name: str, spec: dict, scenario_id: str, overrid
 
     final, partial = out / f"{name}.csv", out / f"{name}.partial.csv"
     if final.exists():
+        done = sorted(pd.read_csv(final)["seed"].astype(int))
+        if done != sorted(seeds):
+            raise RuntimeError(f"{final} holds other campaigns ({len(done)} seeds from {done[0]}) than requested: "
+                               "use another --out")
         print(f"  {name}: done already ({final.name})")
         return
     done_rows = pd.read_csv(partial).to_dict("records") if partial.exists() else []
@@ -340,7 +344,8 @@ def main() -> None:
 
     overrides = parse_overrides(args.set)
     tag = "".join(f"_{k}={v}" for k, v in sorted(overrides.items())).replace("/", "-").replace(" ", "")
-    out = args.out or REPO_ROOT / "simulation" / "results" / f"{args.scenario}{tag}"
+    seeds_tag = f"_seeds{args.first_seed}-{args.first_seed + args.n_campaigns - 1}"
+    out = args.out or REPO_ROOT / "simulation" / "results" / f"{args.scenario}{tag}{seeds_tag}"
     out.mkdir(parents=True, exist_ok=True)
     if args.summary_only:
         summarize(out)
