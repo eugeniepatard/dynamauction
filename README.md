@@ -154,6 +154,8 @@ tests/                  Unit test suite
 | `survival-second-price-exponential-immediate` | `ImmediateSurvivalKernel` | multiplicative fatigue | none / single | Main survival scenario with the reward at bid time (credit-assignment ablation) |
 | `saturation-second-price-lognormal` | `SaturationKernel` | number of wins | Bernoulli / single | Display retargeting — audience fatigue |
 | `recency-second-price-lognormal` | `RecencyDisplayKernel` | time of last win | Bernoulli / single | Email / push — freshness of last touch |
+| `survival-recency-second-price-fixed-burst-arrivals` | `SurvivalKernel` | time since the last win, Δt | Bernoulli / single | A display is worth 0 right after a win and recovers linearly (f = clip(Δt·(1ᵀu)(1ᵀx), 0, 1); Δt = t + 50 before the first win); a burst of auctions (rate 10 on [0, 10), then 1), fixed horizon T = 50 |
+| `survival-recency-second-price-exponential-burst-arrivals` | `SurvivalKernel` | time since the last win, Δt | Bernoulli / single | Same with the exponential horizon (η = 50) |
 | `effective-frequency-second-price-lognormal` | `EffectiveFrequencyKernel` | number of wins | Bernoulli / single | Brand / awareness — user/display relevance × wear-in over the first exposures, then wear-out |
 | `reminder-second-price-lognormal` | `ReminderKernel` | time of last win | Bernoulli / single | Retargeting — user/display relevance × a reminder converting best some time after the previous contact |
 | `mixed-second-price-exponential` | `MixedKernel` | number of wins | Poisson / multi | Rich-media — immediate click-through + delayed view-through |

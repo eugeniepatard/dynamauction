@@ -69,6 +69,27 @@ class LastWonTimeGamma(Gamma):
     def update_context(self, ctx: float, x: np.ndarray, u: np.ndarray, t_display: float, t_past_won_auctions: List[float]) -> float:
         return t_display
 
+class TimeSinceLastWinGamma(Gamma):
+    """S(t⁻) = t − t_last: the time since the last won auction (recency).
+
+    Eq. (carry-over) with the monoid ([0, +∞], min, +∞) and gamma(x_i, t_i, t) = t − t_i: the minimum over the past
+    wins is the time since the most recent one. The stored context is the time of the last win, ``initial_value``
+    before the first win, so that t − initial_value stands for +∞ (−1000 by default, as the last-win time of the
+    recency preset). With the survival kernel, f = clip(S·(w_u⊤u)(w_x⊤x), 0, 1): a display is worth 0 right after a
+    win and recovers linearly with the time since it, faster for more relevant displays, up to its full value.
+    """
+    def __init__(self, initial_value: float = -1000.0):
+        self.initial_value = initial_value
+
+    def initiate_context(self) -> float:
+        return self.initial_value
+
+    def current_context(self, ctx: float, t: float, t_past_won_auctions: List[float]) -> float:
+        return t - ctx
+
+    def update_context(self, ctx: float, x: np.ndarray, u: np.ndarray, t_display: float, t_past_won_auctions: List[float]) -> float:
+        return t_display
+
 class ConstantGamma(Gamma):
     """Context is always constant."""
     def __init__(self, value: float = 0.0):

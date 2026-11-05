@@ -49,6 +49,8 @@ Available presets (all second price, Poisson arrivals of rate 1, campaign length
 | `"survival-second-price-exponential-immediate"` | `immediate-survival` (reward at bid time) | `multiplicative` (c = 0.9, β = 1) | LogNormal(−1, 1) | none / single (κ ~ Bernoulli) |
 | `"saturation-second-price-lognormal"` | `saturation` | `additive` (number of wins) | LogNormal(−1, 1) | Bernoulli / single |
 | `"recency-second-price-lognormal"` | `recency` | `last-won-time` (−1000 before the first win) | LogNormal(−1, 1) | Bernoulli / single |
+| `"survival-recency-second-price-fixed-burst-arrivals"` | `survival` (f = clip(Δt·(1ᵀu)(1ᵀx), 0, 1)) | `time-since-last-win` (Δt; t + 50 before the first win) | LogNormal(−1, 1); arrival `pwpoisson` rate 10 on [0, 10) then 1; fixed $T = 50$ | Bernoulli / single |
+| `"survival-recency-second-price-exponential-burst-arrivals"` | `survival` (f = clip(Δt·(1ᵀu)(1ᵀx), 0, 1)) | `time-since-last-win` (Δt; t + 50 before the first win) | LogNormal(−1, 1); arrival `pwpoisson` rate 10 on [0, 10) then 1 | Bernoulli / single |
 | `"effective-frequency-second-price-lognormal"` | `effective-frequency` (relevance clip((1ᵀu)(1ᵀx), 0, 1) × wear-in then wear-out) | `additive` (number of wins) | LogNormal(−1, 1) | Bernoulli / single |
 | `"reminder-second-price-lognormal"` | `reminder` (relevance clip((1ᵀu)(1ᵀx), 0, 1) × value peaking `peak_time` after the last win) | `last-won-time` (−1000 before the first win) | LogNormal(−1, 1) | Bernoulli / single |
 | `"mixed-second-price-exponential"` | `mixed` (immediate + saturation) | `additive` | Exponential(1); fixed $T = 20$, arrival rate 0.5 | Poisson / multi |
@@ -92,10 +94,10 @@ Available components:
 | Type | Options |
 |------|---------|
 | Kernels | `"saturation"`, `"recency"`, `"effective-frequency"`, `"reminder"`, `"competitor-extinction"`, `"mixed"`, `"survival"`, `"immediate-survival"` |
-| Carry-over context (γ) | `"additive"`, `"multiplicative"`, `"last-won-time"`, `"constant"` |
+| Carry-over context (γ) | `"additive"`, `"multiplicative"`, `"last-won-time"`, `"time-since-last-win"`, `"constant"` |
 | Auctions | `"first-price"`, `"second-price"` |
 | Competition | `"uniform"`, `"lognormal"`, `"exponential"` |
-| Arrival | `"pwpoisson"`, `"cstpoisson"` |
+| Arrival | `"pwpoisson"`, `"cstpoisson"`, `"decaypoisson"` |
 | Display | `"iid"`, `"catalogue"`, `"fixed"`, `"normal"` |
 | User features | `"uniform"`, `"normal"`, `"fixed"` |
 | Horizon | `"fixed"`, `"exponential"` |
@@ -130,6 +132,7 @@ The context `ctx` summarises the past won auctions and enters the conversion ker
 |---|----------------|-----------------------------|
 | `additive` | number of won auctions | same |
 | `last-won-time(initial_value=-1e6)` | time of the last won auction (`initial_value` before any win) | same |
+| `time-since-last-win(initial_value=-1000)` | time of the last won auction (`initial_value` before any win) | $S(t^-) = t - t_{\text{last}}$, the time since the last win: $\min_{i:\, t_i < t}(t - t_i)$, monoid $([0, +\infty], \min, +\infty)$ |
 | `constant` | a constant | same |
 | `multiplicative(c, initial_value=1, beta=1)` | $S(t_{\rm last}^-)$ at the last win | $S(t^-) = S(t_{\rm last}^-)\,\big(1 - c\,e^{-\beta (t - t_{\rm last})}\big)$ |
 

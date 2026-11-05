@@ -3,7 +3,8 @@ Internal helpers for simulation-based planning rollouts.
 
 ``_resample_remaining_horizon``: replaces the pre-baked horizon and future
 auction schedule of a copied environment with a fresh independent draw,
-removing oracle knowledge of the true remaining campaign length.
+removing oracle knowledge of the true remaining campaign length (with a fixed
+horizon the remaining time stays T − t: only the future auctions are redrawn).
 ``_rollout_to_end``: runs a policy to episode termination and returns the
 cumulative reward.
 ``_obs_to_features``: converts a Dict observation to a flat numpy feature
@@ -13,6 +14,7 @@ from typing import Any, Dict, Optional
 import gymnasium as gym
 import numpy as np
 from dynamauction.baseline.policies import BiddingPolicy
+from dynamauction.primitives.horizon import FixedHorizon
 
 
 def _resample_remaining_horizon(env: gym.Env, rng: np.random.Generator) -> None:
@@ -23,6 +25,8 @@ def _resample_remaining_horizon(env: gym.Env, rng: np.random.Generator) -> None:
     This removes the rollout's implicit knowledge of T: the remaining episode
     length becomes an independent sample from the same distribution as T,
     which is the correct prior when T is memoryless (e.g. Exponential).
+    With a fixed horizon the campaign end is known: the remaining time stays T − t
+    and only the future auction schedule (and exogenous process) is resampled.
 
     Must be called on a deepcopy of the live env before a planning rollout.
     """
@@ -30,13 +34,17 @@ def _resample_remaining_horizon(env: gym.Env, rng: np.random.Generator) -> None:
     t_current = float(unwrapped.state.t)
     step_idx = int(unwrapped.state.step_idx)
 
-    T_remaining = unwrapped.scenario.horizon_generator.sample(rng)
+    horizon_generator = unwrapped.scenario.horizon_generator
+    if isinstance(horizon_generator, FixedHorizon):
+        T_remaining = max(float(unwrapped.horizon) - t_current, 0.0)
+    else:
+        T_remaining = horizon_generator.sample(rng)
     new_horizon = t_current + T_remaining
 
     unwrapped.horizon = new_horizon
 
-    # Keep already-processed times + current auction; resample future ones.
-    future_times = unwrapped.scenario.arrival.sample_times(T_remaining, rng) + t_current
+    # Keep already-processed times + current auction; resample future ones (with the rate at the absolute time).
+    future_times = unwrapped.scenario.arrival.sample_times_from(t_current, T_remaining, rng)
     unwrapped.auction_times = np.concatenate([
         unwrapped.auction_times[:step_idx + 1],
         future_times,

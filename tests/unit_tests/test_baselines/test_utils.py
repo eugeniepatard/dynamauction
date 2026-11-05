@@ -179,3 +179,33 @@ class TestResampleRemainingHorizon:
         env_copy = copy.deepcopy(env)
         _resample_remaining_horizon(env_copy, np.random.default_rng(0))
         assert env.unwrapped.horizon == original_horizon
+
+
+class TestResampleFixedHorizon:
+    """With a fixed horizon the campaign end is known: the rollout keeps T and only redraws the future auctions."""
+
+    def test_fixed_horizon_keeps_the_campaign_end(self):
+        import dynamauction as dac
+        from dynamauction import AuctionEnv
+        env = AuctionEnv(dac.make("survival-recency-second-price-fixed-burst-arrivals"))
+        env.reset(seed=2)
+        for _ in range(30):
+            env.step(np.array([0.2], dtype=np.float32))
+        t, k = float(env.state.t), int(env.state.step_idx)
+        env_copy = copy.deepcopy(env)
+        _resample_remaining_horizon(env_copy, np.random.default_rng(0))
+        assert env_copy.horizon == env.horizon == pytest.approx(50.0)
+        future = env_copy.auction_times[k + 1:]
+        assert ((future >= t) & (future <= 50.0)).all()
+        np.testing.assert_array_equal(env_copy.auction_times[:k + 1], env.auction_times[:k + 1])
+
+    def test_exponential_horizon_draws_a_fresh_remaining_time(self):
+        import dynamauction as dac
+        from dynamauction import AuctionEnv
+        env = AuctionEnv(dac.make("survival-recency-second-price-exponential-burst-arrivals"))
+        env.reset(seed=2)
+        env_copy = copy.deepcopy(env)
+        rng = np.random.default_rng(0)
+        expected = float(env.state.t) + float(np.random.default_rng(0).exponential(50.0))
+        _resample_remaining_horizon(env_copy, rng)
+        assert env_copy.horizon == pytest.approx(expected)

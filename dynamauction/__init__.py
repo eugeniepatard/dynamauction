@@ -39,6 +39,7 @@ from dynamauction.primitives import (
     ConstantCompetition,
     # Arrival processes
     PiecewiseConstantPoisson,
+    StepDecayPoisson,
     # Reward kernels
     SaturationKernel,
     RecencyDisplayKernel,
@@ -52,6 +53,7 @@ from dynamauction.primitives import (
     AdditiveGamma,
     MultiplicativeGamma,
     LastWonTimeGamma,
+    TimeSinceLastWinGamma,
     ConstantGamma,
     # Display samplers
     IIDUniformSampler,
@@ -88,6 +90,7 @@ __all__ = [
     "ExponentialCompetition",
     "ConstantCompetition",
     "PiecewiseConstantPoisson",
+    "StepDecayPoisson",
     "SaturationKernel",
     "RecencyDisplayKernel",
     "CompetitorExtinctionKernel",
@@ -99,6 +102,7 @@ __all__ = [
     "AdditiveGamma",
     "MultiplicativeGamma",
     "LastWonTimeGamma",
+    "TimeSinceLastWinGamma",
     "ConstantGamma",
     "IIDUniformSampler",
     "CatalogueSampler",
