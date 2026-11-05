@@ -197,8 +197,13 @@ See [benchmark/BENCHMARK.md](benchmark/BENCHMARK.md) for the complete reproducti
 ```bash
 pip install -e ".[dev]"
 pytest tests/
-pytest tests/ -m "not slow"   # skip the check of the shipped models (tests/integration/)
+pytest tests/ -m "not slow and not paper"   # skip the check of the shipped models (tests/integration/)
+pytest tests/ -m paper   # check that the code still reproduces the paper's results (benchmark/benchmark_results/main/)
 ```
+
+The `paper` check is not part of the default run. A failure means that the code now produces results that no longer
+align with the paper's results: expected after an intentional change of the model or of the planning code. In CI it
+only raises a warning.
 
 ---
 
@@ -219,7 +224,7 @@ If you use DynamAuction in your research, please cite:
 
 ## Authors
 
-DynamAuction is developed by **Benjamin Heymann**, **Eugénie Patard**, **Corentin Pla** and **Patrick Loiseau**, members of
+DynamAuction is developed by **Eugénie Patard**, **Corentin Pla**, **Benjamin Heymann** and **Patrick Loiseau**, members of
 [FairPlay](https://team.inria.fr/fairplay/), a joint research team of [Inria](https://www.inria.fr),
 [CREST](https://crest.science) ([ENSAE Paris](https://www.ensae.fr), Institut Polytechnique de Paris) and
 [Criteo](https://www.criteo.com). FairPlay studies fairness, privacy and incentives in auctions and matching

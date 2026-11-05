@@ -31,7 +31,7 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Run tests
-        run: pytest tests/ -q --tb=short -m "not slow"
+        run: pytest tests/ -q --tb=short -m "not slow and not paper"
 
   # ── The package as a user installs it: built, installed from the wheel (not editable), used outside the repo ──
   packaging:
@@ -114,6 +114,37 @@ jobs:
 
       - name: Evaluate PPO, SAC, TD3, the MLP valuation head and the baselines on test campaigns
         run: pytest tests/ -q --tb=short -m slow
+
+  # ── The paper's results: non-blocking, a failure only raises a warning ───────
+  paper-results:
+    name: Paper results (ubuntu-latest / Python 3.12)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package and dev dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Recompute test campaigns of benchmark/benchmark_results/main/
+        id: paper
+        continue-on-error: true
+        run: pytest tests/ -q --tb=short -m paper
+
+      - name: Warn when the results no longer align with the paper's
+        if: steps.paper.outcome == 'failure'
+        run: >-
+          echo "::warning title=Results no longer align with the paper::The code being changed produces results that
+          no longer align with the paper's results (benchmark/benchmark_results/main/). This is expected after an
+          intentional change of the model or of the planning code; the paper's numbers are reproduced by the version
+          of the code they were computed with."
 
   # ── The oldest dependency versions allowed by pyproject.toml ─────────────────
   minimum-versions:

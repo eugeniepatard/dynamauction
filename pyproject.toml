@@ -59,5 +59,9 @@ where = ["."]
 include = ["dynamauction*"] # limits what gets installed excludes benchmark/, tests/, docs/
 
 [tool.pytest.ini_options]
-markers = ["slow: marks tests as slow (deselect with -m 'not slow')"]
+markers = [
+  "slow: marks tests as slow (deselect with -m 'not slow')",
+  "paper: checks that the code still reproduces the paper's results in benchmark/benchmark_results/main/ (run with -m paper)",
+]
+addopts = "-m 'not paper'"   # the paper check is not part of the default run (a -m on the command line replaces this one)
 pythonpath = ["."]
