@@ -239,6 +239,11 @@ markets, with tools from game theory and machine learning.
 </p>
 
 
+## Contributing
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) for the development setup, the tests and how to open
+a pull request. Everyone taking part in the project is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## License
 
 This project is licensed under the MIT License.
