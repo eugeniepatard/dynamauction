@@ -18,9 +18,12 @@ benchmark/plots/
 benchmark/benchmark_results/*
 !benchmark/benchmark_results/main/
 !benchmark/benchmark_results/additional/
+!benchmark/benchmark_results/burst/
 
-# Models tracked: (PPO, SAC, TD3 at eta = 50, seeds 42-44; MLP valuation head)
+# Models tracked: (PPO, SAC, TD3 at eta = 50 and eta = 100, seeds 42-44; MLP valuation heads at eta = 50 and eta = 100)
 benchmark/models/**
 !benchmark/models/**/
 !benchmark/models/*/eta50/lr=*_seed4[234]/*
+!benchmark/models/*/eta100/lr=*_seed4[234]/*
 !benchmark/models/mlp_valuation_head/survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.*
+!benchmark/models/mlp_valuation_head/eta100/survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.*

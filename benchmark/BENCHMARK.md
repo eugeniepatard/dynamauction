@@ -123,7 +123,12 @@ ablation; it is not part of the benchmark.
 - The Monte-Carlo value of GreedyMyopic / Shading simulates each future to the end of the campaign with continuation bid 0.
 - In every simulated future (Shading, GreedyMyopic, MPC), the remaining horizon is resampled from the horizon distribution
   (no access to the true $T$), and the $M$ rollouts use common random numbers across the candidate actions.
-- MPC: candidates $A_0 = \{0.1, 0.2, \dots, 1.0\}$; ties go to the first candidate.
+- MPC: candidates $A_0 = \{0.1, 0.2, \dots, 1.0\}$; ties go to the first candidate. `MPCPolicy` also has the options
+  `crn="per_component"` (every candidate shares every random draw of the rollout, not only the first ones),
+  `attribution="campaign"` (a rollout also counts the conversions of its window's displays that arrive after the window)
+  and `reward="v0"` (a simulated win is worth $V_0 - $ payment, instead of its simulated conversions), described in
+  [`docs/API_REFERENCE.md`](../docs/API_REFERENCE.md#mpcpolicy); the stored results use the defaults
+  (`crn="shared_stream"`, `attribution="window"`, `reward="simulated"`).
 
 ### Constant bid
 
@@ -243,9 +248,11 @@ MPC uses $\alpha_{\rm cont} = 1$ unless stated (see [Planning Policies](#plannin
 Same policies and protocol with a mean campaign length $\eta = 100$, on the same 1 000 test campaigns (environment seeds
 0–999): the MLP valuation head is retrained at $\eta = 100$ (same settings); the Constant and Shading sweeps are redone (best
 $b = 0.11$ and best $\alpha = 0.4$ again); PPO, TD3 and SAC keep the hyperparameters selected at $\eta = 50$ (no new search)
-and are retrained 3 times at $\eta = 100$, the checkpoint being chosen on 200 validation campaigns of $\eta = 100$. To
-evaluate at $\eta = 100$, set `horizon_eta: 100` in `eval_config.yaml` and use an MLP head and RL models trained at
-$\eta = 100$ (`scenario_overrides={"horizon_eta": 100}` in `benchmark.train_mlp.train_mlp` and in `conf/train.yaml`).
+and are retrained 3 times at $\eta = 100$, the checkpoint being chosen on 200 validation campaigns of $\eta = 100$. These
+models are shipped: the MLP head in `models/mlp_valuation_head/eta100/` and the RL models (training seeds 42–44) in
+`models/{ppo,sac,td3}/eta100/`. To evaluate at $\eta = 100$, set `horizon_eta: 100` in `eval_config.yaml` and point the
+`model` of `sim_policies.mpc` (and `mpc_timebin`) to the $\eta = 100$ head and `rl_models` to the `eta100` folders. To
+retrain them, use `scenario_overrides={"horizon_eta": 100}` in `benchmark.train_mlp.train_mlp` and in `conf/train.yaml`.
 
 | Policy | Mean reward (1 000 campaigns) |
 |---|---|
@@ -328,9 +335,11 @@ benchmark/models/
 │   └── checkpoint.json   # hyperparameters, training seed, checkpoint, validation and test means
 ├── sac/eta50/lr=5e-05_bs=512_warmup=500_gamma=0.99_seed{42,43,44}/
 ├── td3/eta50/lr=0.001_bs=512_noise=0.2_warmup=500_gamma=0.99_seed{42,43,44}/
+├── {ppo,sac,td3}/eta100/...   # the same at eta = 100 (same hyperparameters, retrained at eta = 100)
 └── mlp_valuation_head/
     ├── survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.pt
-    └── survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.json   # its training settings
+    ├── survival-second-price-exponential_h32-32_actrelu_ep1000_e500_lr0.001_s10000.json   # its training settings
+    └── eta100/   # the head trained at eta = 100 (same file names)
 ```
 
 `best_model.zip` is the checkpoint of each training selected on the validation campaigns (the best evaluation during

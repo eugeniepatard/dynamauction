@@ -218,6 +218,148 @@ class TestMPCPolicy:
         assert isinstance(bid, float)
         assert bid >= 0.0
 
+    def test_invalid_crn_raises(self, mock_mlp):
+        with pytest.raises(ValueError, match="crn"):
+            MPCPolicy(v0=mock_mlp, crn="independent")
+
+    def test_per_component_crn_bid(self, mock_mlp, live_env):
+        env, obs = live_env
+        candidates = [0.5, 1.0]
+        policy = MPCPolicy(v0=mock_mlp, alpha_candidates=candidates, n_rollouts=2,
+                           planning_horizon=5.0, crn="per_component")
+        policy.set_env(env)
+        bid = policy.bid(obs)
+        assert policy.alpha_log[-1] in candidates
+        assert bid == pytest.approx(policy.alpha_log[-1] * 0.5, abs=1e-5)
+        # only the rollout copies get their own streams: the live env is untouched
+        from dynamauction.baseline.utils import _OwnStream
+        assert isinstance(env.unwrapped.rng, np.random.Generator)
+        assert not isinstance(env.unwrapped.scenario.competition, _OwnStream)
+        assert not isinstance(env.unwrapped.scenario.display_sampler, _OwnStream)
+
+
+class TestCampaignAttribution:
+    """MPCPolicy(attribution="campaign"): a rollout stopped at the end of its window counts, on top of the window's
+    rewards, exactly the conversions that the environment credits afterwards (when no later auction is won)."""
+
+    def test_invalid_attribution_raises(self, mock_mlp):
+        with pytest.raises(ValueError, match="attribution"):
+            MPCPolicy(v0=mock_mlp, attribution="horizon")
+
+    @pytest.mark.parametrize("seed", [12, 14, 15])   # campaigns whose first display converts after a 1-unit window
+    def test_counts_the_conversions_credited_after_the_window(self, mock_mlp, seed):
+        import copy
+        import gymnasium as gym
+        import dynamauction as dac
+        from dynamauction.baseline.utils import _per_component_rngs
+
+        env = gym.make("DynamAuction-v0", scenario=dac.make("survival-second-price-exponential"))
+        obs, _ = env.reset(seed=seed)
+        t_start = float(obs["t"].ravel()[0])
+        copies = []
+        for _ in range(2):
+            e = copy.deepcopy(env)
+            e.unwrapped.rng = np.random.default_rng(11)
+            _per_component_rngs(e, 11)
+            copies.append(e)
+        kw = dict(v0=mock_mlp, alpha_cont=1.0, planning_horizon=1.0)
+        with_after = MPCPolicy(attribution="campaign", **kw)._mpc_rollout(copies[0], 1.0, 0.5, t_start)
+        window_only = MPCPolicy(attribution="window", **kw)._mpc_rollout(copies[1], 1.0, 0.5, t_start)
+        e, done, credited_after = copies[1], False, 0.0
+        while not done and e.unwrapped.state.step_idx < len(e.unwrapped.auction_times):   # bid 0 until the end
+            _, reward, done, _, _ = e.step(np.array([0.0], dtype=np.float32))
+            credited_after += float(reward)
+        assert credited_after > 0   # the case is not trivial: some conversions are credited after the window
+        assert with_after == pytest.approx(window_only + credited_after, abs=1e-12)
+
+
+class TestV0Reward:
+    """MPCPolicy(reward="v0"): a simulated win is worth V₀ − payment (the paper's g), the simulated conversions are
+    not counted."""
+
+    def test_invalid_reward_raises(self, mock_mlp):
+        with pytest.raises(ValueError, match="reward"):
+            MPCPolicy(v0=mock_mlp, reward="expected")
+        with pytest.raises(ValueError, match="attribution"):
+            MPCPolicy(v0=mock_mlp, reward="v0", attribution="campaign")
+
+    def test_without_lookahead_bids_truthfully(self, mock_mlp, live_env):
+        """H = 0: Q̂(α) = mean of W(α·V₀, B)·(V₀ − B), maximised by bidding V₀ (α = 1) in a second-price auction."""
+        env, obs = live_env
+        policy = MPCPolicy(v0=mock_mlp, alpha_candidates=[0.5, 1.0], n_rollouts=50, planning_horizon=0.0,
+                           reward="v0", crn="per_component")
+        policy.set_env(env)
+        policy.bid(obs)
+        assert policy.alpha_log[-1] == 1.0
+
+    @pytest.mark.parametrize("seed", [12, 14, 15])
+    def test_return_is_v0_minus_payment_of_the_wins(self, mock_mlp, seed):
+        import copy
+        import gymnasium as gym
+        import dynamauction as dac
+        from dynamauction.baseline.utils import _per_component_rngs
+
+        env = gym.make("DynamAuction-v0", scenario=dac.make("survival-second-price-exponential"))
+        obs, _ = env.reset(seed=seed)
+        t_start, horizon = float(obs["t"].ravel()[0]), 5.0
+        copies = []
+        for _ in range(2):
+            e = copy.deepcopy(env)
+            e.unwrapped.rng = np.random.default_rng(11)
+            _per_component_rngs(e, 11)
+            copies.append(e)
+        got = MPCPolicy(v0=mock_mlp, alpha_cont=0.8, planning_horizon=horizon, reward="v0")._mpc_rollout(
+            copies[0], 1.0, 0.5, t_start)
+        e, expected, wins = copies[1], 0.0, 0   # replay: same bids, value = Σ over the wins of 0.5 − payment
+        o, _, done, _, info = e.step(np.array([1.0 * 0.5], dtype=np.float32))
+        while True:
+            if info["auction"]["won"]:
+                expected, wins = expected + 0.5 - info["auction"]["payment"], wins + 1
+            if done or float(o["t"].ravel()[0]) - t_start > horizon:
+                break
+            o, _, done, _, info = e.step(np.array([0.8 * 0.5], dtype=np.float32))
+        assert wins > 0
+        assert got == pytest.approx(expected, abs=1e-9)
+
+
+class TestPerComponentCRN:
+    """_per_component_rngs (MPCPolicy(crn="per_component")): two rollouts with the same seed share the competing bids
+    and the displays of every auction, even after a forced win in one and a forced loss in the other."""
+
+    @staticmethod
+    def _branches(per_component):
+        import copy
+        import gymnasium as gym
+        import dynamauction as dac
+        from dynamauction.baseline.utils import _per_component_rngs
+
+        env = gym.make("DynamAuction-v0", scenario=dac.make("survival-second-price-exponential"))
+        env.reset(seed=5)
+        out = []
+        for first_bid in (1e12, 0.0):   # forced win, forced loss
+            e = copy.deepcopy(env)
+            e.unwrapped.rng = np.random.default_rng(7)
+            if per_component:
+                _per_component_rngs(e, 7)
+            obs, _, done, _, _ = e.step(np.array([first_bid], dtype=np.float32))
+            bids, displays = [], []
+            while not done and len(bids) < 5:
+                displays.append(obs["display_features"].copy())
+                obs, _, done, _, info = e.step(np.array([0.0], dtype=np.float32))
+                bids.append(info["auction"]["competing_bid"])
+            out.append((bids, displays))
+        return out
+
+    def test_draws_shared_after_different_outcomes(self):
+        (bids_win, x_win), (bids_loss, x_loss) = self._branches(per_component=True)
+        assert len(bids_win) == 5
+        np.testing.assert_allclose(bids_win, bids_loss)
+        np.testing.assert_allclose(x_win, x_loss)
+
+    def test_shared_stream_draws_shift_after_different_outcomes(self):
+        (bids_win, _), (bids_loss, _) = self._branches(per_component=False)
+        assert not np.allclose(bids_win, bids_loss)
+
 
 class TestMPCOraclePolicy:
 

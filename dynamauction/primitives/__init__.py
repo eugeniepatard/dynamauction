@@ -6,7 +6,7 @@ from .auctions import AuctionRule, FirstPriceAuction, SecondPriceAuction
 from .competition import CompetitionDistribution, UniformCompetition, LogNormalCompetition, ExponentialCompetition, ConstantCompetition
 from .exogenous_process import ExogenousProcess, CompetitorClickProcess, TrivialProcess
 from .arrival_process import ArrivalProcess, PiecewiseConstantPoisson, ConstantPoisson, StepDecayPoisson
-from .gamma import Gamma, AdditiveGamma, MultiplicativeGamma, LastWonTimeGamma, TimeSinceLastWinGamma, ConstantGamma
+from .gamma import Gamma, AdditiveGamma, MultiplicativeGamma, RecoveringMultiplicativeGamma, LastWonTimeGamma, TimeSinceLastWinGamma, ConstantGamma
 from .kernel import RewardKernel, SaturationKernel, MixedKernel, RecencyDisplayKernel, CompetitorExtinctionKernel, SurvivalKernel, ImmediateSurvivalKernel, EffectiveFrequencyKernel, ReminderKernel
 from .display_sampler import DisplaySampler, IIDUniformSampler, CatalogueSampler, FixedSampler, NormalSampler
 from .user import UserFeatureGenerator, UniformUser, NormalUser, FixedUser

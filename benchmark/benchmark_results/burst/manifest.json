@@ -1,0 +1,110 @@
+{
+ "scenario": "survival-recovering-second-price-exponential-burst-arrivals",
+ "test_campaigns": "env seeds 0-199, policy seed = env seed + 1000",
+ "policies": [
+  "FiPla",
+  "Shading(α=0.6, M=20)",
+  "GreedyMyopic",
+  "MPC(H=5, M=60, α_cont=0.6)",
+  "MPC(H=15, M=60, α_cont=0.6)",
+  "MPC(H=25, M=60, α_cont=0.6)",
+  "MPC(H=5, M=60, shared α)",
+  "MPC(H=10, M=60, shared α)",
+  "MPC(H=15, M=60, shared α)",
+  "MPC(H=25, M=60, shared α)",
+  "MPC(H=5, M=60, two-phase α_cont)",
+  "MPC(H=15, M=60, two-phase α_cont)",
+  "MPC(H=25, M=60, two-phase α_cont)",
+  "Constant",
+  "PPO (training 1)",
+  "PPO (training 2)",
+  "PPO (training 3)"
+ ],
+ "constant_bid": 0.09,
+ "shading_best_alpha": 0.6,
+ "shading_sweep_alphas": [
+  0.1,
+  0.2,
+  0.3,
+  0.4,
+  0.5,
+  0.6,
+  0.7,
+  0.8,
+  0.9,
+  1.0
+ ],
+ "shading_n_rollouts": 20,
+ "mpc": {
+  "version": "MPCPolicy(crn='per_component', attribution='campaign')",
+  "n_rollouts": 60,
+  "alpha_candidates": [
+   0.1,
+   0.2,
+   0.3,
+   0.4,
+   0.5,
+   0.6,
+   0.7,
+   0.8,
+   0.9,
+   1.0
+  ],
+  "continuations": {
+   "α_cont=best": "constant α_cont = 0.6 (best Shading α)",
+   "two-phase": "α_cont = 0.3 for t < 10, then 0.7 (time of the simulated auction)",
+   "shared α": "α_cont = the candidate α of the rollout"
+  },
+  "valuation_head": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/head/survival-second-price-exponential-burst-arrivals-beta0.3_h32-32_actrelu_ep1000_e500_lr0.001_s10000.pt"
+ },
+ "ppo": {
+  "selection": {
+   "hp": {
+    "learning_rate": 0.0001,
+    "ppo_n_steps": 1024,
+    "ppo_n_epochs": 5,
+    "ppo_ent_coef": 0.0,
+    "gamma": 0.99
+   },
+   "search_run": "learning_rate=0.0001_ppo_n_steps=1024_ppo_n_epochs=5_ppo_ent_coef=0.0_gamma=0.99",
+   "search_checkpoint": "final",
+   "search_val_mean": 6.618339480758449,
+   "n_search_runs": 35
+  },
+  "trainings": {
+   "PPO (training 1)": {
+    "test_mean": 5.802518533851843,
+    "test_checkpoint": "final",
+    "timesteps": 5000000
+   },
+   "PPO (training 2)": {
+    "test_mean": 3.314184276703534,
+    "test_checkpoint": "final",
+    "timesteps": 5000000
+   },
+   "PPO (training 3)": {
+    "test_mean": 5.724682350396668,
+    "test_checkpoint": "final",
+    "timesteps": 5000000
+   }
+  },
+  "validation_campaigns": "env seeds 20000-20199"
+ },
+ "sources": {
+  "FiPla": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/fipla/chunks",
+  "Shading(α=0.6, M=20)": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/shading_M20/alpha=0.6/chunks",
+  "GreedyMyopic": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/shading_M20/alpha=1/chunks",
+  "MPC(H=5, M=60, α_cont=0.6)": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/mpc_H5_M60_acbest_crnpc_campaign/chunks",
+  "MPC(H=15, M=60, α_cont=0.6)": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/mpc_H15_M60_acbest_crnpc_campaign/chunks",
+  "MPC(H=25, M=60, α_cont=0.6)": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/mpc_H25_M60_acbest_crnpc_campaign/chunks",
+  "MPC(H=5, M=60, shared α)": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/mpc_H5_M60_acshared_crnpc_campaign/chunks",
+  "MPC(H=10, M=60, shared α)": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/mpc_H10_M60_acshared_crnpc_campaign/chunks",
+  "MPC(H=15, M=60, shared α)": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/mpc_H15_M60_acshared_crnpc_campaign/chunks",
+  "MPC(H=25, M=60, shared α)": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/mpc_H25_M60_acshared_crnpc_campaign/chunks",
+  "MPC(H=5, M=60, two-phase α_cont)": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/mpc_H5_M60_acphase_crnpc_campaign/chunks",
+  "MPC(H=15, M=60, two-phase α_cont)": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/mpc_H15_M60_acphase_crnpc_campaign/chunks",
+  "MPC(H=25, M=60, two-phase α_cont)": "params_search/survival-recovering-second-price-exponential-burst-arrivals/benchmark/mpc_H25_M60_acphase_crnpc_campaign/chunks",
+  "Constant": "Constant(b=0.09) re-simulated per step; b = two-stage best of params_search/survival-second-price-exponential-burst-arrivals-beta0.3/benchmark/eta50/references/episodes.csv on seeds 0-199",
+  "PPO": "params_search/survival-recovering-second-price-exponential-burst-arrivals/pilot/eta50/ppo/final/seed{42,43,44}/test.csv"
+ }
+}

@@ -56,6 +56,7 @@ from dynamauction.primitives import (
     LogNormalCompetition,
     UniformCompetition,
     ExponentialCompetition,
+    ConstantCompetition,
     # Arrival
     PiecewiseConstantPoisson,
     ConstantPoisson,
@@ -73,6 +74,7 @@ from dynamauction.primitives import (
     Gamma,
     AdditiveGamma,
     MultiplicativeGamma,
+    RecoveringMultiplicativeGamma,
     LastWonTimeGamma,
     TimeSinceLastWinGamma,
     ConstantGamma,
@@ -83,6 +85,7 @@ from dynamauction.primitives import (
     NormalSampler,
     # Exogenous
     TrivialProcess,
+    CompetitorClickProcess,
     # Conversion probes
     ConversionProbe,
     PoissonProbe,
@@ -102,6 +105,8 @@ def create_gamma(name: str, **kwargs) -> Gamma:
         return AdditiveGamma(**kwargs)
     elif name == "multiplicative":
         return MultiplicativeGamma(**kwargs)
+    elif name == "recovering-multiplicative":
+        return RecoveringMultiplicativeGamma(**kwargs)
     elif name == "last-won-time":
         return LastWonTimeGamma(**kwargs)
     elif name == "time-since-last-win":
@@ -154,6 +159,8 @@ def create_competition(name: str, **kwargs) -> CompetitionDistribution:
         return LogNormalCompetition(**kwargs)
     elif name == "exponential":
         return ExponentialCompetition(**kwargs)
+    elif name == "constant":
+        return ConstantCompetition(**kwargs)
     else:
         raise ValueError(f"Unknown competition: {name!r}")
 
@@ -188,6 +195,8 @@ def create_exogenous(name: str, **kwargs) -> ExogenousProcess:
     """Create an ExogenousProcess by name and parameters."""
     if name == "trivial":
         return TrivialProcess(**kwargs)
+    elif name == "competitor-click":
+        return CompetitorClickProcess(**kwargs)
     else:
         raise ValueError(f"Unknown exogenous: {name!r}")
 

@@ -5,6 +5,10 @@ Internal helpers for simulation-based planning rollouts.
 auction schedule of a copied environment with a fresh independent draw,
 removing oracle knowledge of the true remaining campaign length (with a fixed
 horizon the remaining time stays T − t: only the future auctions are redrawn).
+``_per_component_rngs``: gives a rollout copy one random stream per component
+(competing bids, displays, conversions), derived from one seed.
+``_credited_after_window``: value of the conversions of a rollout still to be
+credited when it stops at the end of its planning window.
 ``_rollout_to_end``: runs a policy to episode termination and returns the
 cumulative reward.
 ``_obs_to_features``: converts a Dict observation to a flat numpy feature
@@ -51,6 +55,69 @@ def _resample_remaining_horizon(env: gym.Env, rng: np.random.Generator) -> None:
     ])
 
     unwrapped.scenario.exogenous.generate(new_horizon, rng)
+
+
+class _OwnStream:
+    """A scenario component (competition or display sampler) that draws from its own generator, whatever generator
+    the environment passes to it."""
+
+    def __init__(self, component: Any, rng: np.random.Generator) -> None:
+        self._component, self._rng = component, rng
+
+    def sample(self, _rng: Any) -> Any:
+        return self._component.sample(self._rng)
+
+    def __getattr__(self, name: str) -> Any:
+        if name.startswith("_"):
+            raise AttributeError(name)
+        return getattr(self._component, name)
+
+
+class _PerAuctionRNG:
+    """Stands for the environment's generator in a rollout copy: the draws of the auction with index k (the
+    conversions of its display) come from a generator seeded (seed, k)."""
+
+    def __init__(self, env: Any, seed: int) -> None:
+        self._env, self._seed, self._k, self._gen = env, seed, None, None
+
+    def __getattr__(self, name: str) -> Any:
+        if name.startswith("_"):
+            raise AttributeError(name)
+        k = int(self._env.state.step_idx)
+        if k != self._k:
+            self._k, self._gen = k, np.random.default_rng([self._seed, k])
+        return getattr(self._gen, name)
+
+
+def _per_component_rngs(env: gym.Env, seed: int) -> None:
+    """
+    Give a rollout copy one random stream per component, derived from one seed (``MPCPolicy(crn="per_component")``).
+
+    The competing bids and the displays come from their own streams (one draw per auction), and the conversions of
+    the auction with index k from a generator seeded (seed, k): rollouts given the same seed share every draw at every
+    auction, whatever their earlier wins and losses. Only the copy is changed (its scenario components and its
+    generator), never the environment code. Must be called on a deepcopy of the live env.
+    """
+    unwrapped = env.unwrapped
+    competition, display, conversion = np.random.SeedSequence(seed).spawn(3)
+    unwrapped.scenario.competition = _OwnStream(unwrapped.scenario.competition, np.random.default_rng(competition))
+    unwrapped.scenario.display_sampler = _OwnStream(unwrapped.scenario.display_sampler, np.random.default_rng(display))
+    unwrapped.rng = _PerAuctionRNG(unwrapped, int(conversion.generate_state(1)[0]))
+
+
+def _credited_after_window(env: gym.Env) -> float:
+    """
+    Value of the conversions already drawn in a rollout that the environment will credit after the current step
+    (``MPCPolicy(attribution="campaign")``, when the rollout stops at the end of its planning window).
+
+    The conversions matured since the last auction are credited at the next one, and the pending ones at the first
+    auction after them: those up to the last auction of the (simulated) campaign. A conversion after the last auction
+    is never credited.
+    """
+    unwrapped = env.unwrapped
+    last_auction = float(unwrapped.auction_times[-1]) if len(unwrapped.auction_times) else float(unwrapped.horizon)
+    n_pending = sum(1 for c in unwrapped.pending_conversions if c <= last_auction)
+    return float(unwrapped.matured_conversions_reward) + unwrapped.conversion_value * n_pending
 
 
 def _obs_to_features(obs: Dict[str, Any]) -> np.ndarray:

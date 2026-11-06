@@ -1,0 +1,18 @@
+{
+  "scenario": "survival-second-price-exponential",
+  "scenario_overrides": {
+    "horizon_eta": 100
+  },
+  "algo": "sac",
+  "hyperparameters": {
+    "learning_rate": 5e-05,
+    "off_policy_batch_size": 512,
+    "off_policy_learning_starts": 500,
+    "gamma": 0.99
+  },
+  "training_seed": 43,
+  "timesteps": 10000000,
+  "checkpoint": "best (best 20-campaign evaluation during training), chosen on the 200 validation campaigns of eta = 100 (seeds 20000-20199); configuration selected by the search at eta = 50",
+  "validation_mean": -0.25984448271931737,
+  "test_mean_1000_campaigns": -0.07289497521226866
+}

@@ -1,0 +1,21 @@
+{
+  "scenario_id": "survival-second-price-exponential",
+  "scenario_overrides": {
+    "horizon_eta": 100
+  },
+  "n_episodes": 1000,
+  "val_frac": 0.15,
+  "hidden_dims": [
+    32,
+    32
+  ],
+  "n_epochs": 500,
+  "lr": 0.001,
+  "batch_size": 256,
+  "seed": 10000,
+  "n_train_samples": 83779,
+  "n_val_samples": 14784,
+  "final_train_loss": 0.0006785355529844798,
+  "final_val_loss": 0.0007480726344510913,
+  "trained_at": "2026-10-14T15:03:26"
+}

@@ -49,8 +49,7 @@ Available presets (all second price, Poisson arrivals of rate 1, campaign length
 | `"survival-second-price-exponential-immediate"` | `immediate-survival` (reward at bid time) | `multiplicative` (c = 0.9, β = 1) | LogNormal(−1, 1) | none / single (κ ~ Bernoulli) |
 | `"saturation-second-price-lognormal"` | `saturation` | `additive` (number of wins) | LogNormal(−1, 1) | Bernoulli / single |
 | `"recency-second-price-lognormal"` | `recency` | `last-won-time` (−1000 before the first win) | LogNormal(−1, 1) | Bernoulli / single |
-| `"survival-recency-second-price-fixed-burst-arrivals"` | `survival` (f = clip(Δt·(1ᵀu)(1ᵀx), 0, 1)) | `time-since-last-win` (Δt; t + 50 before the first win) | LogNormal(−1, 1); arrival `pwpoisson` rate 10 on [0, 10) then 1; fixed $T = 50$ | Bernoulli / single |
-| `"survival-recency-second-price-exponential-burst-arrivals"` | `survival` (f = clip(Δt·(1ᵀu)(1ᵀx), 0, 1)) | `time-since-last-win` (Δt; t + 50 before the first win) | LogNormal(−1, 1); arrival `pwpoisson` rate 10 on [0, 10) then 1 | Bernoulli / single |
+| `"survival-recovering-second-price-exponential-burst-arrivals"` | `survival` | `recovering-multiplicative` (c = 0.9, β = 0.3) | LogNormal(−1, 1); arrival `pwpoisson` rate 10 on [0, 10) then 1 | Bernoulli / single |
 | `"effective-frequency-second-price-lognormal"` | `effective-frequency` (relevance clip((1ᵀu)(1ᵀx), 0, 1) × wear-in then wear-out) | `additive` (number of wins) | LogNormal(−1, 1) | Bernoulli / single |
 | `"reminder-second-price-lognormal"` | `reminder` (relevance clip((1ᵀu)(1ᵀx), 0, 1) × value peaking `peak_time` after the last win) | `last-won-time` (−1000 before the first win) | LogNormal(−1, 1) | Bernoulli / single |
 | `"mixed-second-price-exponential"` | `mixed` (immediate + saturation) | `additive` | Exponential(1); fixed $T = 20$, arrival rate 0.5 | Poisson / multi |
@@ -94,7 +93,7 @@ Available components:
 | Type | Options |
 |------|---------|
 | Kernels | `"saturation"`, `"recency"`, `"effective-frequency"`, `"reminder"`, `"competitor-extinction"`, `"mixed"`, `"survival"`, `"immediate-survival"` |
-| Carry-over context (γ) | `"additive"`, `"multiplicative"`, `"last-won-time"`, `"time-since-last-win"`, `"constant"` |
+| Carry-over context (γ) | `"additive"`, `"multiplicative"`, `"recovering-multiplicative"`, `"last-won-time"`, `"time-since-last-win"`, `"constant"` |
 | Auctions | `"first-price"`, `"second-price"` |
 | Competition | `"uniform"`, `"lognormal"`, `"exponential"` |
 | Arrival | `"pwpoisson"`, `"cstpoisson"`, `"decaypoisson"` |
@@ -135,6 +134,7 @@ The context `ctx` summarises the past won auctions and enters the conversion ker
 | `time-since-last-win(initial_value=-1000)` | time of the last won auction (`initial_value` before any win) | $S(t^-) = t - t_{\text{last}}$, the time since the last win: $\min_{i:\, t_i < t}(t - t_i)$, monoid $([0, +\infty], \min, +\infty)$ |
 | `constant` | a constant | same |
 | `multiplicative(c, initial_value=1, beta=1)` | $S(t_{\rm last}^-)$ at the last win | $S(t^-) = S(t_{\rm last}^-)\,\big(1 - c\,e^{-\beta (t - t_{\rm last})}\big)$ |
+| `recovering-multiplicative(c, beta=1)` | not used (stays 1) | $S(t^-) = \prod_{i:\, t_i < t}\big(1 - c\,e^{-\beta (t - t_i)}\big)$: every win keeps recovering, whatever the later wins; monoid $([0, 1], \times, 1)$ |
 
 For `multiplicative` (survival presets), $S(0^-) = $ `initial_value` and there is **no factor before the first win**.
 A win at time $t$ stores $S(t^-)$, so a win shortly after the previous one locks a small factor
@@ -478,6 +478,9 @@ policy = MPCPolicy(
     planning_horizon = 25.0,    # H
     seed             = 0,
     tie_alpha        = None,    # ties go to the first candidate; or to the candidate closest to tie_alpha
+    crn              = "shared_stream",   # or "per_component": every candidate shares every draw (see below)
+    attribution      = "window",          # or "campaign": count the window's conversions that arrive after it
+    reward           = "simulated",       # or "v0": a simulated win is worth V₀ − payment, no simulated conversions
 )
 ```
 
@@ -486,6 +489,40 @@ the future auction times (`_resample_remaining_horizon`), and draws its noise fr
 `env_copy.unwrapped.rng` (setting `env_copy.rng` on the Gymnasium wrapper would leave the copied real random stream in
 place, so the rollout would replay the real competing bid). The same `M` (horizon seed, noise seed) pairs are shared by
 all candidates (common random numbers).
+
+**Common random numbers (`crn`).** The horizon seed draws the remaining horizon, the future auction times and the
+exogenous process, so all candidates face the same simulated campaign. The noise seed drives the rest:
+
+| `crn` | competing bids, displays, conversions | consequence |
+|---|---|---|
+| `"shared_stream"` (default) | one generator, drawn in the order in which they occur | a won display draws its conversion and a lost one does not: after the first auction at which two candidates' outcomes differ, their later draws are shifted |
+| `"per_component"` | one stream for the competing bids, one for the displays, and a generator seeded (seed, k) for the conversions of auction k (`_per_component_rngs`, set on the rollout copy only) | all candidates share every draw at every auction, whatever their earlier wins and losses |
+
+Both estimates are unbiased; `"per_component"` lowers the noise of the differences Q̂(α) − Q̂(α′) that decide the
+choice (by about a third in the main scenario, for MPC(H=25, M=60)), for about 10% more time per bid.
+
+**Which conversions count (`attribution`).** A rollout stops before the first auction after t + H. With
+`attribution="window"` (default) its return is what the environment credits until then: the conversions that arrive
+before the end of the window, minus the payments. With `attribution="campaign"` it also counts the conversions of the
+window's displays that arrive after the window but are still credited in the simulated campaign, i.e. before its last
+auction (`_credited_after_window`; a conversion after the last auction is never credited by the environment). A win is
+then valued for all its conversions, as by the myopic value V₀, and with H = 0 the best candidate is α = 1 (truthful
+bidding). The conversions are drawn when the display is won, so this costs nothing extra.
+
+**What a simulated auction is worth (`reward`).** With `reward="simulated"` (default) the rollout adds the environment's
+step rewards: the simulated conversions (counted as set by `attribution`) minus the payments. With `reward="v0"` a won
+simulated auction is worth V₀(s_k, x_k) − payment, V₀ being the prediction used for its bid, and a lost one 0; the
+simulated conversions are not counted (`attribution` does not apply and must stay `"window"`):
+
+  Q̂(α) = (1/M) Σ_m Σ_k W(b_k, B_k) · (V₀(s_k, x_k) − p(b_k, B_k)),   b_0 = α · V₀(s_0, x_0),  b_k = α_cont · V₀(s_k, x_k).
+
+A win is credited its expected value instead of a random 0/1 conversion, which removes the conversion noise from the
+comparison between candidates (a candidate that wins the current auction otherwise gets a coin flip that a candidate
+that loses it does not), whatever the delay of the conversions; the simulator still drives the competition, the auction
+times and the carry-over context. With H = 0 the best candidate is α = 1 (truthful bidding). The rewards then depend on
+the valuation head: an error of V₀ changes both the bids and the value of the simulated wins.
+
+The stored results of the benchmark (`benchmark/benchmark_results/main/`) were computed with the defaults.
 
 **Ties.** In a second-price auction a candidate only changes a rollout if the simulated competing bid falls between two
 candidate bids, so candidates often get exactly the same Q̂ (more often with few rollouts). Ties go to the first candidate

@@ -7,6 +7,7 @@ from dynamauction.primitives.gamma import (
     ConstantGamma,
     LastWonTimeGamma,
     MultiplicativeGamma,
+    RecoveringMultiplicativeGamma,
     TimeSinceLastWinGamma,
 )
 
@@ -111,6 +112,36 @@ class TestMultiplicativeGamma:
     def test_beta_ignored_before_first_win(self):
         g = MultiplicativeGamma(c=0.9, beta=3.0)
         assert g.current_context(1.0, t=0.2, t_past_won_auctions=[]) == pytest.approx(1.0)
+
+
+
+class TestRecoveringMultiplicativeGamma:
+
+    def test_initial_context_is_one(self):
+        assert RecoveringMultiplicativeGamma(c=0.9).initiate_context() == pytest.approx(1.0)
+
+    def test_no_factor_before_first_win(self):
+        g = RecoveringMultiplicativeGamma(c=0.9, beta=0.3)
+        assert g.current_context(1.0, t=5.0, t_past_won_auctions=[]) == pytest.approx(1.0)
+
+    def test_product_over_every_past_win(self):
+        g = RecoveringMultiplicativeGamma(c=0.9, beta=0.3)
+        expected = (1.0 - 0.9 * np.exp(-0.3 * 3.0)) * (1.0 - 0.9 * np.exp(-0.3 * 1.0))
+        assert g.current_context(1.0, t=4.0, t_past_won_auctions=[1.0, 3.0]) == pytest.approx(expected)
+
+    def test_earlier_factor_keeps_recovering_after_a_later_win(self):
+        # unlike MultiplicativeGamma, the factor of the first win is evaluated at the current time, not frozen at the
+        # second win
+        g = RecoveringMultiplicativeGamma(c=0.9, beta=1.0)
+        ctx = g.current_context(1.0, t=10.0, t_past_won_auctions=[1.0, 1.1])
+        assert ctx == pytest.approx((1.0 - 0.9 * np.exp(-9.0)) * (1.0 - 0.9 * np.exp(-8.9)))
+        assert ctx > 0.99
+
+    def test_stored_context_is_ignored(self):
+        g = RecoveringMultiplicativeGamma(c=0.9)
+        assert g.current_context(0.123, t=2.0, t_past_won_auctions=[1.0]) == \
+            pytest.approx(g.current_context(1.0, t=2.0, t_past_won_auctions=[1.0]))
+        assert g.update_context(1.0, _X, _U, t_display=2.0, t_past_won_auctions=[1.0]) == pytest.approx(1.0)
 
 
 class TestCurrentContextDefault:

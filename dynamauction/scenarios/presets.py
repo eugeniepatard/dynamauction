@@ -20,25 +20,8 @@ SCENARIO_PRESETS = {
             "kappa_distribution": "poisson",
         },
 
-    "survival-recency-second-price-fixed-burst-arrivals": {
-            "description": "Survival kernel whose context is the time since the last won auction (recency: a display is worth 0 right after a win and recovers linearly, f = clip(dt * (w_u.u)(w_x.x), 0, 1); dt = t + 50 before the first win), burst of auctions (rate 10 on [0, 10), then 1), fixed horizon T=50",
-            "kernel": {"name": "survival", "params": {"w_u": [1.0, 1.0, 1.0], "w_x": [1.0, 1.0, 1.0], "delay_rate": 1.0}},
-            "auction": {"name": "second-price"},
-            "competition": {"name": "lognormal", "params": {"mu": -1.0, "sigma": 1.0}},
-            "arrival": {"name": "pwpoisson", "params": {"breakpoints": [10.0], "intensities": [10.0, 1.0]}},
-            "display": {"name": "normal", "params": {"dim": 3, "mu": 0.0, "sigma": 1.0}},
-            "exogenous": {"name": "trivial"},
-            "horizon": {"name": "fixed", "params": {"value": 50.0}},
-            "user": {"name": "normal", "params": {"full_dim": 3, "observable_dim": 3, "mu": 0.0, "sigma": 1.0}},
-            "gamma": {"name": "time-since-last-win", "params": {"initial_value": -50.0}},
-            "max_history": 1,
-            "probe": {"name": "bernoulli"},
-            "delay_sampler": {"name": "single"},
-            "kappa_distribution": "poisson",
-        },
-
-    "survival-recency-second-price-exponential-burst-arrivals": {
-            "description": "Survival kernel whose context is the time since the last won auction (recency: a display is worth 0 right after a win and recovers linearly, f = clip(dt * (w_u.u)(w_x.x), 0, 1); dt = t + 50 before the first win), burst of auctions (rate 10 on [0, 10), then 1), exponential horizon (eta=50)",
+    "survival-recovering-second-price-exponential-burst-arrivals": {
+            "description": "Survival kernel with a recovering fatigue (each win multiplies the context by its own factor 1 - c*exp(-beta*(t - t_i)), which recovers towards 1 whatever the later wins; c=0.9, slow recovery beta=0.3), burst of auctions (rate 10 on [0, 10), then 1), exponential horizon (eta=50)",
             "kernel": {"name": "survival", "params": {"w_u": [1.0, 1.0, 1.0], "w_x": [1.0, 1.0, 1.0], "delay_rate": 1.0}},
             "auction": {"name": "second-price"},
             "competition": {"name": "lognormal", "params": {"mu": -1.0, "sigma": 1.0}},
@@ -47,7 +30,7 @@ SCENARIO_PRESETS = {
             "exogenous": {"name": "trivial"},
             "horizon": {"name": "exponential", "params": {"eta": 50.0}},
             "user": {"name": "normal", "params": {"full_dim": 3, "observable_dim": 3, "mu": 0.0, "sigma": 1.0}},
-            "gamma": {"name": "time-since-last-win", "params": {"initial_value": -50.0}},
+            "gamma": {"name": "recovering-multiplicative", "params": {"c": 0.9, "beta": 0.3}},
             "max_history": 1,
             "probe": {"name": "bernoulli"},
             "delay_sampler": {"name": "single"},

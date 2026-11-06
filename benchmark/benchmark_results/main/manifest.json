@@ -37,12 +37,12 @@
       1.0
     ],
     "sources": {
-      "MPC(H=10, M=60)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H10_M60/chunks",
-      "MPC(H=25, M=60)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H25_M60/chunks",
-      "MPC(H=25, M=80)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H25_M80/chunks",
-      "MPC(H=35, M=60)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H35_M60/chunks",
-      "MPC(H=25, M=60, α_cont=0.4)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H25_M60_ac0.4/chunks",
-      "MPC(H=35, M=60, α_cont=0.4)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H35_M60_ac0.4/chunks",
+      "MPC(H=10, M=60)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H10_M60_crnpc_campaign/chunks",
+      "MPC(H=25, M=60)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H25_M60_crnpc_campaign/chunks",
+      "MPC(H=25, M=80)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H25_M80_crnpc_campaign/chunks",
+      "MPC(H=35, M=60)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H35_M60_crnpc_campaign/chunks",
+      "MPC(H=25, M=60, α_cont=0.4)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H25_M60_ac0.4_crnpc_campaign/chunks",
+      "MPC(H=35, M=60, α_cont=0.4)": "params_search/survival-second-price-exponential/pilot/eta50/mpc_H35_M60_ac0.4_crnpc_campaign/chunks",
       "Shading(α=0.4, M=20)": "params_search/survival-second-price-exponential/pilot/eta50/shading_M20/alpha=0.4/results.csv",
       "FiPla": "params_search/survival-second-price-exponential/pilot/eta50/references/fipla_steps.csv",
       "GreedyMyopic": "params_search/survival-second-price-exponential/pilot/eta50/shading_M20/alpha=1/results.csv",
@@ -51,7 +51,8 @@
       "TD3": "params_search/survival-second-price-exponential/td3/eta50/final/seed{42,43,44}/test.csv",
       "SAC": "params_search/survival-second-price-exponential/sac/eta50/final/seed{42,43,44}/test.csv"
     },
-    "missing_or_incomplete": []
+    "missing_or_incomplete": [],
+    "mpc_version": "MPCPolicy(crn='per_component', attribution='campaign')"
   },
   "eta100": {
     "policies": [
@@ -89,12 +90,12 @@
       1.0
     ],
     "sources": {
-      "MPC(H=10, M=60)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H10_M60/chunks",
-      "MPC(H=25, M=60)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H25_M60/chunks",
-      "MPC(H=25, M=80)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H25_M80/chunks",
-      "MPC(H=35, M=60)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H35_M60/chunks",
-      "MPC(H=25, M=60, α_cont=0.4)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H25_M60_ac0.4/chunks",
-      "MPC(H=35, M=60, α_cont=0.4)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H35_M60_ac0.4/chunks",
+      "MPC(H=10, M=60)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H10_M60_crnpc_campaign/chunks",
+      "MPC(H=25, M=60)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H25_M60_crnpc_campaign/chunks",
+      "MPC(H=25, M=80)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H25_M80_crnpc_campaign/chunks",
+      "MPC(H=35, M=60)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H35_M60_crnpc_campaign/chunks",
+      "MPC(H=25, M=60, α_cont=0.4)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H25_M60_ac0.4_crnpc_campaign/chunks",
+      "MPC(H=35, M=60, α_cont=0.4)": "params_search/survival-second-price-exponential/pilot/eta100/mpc_H35_M60_ac0.4_crnpc_campaign/chunks",
       "Shading(α=0.4, M=20)": "params_search/survival-second-price-exponential/pilot/eta100/shading_M20/alpha=0.4/results.csv",
       "FiPla": "params_search/survival-second-price-exponential/pilot/eta100/references/fipla_steps.csv",
       "GreedyMyopic": "params_search/survival-second-price-exponential/pilot/eta100/shading_M20/alpha=1/results.csv",
@@ -103,6 +104,7 @@
       "TD3": "params_search/survival-second-price-exponential/td3/eta100/final/seed{42,43,44}/test.csv",
       "SAC": "params_search/survival-second-price-exponential/sac/eta100/final/seed{42,43,44}/test.csv"
     },
-    "missing_or_incomplete": []
+    "missing_or_incomplete": [],
+    "mpc_version": "MPCPolicy(crn='per_component', attribution='campaign')"
   }
 }
