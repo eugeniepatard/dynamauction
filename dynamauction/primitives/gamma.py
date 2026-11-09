@@ -1,5 +1,6 @@
 """Carry-over context primitives x^{-i} = aggregate_{i'<i}[gamma(xi', ti', ti)]"""
 
+import math
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -57,6 +58,31 @@ class MultiplicativeGamma(Gamma):
 
     def update_context(self, ctx: float, x: np.ndarray, u: np.ndarray, t_display: float, t_past_won_auctions: List[float]) -> float:
         return self.current_context(ctx, t_display, t_past_won_auctions)
+
+class RecoveringMultiplicativeGamma(Gamma):
+    """S(t⁻) = Π_{i: t_i < t} (1 − c·exp(−beta·(t − t_i))) over the past wins t_i, 1 before the first win.
+
+    Each win contributes its own factor, 1 − c right after the win, which recovers towards 1 as time passes, whatever
+    the later wins (unlike MultiplicativeGamma, where a later win freezes the factor of the previous one). beta is the
+    recovery rate: beta < 1 makes the fatigue of a win last longer, beta > 1 shorter. The context only depends on the
+    win times: the stored context is not used and stays 1.
+    """
+
+    def __init__(self, c: float, beta: float = 1.0):
+        self.c = c
+        self.beta = beta
+
+    def initiate_context(self) -> float:
+        return 1.0
+
+    def current_context(self, ctx: float, t: float, t_past_won_auctions: List[float]) -> float:
+        s = 1.0   # empty product: no factor before the first win
+        for t_i in t_past_won_auctions:
+            s *= 1.0 - self.c * math.exp(-self.beta * (t - t_i))
+        return s
+
+    def update_context(self, ctx: float, x: np.ndarray, u: np.ndarray, t_display: float, t_past_won_auctions: List[float]) -> float:
+        return ctx
 
 class LastWonTimeGamma(Gamma):
     """Context is the time of the last won auction."""

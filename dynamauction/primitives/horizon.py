@@ -2,8 +2,9 @@
 Campaign horizon generators sampling the total campaign duration T.
 
 ``HorizonGenerator`` (abstract): samples T at the start of each episode.
-``ExponentialHorizon``: T ~ Exponential(η), giving a geometric stopping
-time with mean 1/η auctions (memoryless campaign length).
+``ExponentialHorizon``: T ~ Exponential with mean η (rate 1/η), a memoryless
+campaign length; with Poisson arrivals of rate μ, the number of auctions
+before T is geometric with mean μ·η.
 """
 from abc import ABC, abstractmethod
 import numpy as np

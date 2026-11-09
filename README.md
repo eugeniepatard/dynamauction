@@ -16,7 +16,7 @@ It is built on a **kernel causal model** that captures realistic advertiser dyna
 - **Flexible scenario builder** — compose kernels, auction rules, competition models, arrival processes, and horizon generators from primitives, or use one of the built-in presets.
 - **Gymnasium environment** (`DynamAuction-v0`) — step-by-step interaction with delayed reward delivery and full observation of the kernel state.
 - **Multi-policy simulator** — run paired campaigns across seeds with any combination of policies; outputs tidy DataFrames per auction, display, conversion, and episode.
-- **Baseline policies** — `FiPlaPolicy`, `ConstantPolicy`, `RandomPolicy`, `GreedyMyopicPolicy`, `ShadingPolicy`, `MPCPolicy`, `MPCOraclePolicy`, `MPCTimeBinnedPolicy`.
+- **Baseline policies** — `FiPlaPolicy`, `ConstantPolicy`, `RandomPolicy`, `GreedyMyopicPolicy`, `ShadingPolicy`, `MPCPolicy` (rollout options `crn`, `attribution`, `reward`: see [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md#mpcpolicy)), `MPCOraclePolicy`, `MPCTimeBinnedPolicy`.
 - **Benchmark pipeline** — end-to-end reproduction of the paper results: RL training (PPO, SAC, TD3 via Stable Baselines3), MLP valuation head, multi-seed evaluation, and publication-quality plots.
 
 ---
@@ -154,8 +154,7 @@ tests/                  Unit test suite
 | `survival-second-price-exponential-immediate` | `ImmediateSurvivalKernel` | multiplicative fatigue | none / single | Main survival scenario with the reward at bid time (credit-assignment ablation) |
 | `saturation-second-price-lognormal` | `SaturationKernel` | number of wins | Bernoulli / single | Display retargeting — audience fatigue |
 | `recency-second-price-lognormal` | `RecencyDisplayKernel` | time of last win | Bernoulli / single | Email / push — freshness of last touch |
-| `survival-recency-second-price-fixed-burst-arrivals` | `SurvivalKernel` | time since the last win, Δt | Bernoulli / single | A display is worth 0 right after a win and recovers linearly (f = clip(Δt·(1ᵀu)(1ᵀx), 0, 1); Δt = t + 50 before the first win); a burst of auctions (rate 10 on [0, 10), then 1), fixed horizon T = 50 |
-| `survival-recency-second-price-exponential-burst-arrivals` | `SurvivalKernel` | time since the last win, Δt | Bernoulli / single | Same with the exponential horizon (η = 50) |
+| `survival-recovering-second-price-exponential-burst-arrivals` | `SurvivalKernel` | recovering multiplicative fatigue (c = 0.9, β = 0.3) | Bernoulli / single | Every win multiplies the conversion propensity by its own factor 1 − c·e^{−β(t − t_i)}, which recovers slowly; a burst of auctions (rate 10 on [0, 10), then 1), exponential horizon (η = 50): the best shading changes over the campaign |
 | `effective-frequency-second-price-lognormal` | `EffectiveFrequencyKernel` | number of wins | Bernoulli / single | Brand / awareness — user/display relevance × wear-in over the first exposures, then wear-out |
 | `reminder-second-price-lognormal` | `ReminderKernel` | time of last win | Bernoulli / single | Retargeting — user/display relevance × a reminder converting best some time after the previous contact |
 | `mixed-second-price-exponential` | `MixedKernel` | number of wins | Poisson / multi | Rich-media — immediate click-through + delayed view-through |

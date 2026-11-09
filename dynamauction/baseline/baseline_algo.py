@@ -10,7 +10,7 @@ import numpy as np
 import gymnasium as gym
 from dynamauction.baseline.estimators import MLPValuationHead, SimulationEstimator
 from dynamauction.baseline.policies import BiddingPolicy
-from dynamauction.baseline.utils import _resample_remaining_horizon
+from dynamauction.baseline.utils import _credited_after_window, _per_component_rngs, _resample_remaining_horizon
 from dynamauction.env import AuctionEnv
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -215,6 +215,29 @@ class MPCPolicy(BiddingPolicy):
         second-price auction, candidates that produce the same first-step outcome
         in every rollout get identical Q̂), pick the tied candidate closest to
         ``tie_alpha``.  ``None`` keeps the first candidate in ``alpha_candidates``.
+    crn : {"shared_stream", "per_component"}
+        How the noise seed drives the rollout.  ``"shared_stream"`` (default): one
+        generator for the competing bids, the displays and the conversions, drawn in
+        the order in which they occur; a won display draws its conversion and a lost
+        one does not, so after the first auction at which two candidates' outcomes
+        differ their later draws are shifted.  ``"per_component"``: one stream for the
+        competing bids, one for the displays and one generator per auction index for
+        the conversions, set on each rollout copy (``_per_component_rngs``), so that all
+        candidates share every draw at every auction.  Both are unbiased;
+        ``"per_component"`` reduces the noise of the comparison between candidates.
+    attribution : {"window", "campaign"}
+        Which conversions a rollout counts.  ``"window"`` (default): those credited
+        within the planning window (the rollout stops before the first auction after
+        t + H).  ``"campaign"``: also the conversions of the window's displays that
+        arrive after the window but are still credited in the simulated campaign
+        (before its last auction), so that a win is valued for all its conversions.
+    reward : {"simulated", "v0"}
+        What a simulated auction is worth.  ``"simulated"`` (default): the environment's
+        step reward, i.e. the simulated conversions (counted as set by ``attribution``)
+        minus the payments.  ``"v0"``: V₀(s_k, x_k) − payment if the auction is won and 0
+        otherwise, V₀ being the prediction used for the bid; the simulated conversions
+        are not counted (their expected value, V₀, replaces them).  ``attribution`` then
+        does not apply and must stay ``"window"``.
     """
 
     def __init__(
@@ -226,13 +249,27 @@ class MPCPolicy(BiddingPolicy):
         planning_horizon: float = 7.0,
         seed: int = 0,
         tie_alpha: Optional[float] = None,
+        crn: str = "shared_stream",
+        attribution: str = "window",
+        reward: str = "simulated",
     ) -> None:
+        if crn not in ("shared_stream", "per_component"):
+            raise ValueError(f"crn must be 'shared_stream' or 'per_component', got {crn!r}")
+        if attribution not in ("window", "campaign"):
+            raise ValueError(f"attribution must be 'window' or 'campaign', got {attribution!r}")
+        if reward not in ("simulated", "v0"):
+            raise ValueError(f"reward must be 'simulated' or 'v0', got {reward!r}")
+        if reward == "v0" and attribution != "window":
+            raise ValueError("attribution only applies to reward='simulated' (with reward='v0' a win is worth V0)")
         self.v0 = v0
         self.alpha_candidates = list(alpha_candidates)
         self.alpha_cont = alpha_cont
         self.n_rollouts = n_rollouts
         self.planning_horizon = planning_horizon
         self.tie_alpha = tie_alpha
+        self.crn = crn
+        self.attribution = attribution
+        self.reward = reward
         self._env: Optional[AuctionEnv] = None
         self._rng = np.random.default_rng(seed)
         self.alpha_log: List[float] = []
@@ -270,6 +307,8 @@ class MPCPolicy(BiddingPolicy):
                 env_copy = copy.deepcopy(self._env)
                 _resample_remaining_horizon(env_copy, np.random.default_rng(scenario_seed))
                 env_copy.unwrapped.rng = np.random.default_rng(noise_seed)
+                if self.crn == "per_component":
+                    _per_component_rngs(env_copy, noise_seed)
                 cumulative += self._mpc_rollout(
                     env_copy, alpha, v0_now, t_start
                 )
@@ -301,23 +340,35 @@ class MPCPolicy(BiddingPolicy):
         Step t+k: bid = alpha_cont  · V₀(s_k,  x_k)  (default continuation)
 
         Stops at the natural episode end or when the elapsed time exceeds
-        ``planning_horizon``.
+        ``planning_horizon``; with ``attribution="campaign"``, a stop at the end of the
+        window adds the conversions still to be credited (``_credited_after_window``).
+        Each simulated auction is valued by ``_step_value`` (``reward``).
         """
         bid_0 = alpha_first * v0_now
-        obs, reward, done, _trunc, _ = env.step(np.array([bid_0], dtype=np.float32))
-        total = float(reward)
+        obs, reward, done, _trunc, info = env.step(np.array([bid_0], dtype=np.float32))
+        total = self._step_value(reward, info, v0_now)
 
         while not done:
             t_now = float(obs["t"].ravel()[0])
             if t_now - t_start > self.planning_horizon:
+                if self.attribution == "campaign":
+                    total += _credited_after_window(env)
                 break
-            bid_k = self.alpha_cont * self.v0.predict(obs)
-            obs, reward, done, _trunc, _ = env.step(
-                np.array([bid_k], dtype=np.float32)
+            v0_k = self.v0.predict(obs)
+            obs, reward, done, _trunc, info = env.step(
+                np.array([self.alpha_cont * v0_k], dtype=np.float32)
             )
-            total += float(reward)
+            total += self._step_value(reward, info, v0_k)
 
         return total
+
+    def _step_value(self, reward: float, info: Dict[str, Any], v0: float) -> float:
+        """Value of one simulated auction: the environment's step reward (``reward="simulated"``), or V₀ minus the
+        payment if the auction is won and 0 otherwise (``reward="v0"``)."""
+        if self.reward == "simulated":
+            return float(reward)
+        auction = info["auction"]
+        return float(v0) - float(auction["payment"]) if auction["won"] else 0.0
 
 class MPCTimeBinnedPolicy(BiddingPolicy):
     """

@@ -187,7 +187,8 @@ class TestResampleFixedHorizon:
     def test_fixed_horizon_keeps_the_campaign_end(self):
         import dynamauction as dac
         from dynamauction import AuctionEnv
-        env = AuctionEnv(dac.make("survival-recency-second-price-fixed-burst-arrivals"))
+        env = AuctionEnv(dac.make("survival-recovering-second-price-exponential-burst-arrivals",
+                                  horizon_name="fixed", horizon_params={"value": 50.0}))
         env.reset(seed=2)
         for _ in range(30):
             env.step(np.array([0.2], dtype=np.float32))
@@ -202,7 +203,7 @@ class TestResampleFixedHorizon:
     def test_exponential_horizon_draws_a_fresh_remaining_time(self):
         import dynamauction as dac
         from dynamauction import AuctionEnv
-        env = AuctionEnv(dac.make("survival-recency-second-price-exponential-burst-arrivals"))
+        env = AuctionEnv(dac.make("survival-recovering-second-price-exponential-burst-arrivals"))
         env.reset(seed=2)
         env_copy = copy.deepcopy(env)
         rng = np.random.default_rng(0)

@@ -9,5 +9,10 @@
     "saturation",
     "v0_sensitivity"
   ],
-  "missing_or_incomplete": []
+  "missing_or_incomplete": [],
+  "mpc_version": "MPCPolicy(crn='per_component', attribution='campaign')",
+  "mpc_not_replaced": [
+    "effective-frequency: MPC rows kept from the old version (no campaign run)",
+    "reminder: MPC rows kept from the old version (no campaign run)"
+  ]
 }

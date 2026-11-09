@@ -1,7 +1,7 @@
 """
-Recency burst presets (survival-recency-second-price-{fixed,exponential}-burst-arrivals): the survival kernel with the
-context S(t⁻) = time since the last won auction (TimeSinceLastWinGamma, t + 50 before the first win), a burst of auctions (rate 10 on [0, 10), then
-1) and a fixed (T = 50) or exponential (eta = 50) horizon.
+Time-since-last-win context on the burst scenario: the survival-recovering-second-price-exponential-burst-arrivals preset
+with its context replaced by S(t⁻) = time since the last won auction (TimeSinceLastWinGamma, t + 50 before the first win),
+with its exponential horizon (eta = 50) or a fixed one (T = 50). Built through make() overrides.
 """
 import numpy as np
 import pytest
@@ -11,13 +11,18 @@ from dynamauction import AuctionEnv
 from dynamauction.primitives import TimeSinceLastWinGamma
 from dynamauction.primitives.horizon import ExponentialHorizon, FixedHorizon
 
-FIXED = "survival-recency-second-price-fixed-burst-arrivals"
-EXPONENTIAL = "survival-recency-second-price-exponential-burst-arrivals"
+BURST = "survival-recovering-second-price-exponential-burst-arrivals"
+RECENCY = {"gamma_name": "time-since-last-win", "gamma_params": {"initial_value": -50.0}}
+FIXED_T = {"horizon_name": "fixed", "horizon_params": {"value": 50.0}}
 
 
-@pytest.mark.parametrize("preset, horizon_cls", [(FIXED, FixedHorizon), (EXPONENTIAL, ExponentialHorizon)])
-def test_preset_components(preset, horizon_cls):
-    sc = dac.make(preset)
+def make_recency_burst(fixed: bool):
+    return dac.make(BURST, **RECENCY, **(FIXED_T if fixed else {}))
+
+
+@pytest.mark.parametrize("fixed, horizon_cls", [(True, FixedHorizon), (False, ExponentialHorizon)])
+def test_scenario_components(fixed, horizon_cls):
+    sc = make_recency_burst(fixed)
     assert isinstance(sc.gamma, TimeSinceLastWinGamma)
     assert type(sc.kernel).__name__ == "SurvivalKernel"
     assert type(sc.arrival).__name__ == "PiecewiseConstantPoisson"
@@ -26,10 +31,10 @@ def test_preset_components(preset, horizon_cls):
     assert (sc.competition.mu, sc.competition.sigma) == (-1.0, 1.0)
 
 
-@pytest.mark.parametrize("preset", [FIXED, EXPONENTIAL])
-def test_context_is_the_time_since_the_last_win(preset):
+@pytest.mark.parametrize("fixed", [True, False])
+def test_context_is_the_time_since_the_last_win(fixed):
     """When winning every auction, the context of auction k is t_k − t_{k−1} (t_1 + 50 for the first one)."""
-    env = AuctionEnv(dac.make(preset))
+    env = AuctionEnv(make_recency_burst(fixed))
     env.reset(seed=1)
     times, ctx = [], []
     for _ in range(6):
@@ -41,7 +46,7 @@ def test_context_is_the_time_since_the_last_win(preset):
 
 
 def test_fixed_horizon_is_50():
-    env = AuctionEnv(dac.make(FIXED))
+    env = AuctionEnv(make_recency_burst(fixed=True))
     for s in range(5):
         env.reset(seed=s)
         assert env.horizon == pytest.approx(50.0)
