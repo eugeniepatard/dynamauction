@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DynamAuction</title>
+<meta name="description" content="DynamAuction: a reinforcement learning environment for repeated auctions where what you win today changes what tomorrow's items are worth.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {delimiters: [{left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}]})"></script>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --ink: #161a2e;
+    --ink-2: #454b66;
+    --muted: #6b7190;
+    --line: #dfe2ee;
+    --accent: #7b2cbf;        /* purple: brand, links, the competitor */
+    --accent-ink: #ffffff;
+    --accent-soft: #f1e7fa;
+    --bid: #f0ad4e;           /* amber: auctions and bids (fill) */
+    --bid-ink: #8a5200;       /* amber, readable as text */
+    --lime: #94c973;          /* green: conversions and clicks (fill) */
+    --lime-ink: #3f6b17;      /* green, readable as text */
+    --lime-soft: #edf6e3;
+    --myopic: #8b93b8;
+    --line-strong: #c3c8db;
+    --bid-soft: #fdf0dc;
+    --rival: #7b2cbf;
+    --shadow: 0 1px 2px rgba(22, 26, 46, .06), 0 8px 24px rgba(22, 26, 46, .06);
+    --radius: 10px;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1220; --surface: #171b2e; --ink: #eceefa; --ink-2: #b9bdd6; --muted: #8d92b2;
+      --line: #2a2f48; --accent: #b07ce6; --accent-ink: #160a24; --accent-soft: #2c1d40;
+      --bid: #f0b562; --bid-ink: #f0b562; --bid-soft: #3a2b14; --lime: #a4d278; --lime-ink: #a4d278; --lime-soft: #22301a; --myopic: #7d86ad; --line-strong: #4a5070; --rival: #b07ce6;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1220; --surface: #171b2e; --ink: #eceefa; --ink-2: #b9bdd6; --muted: #8d92b2;
+    --line: #2a2f48; --accent: #b07ce6; --accent-ink: #160a24; --accent-soft: #2c1d40;
+    --bid: #f0b562; --bid-ink: #f0b562; --bid-soft: #3a2b14; --lime: #a4d278; --lime-ink: #a4d278; --lime-soft: #22301a; --myopic: #7d86ad; --line-strong: #4a5070; --rival: #b07ce6;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 400 17px/1.65 var(--sans);
+    padding-inline: 16px;
+  }
+  img { max-width: 100%; height: auto; display: block; }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  .wrap { max-width: 980px; margin-inline: auto; }
+  .prose { max-width: 900px; }
+  h1, h2, h3 { line-height: 1.2; text-wrap: balance; margin: 0; }
+  h2 { font-size: 1.6rem; font-weight: 600; letter-spacing: -.01em; }
+  .label {
+    font: 500 .78rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  }
+  section { padding-block: 64px; border-top: 1px solid var(--line); }
+
+  /* ---------- hero ---------- */
+  .hero { padding-block: 72px 56px; text-align: center; }
+  .wordmark {
+    display: inline-flex; align-items: center; gap: .55rem;
+    font: 600 1rem/1 var(--mono); color: var(--accent); letter-spacing: .02em;
+  }
+  .wordmark svg { width: 22px; height: 22px; }
+  .hero h1 {
+    margin-top: 20px; font-size: clamp(1.9rem, 4.6vw, 3.1rem); font-weight: 700; letter-spacing: -.02em;
+  }
+  .hero h1 .name { color: var(--accent); }
+  .venue { margin-top: 14px; color: var(--muted); font: 500 .95rem/1.4 var(--mono); }
+
+  .authors {
+    margin: 30px auto 0; padding: 0; list-style: none;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 26px; font-size: 1.12rem;
+  }
+  .authors a { color: var(--ink); text-decoration-color: var(--line); }
+  .authors a:hover { color: var(--accent); text-decoration-color: currentColor; }
+  .authors sup { color: var(--muted); font-size: .7em; margin-left: 1px; }
+  .notes { margin-top: 8px; color: var(--muted); font-size: .9rem; }
+
+  .affils {
+    margin: 26px auto 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+  }
+  .affil {
+    display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    font-size: .95rem; color: var(--ink-2);
+  }
+  .affil .num { font: 500 .78rem/1 var(--mono); color: var(--muted); }
+  .affil strong { color: var(--ink); font-weight: 600; }
+
+  .actions { margin-top: 34px; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px; padding: 11px 20px; border-radius: 999px;
+    font: 500 1rem/1 var(--sans); text-decoration: none; border: 1px solid var(--accent);
+    background: var(--accent); color: var(--accent-ink); transition: transform .12s ease, opacity .12s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.ghost { background: transparent; color: var(--accent); }
+  .btn svg { width: 18px; height: 18px; flex: none; }
+  .btn.is-pending { opacity: .55; cursor: not-allowed; }
+  .btn.is-pending:hover { transform: none; }
+  .soon {
+    font: 500 .68rem/1 var(--mono); letter-spacing: .06em; text-transform: uppercase;
+    padding: 4px 6px; border-radius: 6px; background: var(--accent-soft); color: var(--accent);
+  }
+  .btn:not(.ghost) .soon { background: rgba(255,255,255,.2); color: var(--accent-ink); }
+
+  /* ---------- abstract ---------- */
+  .tldr {
+    margin-top: 18px; padding: 18px 20px; border-left: 3px solid var(--bid);
+    background: var(--bid-soft); border-radius: 0 var(--radius) var(--radius) 0; color: var(--ink);
+  }
+  .abstract p { color: var(--ink-2); margin: 16px 0 0; }
+
+  /* ---------- figures ---------- */
+  .figs { margin-top: 28px; display: grid; gap: 28px; }
+  figure {
+    margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  figure .img { background: #ffffff; padding: 18px; }   /* the plots are drawn on white */
+  figure .narrow img { max-width: 760px; margin-inline: auto; }
+  figcaption { padding: 16px 20px 18px; font-size: .95rem; color: var(--ink-2); border-top: 1px solid var(--line); }
+  figcaption b { color: var(--ink); font-weight: 600; }
+  .fig-slot {
+    border: 1.5px dashed var(--line); border-radius: var(--radius); padding: 28px; text-align: center;
+    color: var(--muted); font-size: .95rem;
+  }
+
+  /* ---------- game teaser ---------- */
+  .game {
+    margin-top: 28px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; align-items: center;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 32px;
+    box-shadow: var(--shadow);
+  }
+  .game h3 { font-size: 1.5rem; font-weight: 600; margin-top: 10px; }
+  .game p { color: var(--ink-2); margin: 12px 0 0; }
+  .game ul { margin: 14px 0 0; padding-left: 1.1rem; color: var(--ink-2); }
+  .game li { margin-top: 6px; }
+  .pill {
+    display: inline-block; font: 500 .75rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase;
+    padding: 6px 10px; border-radius: 999px; background: var(--lime-soft); color: var(--lime-ink);
+  }
+  .board { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .board svg { width: 100%; height: auto; display: block; }
+  .board .axis { stroke: var(--line); stroke-width: 1.5; fill: none; }
+  .board .curve { stroke: var(--accent); stroke-width: 2.5; fill: none; }
+  .board .area { fill: var(--accent-soft); stroke: none; }
+  .board .lost { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; }
+  .board .won { fill: var(--bid); stroke: var(--surface); stroke-width: 2; }
+  .board text { fill: var(--muted); font: 500 11px var(--mono); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: .85rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  footer { padding-block: 36px 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: .9rem; text-align: center; }
+
+  @media (max-width: 760px) {
+    section { padding-block: 48px; }
+    .hero { padding-block: 48px 40px; }
+    .game { grid-template-columns: 1fr; padding: 22px; }
+    figure .img { padding: 10px; }
+  }
+
+  /* ---------- sections added: nav, problem, model, simulator, results ---------- */
+  .toc { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; padding-bottom: 40px; font-size: .95rem; }
+  .toc a { color: var(--muted); text-decoration: none; }
+  .toc a:hover { color: var(--accent); }
+  .lead { color: var(--ink-2); margin: 14px 0 0; }
+  .media {
+    margin-top: 28px; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 16px; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
+  }
+  .media img, .media video { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .media-placeholder { position: relative; height: 100%; display: grid; place-items: center; padding: 6% 8%; background: var(--bg); }
+  .media-placeholder svg { width: 100%; max-height: 100%; }
+  .media-tag {
+    position: absolute; top: 14px; right: 14px; font: 500 .72rem/1 var(--mono); letter-spacing: .06em; text-transform: uppercase;
+    padding: 6px 9px; border-radius: 6px; background: var(--accent-soft); color: var(--accent);
+  }
+  .board .axis { stroke: var(--line); stroke-width: 1.5; fill: none; }
+  .board .curve { stroke: var(--accent); stroke-width: 2.5; fill: none; }
+  .board .area { fill: var(--accent-soft); stroke: none; }
+  .board .lost { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; }
+  .board .won { fill: var(--bid); stroke: var(--surface); stroke-width: 2; }
+  .board text { fill: var(--muted); font: 500 11px var(--mono); }
+  .cards { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+  .card h3 { font-size: 1.1rem; font-weight: 600; margin-top: 12px; }
+  .card p { color: var(--ink-2); font-size: .95rem; margin: 10px 0 0; }
+  .num-badge { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent); font: 600 .85rem/1 var(--mono); }
+  .eq { margin: 12px 0 0; padding: 10px 0; overflow-x: auto; color: var(--ink); }
+  .split { margin-top: 28px; display: grid; grid-template-columns: 1fr 1.15fr; gap: 24px; align-items: start; }
+  .features { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+  .features li { color: var(--ink-2); padding-left: 16px; border-left: 3px solid var(--accent-soft); }
+  .features b { display: block; color: var(--ink); font-weight: 600; }
+  .code { background: #12162a; border-radius: var(--radius); overflow-x: auto; }
+  .code pre { margin: 0; padding: 18px 20px; font: 400 .85rem/1.6 var(--mono); color: #e3e6f7; }
+  .code .c { color: #8d92b2; }
+  figure.wide { margin-top: 28px; }
+  .stats { margin-top: 24px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 22px;
+    display: flex; align-items: baseline; gap: 16px; color: var(--ink-2); font-size: .95rem; }
+  .stat .big { font: 700 2.1rem/1 var(--sans); color: var(--accent); font-variant-numeric: tabular-nums; flex: none; }
+  #problem .game { margin-top: 22px; grid-template-columns: 1fr auto; padding: 24px 28px; }
+  #problem .game h3 { font-size: 1.25rem; }
+  @media (max-width: 760px) {
+    .cards, .split, .stats { grid-template-columns: 1fr; }
+    #problem .game { grid-template-columns: 1fr; }
+    #problem .game .btn { justify-self: start; }
+    .stat { flex-direction: column; gap: 8px; }
+  }
+
+  /* ---------- pipeline ---------- */
+  .pipeline { margin-top: 32px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px 24px 20px; box-shadow: var(--shadow); --pl-progress: 0; }
+  .pl-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .pl-top h3, .demo-head h3 { font-size: 1.15rem; font-weight: 600; }
+  .pl-toggle { font: 500 .8rem/1 var(--mono); padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink-2); cursor: pointer; }
+  .pl-track { list-style: none; margin: 26px 0 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); position: relative; }
+  .pl-track::before, .pl-track::after { content: ""; position: absolute; left: 8.33%; right: 8.33%; top: 27px; height: 3px; border-radius: 2px; background: var(--line); }
+  .pl-track::after { right: auto; width: calc(83.33% * var(--pl-progress)); background: var(--accent); transition: width .6s ease; }
+  .pl-step { position: relative; z-index: 1; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: 0; padding: 0 4px; cursor: pointer; color: var(--ink-2); font: 500 .92rem/1.25 var(--sans); }
+  .pl-icon { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); border: 2px solid var(--line); transition: border-color .3s, background .3s, transform .3s; }
+  .pl-icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .pl-step.is-done .pl-icon { border-color: var(--accent); color: var(--accent); }
+  .pl-step.is-active .pl-icon { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); transform: scale(1.1); box-shadow: 0 0 0 6px var(--accent-soft); }
+  .pl-step.is-active .pl-name { color: var(--ink); font-weight: 600; }
+  .pl-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 8px; }
+  .pl-once .pl-icon { border-style: dashed; }
+  .pl-tag { font: 500 .66rem/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .pl-loop { position: relative; margin: 10px 8.33% 0 25%; height: 26px; border: 2px dashed var(--line); border-top: 0; border-radius: 0 0 14px 14px; transition: border-color .3s; }
+  .pl-loop span { position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); background: var(--surface); padding: 0 8px; font: 500 .72rem/1.2 var(--mono); color: var(--muted); white-space: nowrap; }
+  .pipeline.is-looping .pl-loop { border-color: var(--accent); }
+  .pl-detail { margin-top: 26px; min-height: 92px; padding: 14px 18px; border-radius: var(--radius); background: var(--bg); }
+  .pl-detail-title { margin: 0; font-weight: 600; color: var(--ink); }
+  .pl-detail-body { margin: 6px 0 0; color: var(--ink-2); font-size: .95rem; }
+
+  /* ---------- campaign demo ---------- */
+  .demo { margin-top: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; box-shadow: var(--shadow); }
+  .demo-head p { margin: 6px 0 0; color: var(--ink-2); font-size: .95rem; }
+  .demo-controls { margin-top: 18px; display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+  .demo fieldset { margin: 0; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 14px; align-content: start; }
+  .demo legend { font: 500 .72rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 6px; }
+  .demo [hidden] { display: none !important; }
+  .demo label { display: grid; gap: 4px; font-size: .82rem; color: var(--muted); }
+  .demo label { min-width: 0; }
+  .demo label.check { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: .88rem; grid-column: 1 / -1; cursor: pointer; }
+  .demo label.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .demo select { width: 100%; min-width: 0; text-overflow: ellipsis; font: 400 .9rem var(--sans); padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  .demo select:disabled { opacity: .5; }
+  .demo input[type=range] { width: 100%; accent-color: var(--accent); }
+  .demo output { color: var(--ink); font-family: var(--mono); }
+  .demo-buttons { display: flex; flex-wrap: wrap; gap: 8px; grid-column: 1 / -1; }
+  .demo-buttons .btn { padding: 8px 14px; font-size: .9rem; cursor: pointer; }
+  .demo-seed { margin: 0; align-self: end; font: 500 .75rem var(--mono); color: var(--muted); }
+  .demo-stage { margin-top: 16px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .demo-stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 960 / 400; }
+  .demo-note { margin: 12px 0 0; font-size: .82rem; color: var(--muted); }
+  @media (max-width: 760px) {
+    .pl-track { grid-template-columns: 1fr; gap: 10px; }
+    .pl-track::before, .pl-track::after, .pl-loop { display: none; }
+    .pl-step { flex-direction: row; justify-content: flex-start; gap: 12px; }
+    .pl-icon { width: 44px; height: 44px; }
+    .demo-controls { grid-template-columns: 1fr; }
+    .demo-stage { overflow-x: auto; }
+    .demo-stage canvas { min-width: 720px; }
+    .demo, .pipeline { padding: 16px; }
+  }
+
+  /* ---------- side table of contents, centered and justified text ---------- */
+  html { scroll-behavior: smooth; }
+  section, #pipeline, #demo { scroll-margin-top: 24px; }
+  .sidetoc { display: none; }
+  @media (min-width: 1280px) {
+    .sidetoc {
+      display: flex; flex-direction: column; gap: 2px; position: fixed; top: 50%; transform: translateY(-50%);
+      left: max(16px, calc((100vw - 980px) / 2 - 220px)); width: 180px; padding: 14px 10px;
+      border-left: 2px solid var(--line);
+    }
+    .toc { display: none; }
+  }
+  .sidetoc-title { margin: 0 0 8px 12px; font: 500 .72rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .sidetoc a { display: block; padding: 5px 12px; margin-left: -12px; border-left: 2px solid transparent; color: var(--muted); text-decoration: none; font-size: .92rem; line-height: 1.3; transition: color .2s, border-color .2s; }
+  .sidetoc a.sub { padding-left: 26px; font-size: .85rem; }
+  .sidetoc a:hover { color: var(--ink); }
+  .sidetoc a.is-active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+  section > .label, section > h2 { text-align: center; }
+  .prose, .lead { margin-inline: auto; }
+  .abstract .label { text-align: center; }
+  main p, section p, figcaption, .card p, .features li, .pl-detail-body, .demo-head p, .demo-note {
+    text-align: justify; hyphens: auto; -webkit-hyphens: auto;
+  }
+  .demo-head, .pl-top h3 { text-align: center; }
+  .pl-top { justify-content: center; position: relative; }
+  .pl-toggle { position: absolute; right: 0; }
+  .card h3, .game h3 { text-align: left; }
+
+  /* ---------- model: theory blocks ---------- */
+  .theory { margin-top: 30px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .th { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; }
+  .th h3 { display: inline; margin-left: 10px; font-size: 1.08rem; font-weight: 600; vertical-align: middle; }
+  .th p { color: var(--ink-2); font-size: .95rem; margin: 12px 0 0; }
+  .th .eq { margin-top: 10px; padding: 12px 14px; border-radius: 10px; background: var(--bg); text-align: center; }
+  .chips { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips li { font-size: .82rem; padding: 5px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); }
+  .example { margin-top: 18px; display: grid; grid-template-columns: 1fr 1.25fr; gap: 24px; align-items: center;
+    padding: 24px; border-radius: 14px; background: var(--bid-soft); border: 1px solid var(--line); }
+  .example h3 { font-size: 1.12rem; font-weight: 600; margin-top: 8px; }
+  .example p { color: var(--ink-2); font-size: .95rem; margin: 10px 0 0; }
+  .example .label, .mpc-box .label { text-align: left; }
+  .example-eqs .eq { padding: 10px 12px; margin-top: 8px; background: var(--surface); border-radius: 10px; text-align: center; }
+  .example-note { font-size: .85rem; text-align: center !important; }
+  .mpc-box { margin-top: 18px; padding: 22px 24px; border-radius: 14px; background: var(--accent-soft); }
+  .mpc-box p { color: var(--ink-2); font-size: .95rem; margin: 10px 0 0; }
+  .mpc-box .eq { margin-top: 8px; text-align: center; }
+
+  /* ---------- simulator: parts grid and code window ---------- */
+  .parts { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .part { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; transition: transform .15s ease, box-shadow .15s ease; }
+  .part:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .part h3 { font-size: 1.05rem; font-weight: 600; }
+  .part p { margin: 0; color: var(--ink-2); font-size: .92rem; }
+  .part-icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; color: var(--ink); }
+  .part-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tone-a { background: var(--bid); color: var(--bid-ink); }
+  .tone-b { background: var(--lime); color: var(--lime-ink); }
+  .tone-c { background: var(--accent); color: var(--accent-ink); }
+  .tags { list-style: none; margin: auto 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags li { font: 500 .74rem/1 var(--mono); padding: 5px 8px; border-radius: 6px; background: var(--bg); color: var(--ink-2); border: 1px solid var(--line); }
+  .codewin { margin-top: 20px; border-radius: 14px; overflow: hidden; background: #1a0a2b; box-shadow: var(--shadow); }
+  .codewin-bar { display: flex; align-items: center; gap: 7px; padding: 10px 14px; background: #2a1242; }
+  .codewin-bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--bid); }
+  .codewin-bar i:nth-child(2) { background: #c1ff72; }
+  .codewin-bar i:nth-child(3) { background: #b56dff; }
+  .codewin-bar span { margin-left: 8px; font: 500 .78rem var(--mono); color: #c9b5dd; }
+  .codewin pre { margin: 0; padding: 18px 22px; overflow-x: auto; font: 400 .86rem/1.65 var(--mono); color: #efe6f7; }
+  .codewin .c { color: #9a86ad; } .codewin .k { color: #ffbd59; } .codewin .s { color: #c1ff72; } .codewin .n { color: #e3a8ff; }
+  @media (max-width: 900px) { .parts { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 760px) {
+    .theory, .example, .parts { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- more green: labels, titles, pipeline ---------- */
+  .label { display: inline-block; padding: 6px 10px; border-radius: 999px; background: var(--lime-soft); color: var(--lime-ink); }
+  section > .label { display: table; margin-inline: auto; }
+  .abstract .label { display: table; margin: 0 auto; }
+  section > h2 { margin-top: 12px; }
+  section > h2::after { content: ""; display: block; width: 56px; height: 4px; margin: 14px auto 0; border-radius: 2px; background: var(--lime); }
+  .pl-track::after { background: var(--lime); }
+  .pl-step.is-active .pl-icon { box-shadow: 0 0 0 6px var(--lime); }
+  .pl-step.is-done .pl-icon { border-color: var(--lime-ink); color: var(--lime-ink); }
+  .stat { border-left: 5px solid var(--lime); }
+  .tldr { border-left-color: var(--lime); background: var(--lime-soft); }
+
+  /* ---------- compact model ---------- */
+  .theory3 { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: auto 1fr auto auto; column-gap: 16px; row-gap: 0; }
+  .theory3 .th { padding: 20px; display: grid; grid-template-rows: subgrid; grid-row: span 4; row-gap: 12px; }
+  .theory3 .th h3 { display: inline; }
+  .theory3 .eq { margin: 0; align-self: center; overflow-x: auto; }
+  .theory3 .eq .katex-display > .katex { font-size: 1.05em; }
+  .theory3 .th p { margin: 0; }
+  .theory3 .chips { margin: 0; }
+
+  /* ---------- simulator: sub-heading ---------- */
+  .sub-h { margin-top: 36px; text-align: center; font-size: 1.15rem; font-weight: 600; }
+
+  /* ---------- results: settings, chart, dialog ---------- */
+  .settings { margin-top: 26px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+  .settings .set { grid-column: span 4; }
+  .set { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--lime); }
+  .set-k { font: 500 .7rem/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .set-v { font-weight: 600; color: var(--ink); font-size: .98rem; }
+  .set-d { font-size: .84rem; color: var(--ink-2); }
+  .settings .set-wide { grid-column: span 6; gap: 8px; }
+  .set-wide .set-d { font-size: .9rem; text-align: justify; hyphens: auto; }
+  .set-eq { padding: 6px 10px; border-radius: 10px; background: var(--bg); overflow-x: auto; }
+  .set-eq .katex-display { margin: .4em 0; }
+  @media (max-width: 900px) { .settings .set, .settings .set-wide { grid-column: span 6; } .settings .set-wide { grid-column: 1 / -1; } }
+  @media (max-width: 560px) { .settings .set { grid-column: 1 / -1; } }
+  .chart-card { margin-top: 22px; padding: 22px 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+  .chart-head { text-align: center; }
+  .chart-head h3 { font-size: 1.12rem; font-weight: 600; }
+  .chart-head p { margin: 6px 0 0; color: var(--muted); font-size: .88rem; text-align: center; }
+  .chart-legend { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; font-size: .85rem; color: var(--ink-2); }
+  .chart-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .chart-wrap { position: relative; margin-top: 10px; overflow-x: auto; }
+  .chart svg { display: block; width: 100%; min-width: 560px; height: auto; }
+  .chart .grid { stroke: var(--line); stroke-width: 1; }
+  .chart .tick { fill: var(--muted); font: 500 11px var(--mono); }
+  .chart .lab { fill: var(--ink-2); font: 500 13px var(--sans); }
+  .chart .val { fill: var(--ink); font: 600 12px var(--mono); }
+  .chart .ci { stroke: var(--ink); stroke-width: 1.5; opacity: .7; }
+  .chart .hit { fill: transparent; }
+  .chart .bar { cursor: pointer; outline: none; }
+  .chart .bar:hover .hit, .chart .bar:focus-visible .hit { fill: var(--lime-soft); }
+  .chart .bar:hover .lab, .chart .bar:focus-visible .lab { fill: var(--ink); font-weight: 600; }
+  .chart .fill { stroke: rgba(0,0,0,.08); }
+  .chart-tip { position: absolute; z-index: 2; width: 220px; pointer-events: none; padding: 10px 12px; border-radius: 10px; background: var(--ink); color: var(--surface); font-size: .82rem; line-height: 1.45; box-shadow: var(--shadow); }
+  .chart-tip span { opacity: .7; font-size: .75rem; }
+  .dlg { width: min(520px, calc(100vw - 32px)); padding: 26px 26px 22px; border: 0; border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 60px rgba(0,0,0,.25); }
+  .dlg::backdrop { background: rgba(15, 18, 32, .45); backdrop-filter: blur(2px); }
+  .dlg-close { position: absolute; top: 10px; right: 12px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--bg); color: var(--ink-2); font-size: 1.3rem; cursor: pointer; }
+  .dlg-family { display: inline-flex; align-items: center; gap: 7px; font: 500 .72rem/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .dlg-family::before { content: ""; width: 12px; height: 12px; border-radius: 3px; background: var(--fam, var(--accent)); }
+  .dlg-title { margin-top: 10px; font-size: 1.2rem; font-weight: 600; }
+  .dlg p { margin: 12px 0 0; color: var(--ink-2); font-size: .95rem; text-align: justify; hyphens: auto; }
+  .dlg-nums { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .dlg-nums div { padding: 10px 12px; border-radius: 10px; background: var(--lime-soft); display: flex; flex-direction: column; gap: 2px; }
+  .dlg-nums span { font: 500 .7rem/1.2 var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .dlg-nums b { font: 600 1rem var(--mono); color: var(--ink); }
+  @media (max-width: 900px) { .theory3 { grid-template-columns: 1fr; } }
+
+  .catch { margin: 24px auto 0; max-width: 46rem; text-wrap: balance; text-align: center !important; font-size: 1.22rem; line-height: 1.5; font-weight: 600; color: var(--ink); }
+  .catch em { font-style: normal; color: var(--accent); background: linear-gradient(transparent 62%, var(--lime) 62%); padding: 0 2px; }
+  .th-head { display: flex; align-items: center; gap: 10px; }
+  .theory3 .th-head h3 { margin: 0; }
+  p.center { text-align: center !important; }
+</style>
+</head>
+<body>
+<nav class="sidetoc" aria-label="Table of contents">
+  <p class="sidetoc-title">Contents</p>
+  <a href="#problem">The problem</a>
+  <a href="#abstract">Abstract</a>
+  <a href="#model">The model</a>
+  <a href="#simulator">The simulator</a>
+  <a href="#pipeline" class="sub">One environment step</a>
+  <a href="#demo" class="sub">Watch a campaign</a>
+  <a href="#results">Results</a>
+</nav>
+<div class="wrap">
+
+  <!-- =============================== HERO =============================== -->
+  <header class="hero">
+    <div class="wordmark" aria-label="DynamAuction">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18 L9 11 L13 14 L20 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="5" r="2.6" fill="currentColor"/></svg>
+      DynamAuction
+    </div>
+    <h1><span class="name">DynamAuction</span>: A Reinforcement Learning Environment for Repeated Auctions with Dynamic Value</h1>
+    <!-- TODO: venue, e.g. "NeurIPS 2026", once it can be announced -->
+    <p class="venue" hidden>Venue · 2026</p>
+
+    <ul class="authors">
+      <!-- TODO: put each author's website in href (leave "#" while there is none) -->
+      <li><a href="#" data-todo="author-website">Eugénie Patard</a><sup>1</sup></li>
+      <li><a href="#" data-todo="author-website">Corentin Pla</a><sup>1,2,3</sup></li>
+      <li><a href="https://benhey.github.io/" data-todo="author-website">Benjamin Heymann</a><sup>1,2</sup></li>
+      <li><a href="https://patrickloiseau.github.io/index.html" data-todo="author-website">Patrick Loiseau</a><sup>1</sup></li>
+    </ul>
+
+    <div class="affils">
+      <!-- TODO (optional): add each lab's logo as <img src="assets/logo-....svg" alt="" height="22"> before its name -->
+      <span class="affil"><span class="num">1</span><strong>Inria</strong>FairPlay joint team</span>
+      <span class="affil"><span class="num">2</span><strong>Criteo</strong></span>
+      <span class="affil"><span class="num">3</span><strong>ENSAE</strong>CREST</span>
+    </div>
+
+    <nav class="actions" aria-label="Paper and code">
+      <!-- TODO: arXiv link: replace href="#", remove class "is-pending", aria-disabled and the "soon" badge -->
+      <a class="btn is-pending" href="#" aria-disabled="true" data-todo="arxiv" title="arXiv link coming soon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v4h4M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        arXiv <span class="soon">soon</span>
+      </a>
+      <a class="btn" href="DynamAuction_paper.pdf">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Paper (PDF)
+      </a>
+      <a class="btn ghost" href="https://github.com/eugeniepatard/dynamauction">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.6 9.6 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></svg>
+        Code
+      </a>
+      <!-- TODO (optional): more slots, e.g. documentation, poster, video -->
+    </nav>
+  </header>
+
+  <nav class="toc" aria-label="Sections">
+    <a href="#problem">The problem</a><a href="#abstract">Abstract</a><a href="#model">The model</a><a href="#simulator">The simulator</a><a href="#results">Results</a>
+  </nav>
+
+  <!-- =============================== PROBLEM + GAME =============================== -->
+  <section id="problem">
+    <p class="label">The problem</p>
+    <h2>Every ad you win changes what the next one is worth</h2>
+    <p class="lead prose">An advertiser bids, auction after auction, to show ads to the same user. Showing an ad now can
+      make the user convert, but it also tires them: the more often they have just seen the brand, the less the next
+      display is worth. The best bid therefore depends on the past wins and on the auctions still to come, not only on
+      the value of the display at hand.</p>
+    <p class="catch">To win tomorrow's auctions, you have to bid with them in mind today:
+      this is <em>planning</em>, and it is where reinforcement learning has to prove itself.</p>
+
+    <!-- MAIN ANIMATION: replace the placeholder content of .media by
+         <img src="assets/problem.gif" alt="..."> or
+         <video src="assets/problem.mp4" autoplay muted loop playsinline></video>
+         The box keeps a 16:9 ratio; change aspect-ratio in .media if the animation has another shape. -->
+    <div class="media" role="img" aria-label="Placeholder for the main animation: won auctions lower the value of the next displays, which recovers between wins">
+      <div class="media-placeholder">
+        <svg viewBox="0 0 360 190" class="board">
+          <path class="area" d="M20 40 L70 40 L70 95 Q95 70 120 62 L120 118 Q140 100 160 92 L160 135 Q200 95 250 70 Q290 55 340 48 L340 160 L20 160 Z"/>
+          <path class="curve" d="M20 40 L70 40 L70 95 Q95 70 120 62 L120 118 Q140 100 160 92 L160 135 Q200 95 250 70 Q290 55 340 48"/>
+          <line class="axis" x1="20" y1="160" x2="340" y2="160"/>
+          <circle class="lost" cx="45" cy="160" r="6"/><circle class="won" cx="70" cy="160" r="7"/>
+          <circle class="lost" cx="95" cy="160" r="6"/><circle class="won" cx="120" cy="160" r="7"/>
+          <circle class="won" cx="160" cy="160" r="7"/><circle class="lost" cx="190" cy="160" r="6"/>
+          <circle class="lost" cx="225" cy="160" r="6"/><circle class="lost" cx="265" cy="160" r="6"/>
+          <circle class="lost" cx="305" cy="160" r="6"/>
+          <text x="20" y="26">value of the next display</text><text x="262" y="182">time →</text>
+        </svg>
+        <span class="media-tag">Main animation coming soon</span>
+      </div>
+    </div>
+
+    <div class="game">
+      <div>
+        <span class="pill">Interactive game · in development</span>
+        <h3>Play the bidder</h3>
+        <p>Bid on a stream of auctions for one user, seeing only what the bidder of the environment sees. Watch their
+          fatigue build up and recover as you win and lose, then compare your score with the myopic bidder, the tuned
+          shading and our MPC planner on the same campaign.</p>
+      </div>
+      <!-- TODO: link to the game once it exists (replace href, remove is-pending, aria-disabled and the badge) -->
+      <a class="btn is-pending" href="#" aria-disabled="true" data-todo="game">Play <span class="soon">soon</span></a>
+    </div>
+  </section>
+
+  <!-- =============================== ABSTRACT =============================== -->
+  <section class="abstract" id="abstract">
+    <div class="prose">
+      <p class="label">Abstract</p>
+      <div class="tldr"><strong>What you win today changes what tomorrow's items are worth.</strong>
+        DynamAuction is a simulator for this planning problem in repeated auctions, with a new class of MPC bidding policies as a baseline.</div>
+      <p>A buyer who repeatedly participates in auctions for related items often faces a dynamic value problem: what they
+        win today changes what tomorrow's items are worth. Despite the empirical importance of such effects, especially in
+        display advertising, the algorithmic literature on repeated auctions has largely focused on the learning problem,
+        by treating each opportunity as a contextual bandit, while sidestepping the planning problem induced by the
+        dependence of current value on past wins.</p>
+      <p>We introduce DynamAuction, a synthetic environment for single-buyer sequential bidding. The reward from each win
+        depends on the buyer's history of previous wins, summarized through a carry-over state. The environment supports
+        first- and second-price auctions, non-homogeneous Poisson arrivals, delayed feedback, saturation, and recency
+        effects. We also introduce a new class of Model Predictive Control (MPC) algorithms. On our benchmark scenario,
+        these MPC policies outperform off-the-shelf deep RL baselines (PPO, SAC, TD3) as well as a tuned shading
+        baseline. We release DynamAuction to support RL research on repeated auctions.</p>
+    </div>
+  </section>
+
+  <!-- =============================== MODEL =============================== -->
+  <section id="model">
+    <p class="label">The model</p>
+    <h2>A kernel causal model of dynamic value</h2>
+    <p class="lead prose center">Three ingredients, each configurable in the simulator.</p>
+    <div class="theory3">
+      <article class="th">
+        <div class="th-head"><span class="num-badge">1</span><h3>Carry-over context</h3></div>
+        <p>Each past win leaves a trace on the user; the traces add up, in a commutative monoid, into one state that fades or grows with time.</p>
+        <div class="eq">\[ S_u(t) = \bigoplus_{i \,:\, t_i \le t} \gamma(x_i, t_i, t) \]</div>
+        <ul class="chips"><li>counter of wins</li><li>fatigue</li><li>time since last win</li><li>full history</li></ul>
+      </article>
+      <article class="th">
+        <div class="th-head"><span class="num-badge">2</span><h3>Reward kernel</h3></div>
+        <p>A won display pays off now and later: an immediate part and a delayed density, set by the context before the display.</p>
+        <div class="eq">\[ \mathcal K(A) = \kappa\, \delta_0(A) + \int_A \lambda(\tau)\, d\tau \]</div>
+      </article>
+      <article class="th">
+        <div class="th-head"><span class="num-badge">3</span><h3>A planning problem</h3></div>
+        <p>The bidder sees only a summary \(\phi(S_u)\) of the context and never the end \(T\). It maximizes reward minus payments, so the right bid is the <em>marginal</em> value of a win, not the myopic value \(V_0\).</p>
+        <div class="eq">\[ \max_\pi\, \mathbb E\Bigl[\sum_i r_i - \sum_j p_j\Bigr] \]</div>
+      </article>
+    </div>
+  </section>
+
+  <!-- =============================== SIMULATOR =============================== -->
+  <section id="simulator">
+    <p class="label">The simulator</p>
+    <h2>DynamAuction</h2>
+    <p class="lead prose">A Gymnasium environment for repeated auctions with dynamic value: see one step, watch a campaign, then build your own scenario from interchangeable parts.</p>
+
+    <!-- ---------- one environment step, as an animated pipeline (replaces env-schema.png) ---------- -->
+    <div class="pipeline" id="pipeline">
+      <div class="pl-top">
+        <h3>One environment step</h3>
+        <button type="button" class="pl-toggle" aria-pressed="true">Pause</button>
+      </div>
+      <ol class="pl-track">
+        <li><button type="button" class="pl-step pl-once" data-title="Campaign start (once)"
+            data-body="The environment draws the user u, the length of the campaign T, hidden from the bidder, and the auction times. The carry-over context starts empty: no ad has been shown yet.">
+          <span class="pl-icon"><svg viewBox="0 0 24 24"><path d="M6 21V4m0 0h11l-2.5 4L17 12H6"/></svg></span>
+          <span class="pl-name">Start</span><span class="pl-tag">once</span></button></li>
+        <li><button type="button" class="pl-step" data-title="1 · Observe"
+            data-body="At an auction at time t, the bidder sees the time, the step, the user and display features, the exogenous signal, its carry-over context (or only a summary of it), and the reward and conversion times since the previous auction. It never sees the future auctions nor T.">
+          <span class="pl-icon"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>
+          <span class="pl-name">Observe</span></button></li>
+        <li><button type="button" class="pl-step" data-title="2 · Bid"
+            data-body="The policy turns this observation into a bid b.">
+          <span class="pl-icon"><svg viewBox="0 0 24 24"><path d="M9 7h6l2-3H7zM6 13a6 6 0 0 0 12 0c0-3-2.7-6-6-6s-6 3-6 6z"/><path d="M12 10v6M10 12.5h3.2a1.2 1.2 0 0 1 0 2.4H10"/></svg></span>
+          <span class="pl-name">Bid</span></button></li>
+        <li><button type="button" class="pl-step" data-title="3 · Auction"
+            data-body="A competing bid B is drawn. The bidder wins if b > B, and pays B in a second-price auction or b in a first-price one.">
+          <span class="pl-icon"><svg viewBox="0 0 24 24"><path d="m14 4 6 6M11 7l6 6M12.5 5.5l5 5-4 4-5-5zM9.5 11.5 3 18M4 21h9"/></svg></span>
+          <span class="pl-name">Auction</span></button></li>
+        <li><button type="button" class="pl-step" data-title="4 · Outcome"
+            data-body="A win updates the carry-over context, which changes what the next displays are worth. The display converts with a probability given by the reward kernel: right away, or after a random delay.">
+          <span class="pl-icon"><svg viewBox="0 0 24 24"><path d="M5 3l12 6-5 1.5L10 16z"/><path d="M14 14l5 5"/></svg></span>
+          <span class="pl-name">Outcome</span></button></li>
+        <li><button type="button" class="pl-step" data-title="5 · Wait and credit"
+            data-body="Time jumps to the next auction. Delayed conversions happening in between are credited, and the reward (conversions minus payment) comes back with the next observation. Then the loop starts again at Observe, until the end of the campaign; conversions after the last auction are not credited.">
+          <span class="pl-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg></span>
+          <span class="pl-name">Wait &amp; credit</span></button></li>
+      </ol>
+      <div class="pl-loop" aria-hidden="true"><span>next auction · repeat until the end of the campaign</span></div>
+      <div class="pl-detail" aria-live="polite"><p class="pl-detail-title"></p><p class="pl-detail-body"></p></div>
+    </div>
+
+    <!-- ---------- a short campaign, animated ---------- -->
+    <div class="demo" id="demo">
+      <div class="demo-head">
+        <h3>Watch a campaign</h3>
+        <p>Pick the primitives and a policy, then start: the auctions slide towards the bidder along the time line.</p>
+      </div>
+      <div class="demo-controls">
+        <fieldset>
+          <legend>Environment</legend>
+          <label>Auction<select id="d-auction"><option value="second">second price</option><option value="first">first price</option></select></label>
+          <label>Competing bid<select id="d-competition"><option value="lognormal">LogNormal(−1, 1)</option><option value="uniform">Uniform(0, 1)</option><option value="exponential">Exponential(0.3)</option></select></label>
+          <label>Arrivals<select id="d-arrivals"><option value="poisson">Poisson, rate 1</option><option value="sparse">Poisson, rate 0.5</option><option value="burst">burst, then calm</option><option value="decay">rate halving every 4</option></select></label>
+          <label>Campaign length<select id="d-horizon"><option value="exp">random, mean 10</option><option value="fixed">fixed, 10</option></select></label>
+          <label>Carry-over context<select id="d-context"><option value="fatigue">fatigue (main)</option><option value="recovering">recovering fatigue</option><option value="recency">time since last win</option><option value="saturation">number of wins</option></select></label>
+          <label>Bidder sees<select id="d-obs"><option value="summary">a summary (φ)</option><option value="full">the full context</option></select></label>
+          <label>Conversions<select id="d-conv"><option value="delayed">delayed</option><option value="immediate">immediate</option></select></label>
+        </fieldset>
+        <fieldset>
+          <legend>Policy</legend>
+          <label>Policy<select id="d-policy"><option value="fipla">FiPla (bids V₀)</option><option value="shading">Shading (α × V₀)</option><option value="constant">Constant bid</option></select></label>
+          <label id="d-alpha-row" hidden>α = <output id="d-alpha-out">0.6</output><input id="d-alpha" type="range" min="0.1" max="1" step="0.1" value="0.6"></label>
+          <label id="d-const-row" hidden>bid = <output id="d-const-out">0.20</output><input id="d-const" type="range" min="0" max="1" step="0.01" value="0.2"></label>
+          <div class="demo-buttons">
+            <button type="button" class="btn" id="d-play">Start</button>
+            <button type="button" class="btn ghost" id="d-reset">Reset</button>
+            <button type="button" class="btn ghost" id="d-new">New campaign</button>
+          </div>
+          <label class="check"><input type="checkbox" id="d-step"> Pause on each observation</label>
+          <label class="speed">Speed<select id="d-speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+          <p class="demo-seed" id="d-seed"></p>
+        </fieldset>
+      </div>
+      <div class="demo-stage"><canvas width="960" height="400" role="img"
+        aria-label="Animated campaign: auctions slide along a time line towards the bidder, who bids against a competitor; wins, payments and clicks are counted."></canvas></div>
+      <p class="demo-note">A simplified re-implementation of the environment in your browser, for illustration: same formulas as the
+        library (survival kernel, carry-over contexts, oracle value V₀, delayed conversions), short campaigns (mean length 10), at least 0.3 time units between two auctions so that they can be told
+        apart, and a user drawn among those receptive to the ad. FiPla and Shading use the oracle value V₀, which RL agents do not see. The
+        benchmark itself runs the Python package.</p>
+    </div>
+    <h3 class="sub-h">Build your own scenario</h3>
+    <div class="parts">
+      <article class="part">
+        <span class="part-icon tone-a"><svg viewBox="0 0 24 24"><path d="m14 4 6 6M11 7l6 6M12.5 5.5l5 5-4 4-5-5zM9.5 11.5 3 18M4 21h9"/></svg></span>
+        <h3>Auctions</h3>
+        <p>First- or second-price, against a competing bid drawn from a chosen distribution.</p>
+        <ul class="tags"><li>second-price</li><li>first-price</li><li>lognormal</li><li>uniform</li><li>exponential</li><li>constant</li></ul>
+      </article>
+      <article class="part">
+        <span class="part-icon tone-b"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg></span>
+        <h3>Arrivals and horizon</h3>
+        <p>Auctions arrive as a Poisson process, constant, piecewise-constant or decaying; the campaign length is fixed or random.</p>
+        <ul class="tags"><li>cstpoisson</li><li>pwpoisson</li><li>decaypoisson</li><li>exponential T</li><li>fixed T</li></ul>
+      </article>
+      <article class="part">
+        <span class="part-icon tone-c"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 4-7 5 6"/><path d="M3 21h18"/></svg></span>
+        <h3>Value dynamics</h3>
+        <p>How past wins change the value of the next displays: a reward kernel and a carry-over context.</p>
+        <ul class="tags"><li>survival</li><li>saturation</li><li>recency</li><li>effective-frequency</li><li>reminder</li><li>fatigue</li></ul>
+      </article>
+      <article class="part">
+        <span class="part-icon tone-b"><svg viewBox="0 0 24 24"><path d="M5 3l12 6-5 1.5L10 16z"/><path d="M14 14l5 5"/></svg></span>
+        <h3>Feedback</h3>
+        <p>Immediate or delayed conversions, single or multiple, credited only when they happen, before the end of the campaign.</p>
+        <ul class="tags"><li>immediate</li><li>delayed</li><li>bernoulli</li><li>poisson</li></ul>
+      </article>
+      <article class="part">
+        <span class="part-icon tone-a"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><path d="M16.5 13v7M13 16.5h7"/></svg></span>
+        <h3>Presets or your own</h3>
+        <p>Ready-made scenarios with one call, or a scenario assembled from primitives with the builder.</p>
+        <ul class="tags"><li>dac.make(…)</li><li>ScenarioBuilder</li><li>overrides</li></ul>
+      </article>
+      <article class="part">
+        <span class="part-icon tone-c"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+        <h3>Baselines and benchmark</h3>
+        <p>Reference policies and the full benchmark pipeline: tuned on validation campaigns, tested on 1&thinsp;000 others.</p>
+        <ul class="tags"><li>FiPla</li><li>Shading</li><li>MPC</li><li>PPO</li><li>SAC</li><li>TD3</li></ul>
+      </article>
+    </div>
+
+  </section>
+
+  <!-- =============================== RESULTS =============================== -->
+  <section id="results">
+    <p class="label">Results</p>
+    <h2>Planning pays: MPC beats tuned shading and deep RL</h2>
+    <p class="lead prose">Every policy plays the same 1&thinsp;000 test campaigns of the main scenario, whose settings are below.</p>
+
+    <div class="settings" aria-label="Main scenario settings">
+      <div class="set set-wide">
+        <span class="set-k">Value of a display · survival kernel</span>
+        <span class="set-d">The general kernel \(\mathcal K = \kappa\,\delta_0 + \lambda(\tau)\,d\tau\) has no immediate part here: a won display
+          converts at most once, with probability \(p\), after an exponential delay of rate \(\delta\).</span>
+        <div class="set-eq">\[ \begin{gathered} \kappa = 0, \qquad \lambda(\tau) = p\, \delta\, e^{-\delta \tau}, \\ p = \operatorname{clip}\bigl(\phi \cdot (\mathbf 1^\top u)(\mathbf 1^\top x),\, 0,\, 1\bigr) \end{gathered} \]</div>
+        <span class="set-d">Only conversions before the end of the campaign count, so a display won at \(t\) is worth
+          \(V_0 = p\,\bigl(1 - e^{-\delta (T - t)}\bigr)\) in expectation. Here \(\delta = 1\).</span>
+      </div>
+      <div class="set set-wide">
+        <span class="set-k">Fatigue · multiplicative carry-over context</span>
+        <span class="set-d">The context is the list of past wins \(t_1 \lt \dots \lt t_N\). Each interval between two wins multiplies the
+          fatigue factor by a penalty, larger when the wins are close; the factor then recovers from the last win.</span>
+        <div class="set-eq">\[ \begin{aligned} \phi(S_u(t^-), t) &= \prod_{i=2}^{N} \bigl(1 - c\, e^{-\beta (t_i - t_{i-1})}\bigr) \\ &\quad \times \bigl(1 - c\, e^{-\beta (t - t_N)}\bigr) \end{aligned} \]</div>
+        <span class="set-d">\(c = 0.9\), \(\beta = 1\), and \(\phi = 1\) before the first win. The bidder sees only \(\phi\), not the
+          win times: its observation is partial.</span>
+      </div>
+      <div class="set"><span class="set-k">Users and displays</span><span class="set-v">\(u, x \sim \mathcal N(0, I_3)\)</span><span class="set-d">user drawn once per campaign</span></div>
+      <div class="set"><span class="set-k">Auction</span><span class="set-v">second price</span><span class="set-d">competing bid LogNormal(−1, 1)</span></div>
+      <div class="set"><span class="set-k">Arrivals</span><span class="set-v">Poisson, rate 1</span><span class="set-d">≈ 48 auctions per campaign</span></div>
+      <div class="set"><span class="set-k">Campaign length</span><span class="set-v">\(T \sim \mathrm{Exp}\), mean 50</span><span class="set-d">hidden from the bidder</span></div>
+      <div class="set"><span class="set-k">Conversions</span><span class="set-v">Bernoulli(\(p\)), value 1</span><span class="set-d">delay Exp(1), credited until the last auction</span></div>
+      <div class="set"><span class="set-k">Evaluation</span><span class="set-v">1&thinsp;000 test campaigns</span><span class="set-d">same campaigns for all, paired differences</span></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-head">
+        <h3>Mean episode reward</h3>
+        <p>95% confidence intervals · deep RL: mean of three trainings · <b>click a bar</b> to see how the policy works</p>
+      </div>
+      <ul class="chart-legend">
+        <li><i style="background:var(--accent)"></i>MPC (ours)</li><li><i style="background:var(--bid)"></i>Tuned shading</li>
+        <li><i style="background:var(--lime)"></i>Deep RL</li><li><i style="background:var(--myopic)"></i>Myopic</li>
+        <li><i style="background:var(--line-strong)"></i>Constant</li>
+      </ul>
+      <div class="chart-wrap"><div id="chart" class="chart"></div><div id="chart-tip" class="chart-tip" hidden></div></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span class="big">+18%</span><span>reward of the best MPC over the tuned Shading
+        (+0.65 ± 0.13, paired over the same campaigns)</span></div>
+      <div class="stat"><span class="big">+46%</span><span>over the best deep RL agent, PPO
+        (4.33 against 2.97); SAC and TD3 do worse than the myopic bidder</span></div>
+    </div>
+
+    <dialog id="algo-dialog" class="dlg" aria-labelledby="dlg-title">
+      <button type="button" class="dlg-close" aria-label="Close">×</button>
+      <span class="dlg-family"></span>
+      <h3 class="dlg-title" id="dlg-title"></h3>
+      <p class="dlg-how"></p>
+      <p class="dlg-why"></p>
+      <div class="dlg-nums">
+        <div><span>mean reward</span><b class="dlg-reward"></b></div>
+        <div><span>vs tuned Shading</span><b class="dlg-delta"></b></div>
+      </div>
+    </dialog>
+  </section>
+
+  <footer>
+    DynamAuction · <a href="https://github.com/eugeniepatard/dynamauction">github.com/eugeniepatard/dynamauction</a>
+  </footer>
+</div>
+
+<script>
+  // Links that are not available yet (arXiv, game, author websites without a page) do nothing when clicked.
+  document.querySelectorAll('a[data-todo][href="#"]').forEach(function (a) {
+    a.addEventListener('click', function (e) { e.preventDefault(); });
+  });
+</script>
+<script src="assets/sim.js" defer></script>
+<script src="assets/results.js" defer></script>
+</body>
+</html>
