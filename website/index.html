@@ -548,6 +548,41 @@
     text-align: justify !important; hyphens: auto; -webkit-hyphens: auto;
   }
   .demo-head p, .catch { margin-left: 0; margin-right: 0; }
+
+  /* ---------- live demo: three numbered steps, with a prominent Start ---------- */
+  .demo-controls { grid-template-columns: minmax(0, 2.1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr); gap: 10px; align-items: stretch; }
+  .demo .dstep legend { display: inline-flex; align-items: center; gap: 8px; font: 600 .8rem/1 var(--sans); letter-spacing: 0;
+                        text-transform: none; color: var(--ink); padding: 4px 10px 4px 4px; border-radius: 999px; }
+  .dnum { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--accent);
+          color: var(--accent-ink); font: 600 .78rem/1 var(--mono); }
+  .darrow { align-self: center; justify-self: center; width: 28px; height: 28px; }
+  .darrow::before { content: ""; display: block; width: 28px; height: 28px; background: var(--lime);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h13M12 5l7 7-7 7' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h13M12 5l7 7-7 7' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+  .demo .drun { grid-template-columns: 1fr; border: 3px solid var(--bid); }
+  .demo .drun .dnum { background: var(--bid); color: #2b1a06; }
+  .dstart.btn { justify-content: center; width: 100%; padding: 14px 18px; font-size: 1.15rem; font-weight: 700; cursor: pointer;
+                background: var(--bid); border-color: var(--bid); color: #2b1a06; box-shadow: 0 3px 0 var(--bid-ink); }
+  .dstart.btn::after { content: "▸"; margin-left: 4px; }
+  .dstart.btn:hover { transform: translateY(-1px); box-shadow: 0 4px 0 var(--bid-ink); }
+  .dstart.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--bid-ink); }
+  .drun .demo-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .drun .demo-buttons .btn { justify-content: center; white-space: nowrap; padding: 7px 8px; font-size: .82rem; }
+  @media (max-width: 1000px) {
+    .demo-controls { grid-template-columns: 1fr; }
+    .darrow { transform: rotate(90deg); }
+  }
+
+  .dflow { display: grid; grid-template-columns: minmax(0, 2.1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr); gap: 10px; margin-top: 6px; }
+  .dflow .darrow { grid-column: 5; }
+  .darrow.down { transform: rotate(90deg); }
+  .dstage-wrap { position: relative; margin-top: 10px; }
+  .dstage-wrap .demo-stage { margin-top: 0; }
+  .dstage-tag { position: absolute; z-index: 2; top: -13px; left: 14px; display: inline-flex; align-items: center; gap: 8px;
+                padding: 4px 10px 4px 4px; border-radius: 999px; background: var(--surface); color: var(--ink);
+                font: 600 .8rem/1 var(--sans); }
+  .dstage-wrap .demo-stage { background: var(--surface); padding-top: 18px; border: 0; }
+  @media (max-width: 1000px) { .dflow { grid-template-columns: 1fr; } .dflow .darrow { grid-column: 1; justify-self: center; margin-left: 0; } }
 </style>
 </head>
 <body>
@@ -590,10 +625,9 @@
     </div>
 
     <nav class="actions" aria-label="Paper and code">
-      <!-- TODO: arXiv link: replace href="#", remove class "is-pending", aria-disabled and the "soon" badge -->
-      <a class="btn is-pending" href="#" aria-disabled="true" data-todo="arxiv" title="arXiv link coming soon">
+      <a class="btn" href="https://arxiv.org/abs/2611.14000">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v4h4M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        arXiv <span class="soon">soon</span>
+        arXiv
       </a>
       <a class="btn" href="DynamAuction_paper.pdf">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -649,9 +683,7 @@
       <span class="gt-text">
         <span class="pill">Interactive game · 2 minutes</span>
         <span class="gt-title">The Knight's Merchant</span>
-        <span class="gt-desc">Walk through a medieval market and buy the gear a knight ordered, one stand at a time. Every
-          purchase changes what the next stands are worth to you, so the first bargain is not always the best plan. Then
-          compare your profit with a myopic merchant and with the optimal planner on the same market.</span>
+        <span class="gt-desc">A small game that illustrates DynamAuction: buy the gear a knight needs, stand after stand. Grab the first bargain or wait for a better one? To do well, you have to plan.</span>
       </span>
       <span class="btn gt-play">Play ▸</span>
     </a>
@@ -749,12 +781,11 @@
       <div class="demo-head">
         <span class="demo-badge"><i></i>Live demo</span>
         <h3>Watch a campaign, live</h3>
-        <p>A demonstration of the DynamAuction simulator, running in your browser. Pick the primitives and a policy, press
-          Start, and follow the auctions as they slide towards the bidder.</p>
+        <p>The DynamAuction simulator, running in your browser: choose an environment, choose a policy, then press Start.</p>
       </div>
       <div class="demo-controls">
-        <fieldset>
-          <legend>Environment</legend>
+        <fieldset class="dstep">
+          <legend><span class="dnum">1</span>Choose the environment</legend>
           <label>Auction<select id="d-auction"><option value="second">second price</option><option value="first">first price</option></select></label>
           <label>Competing bid<select id="d-competition"><option value="lognormal">LogNormal(−1, 1)</option><option value="uniform">Uniform(0, 1)</option><option value="exponential">Exponential(0.3)</option></select></label>
           <label>Arrivals<select id="d-arrivals"><option value="poisson">Poisson, rate 1</option><option value="sparse">Poisson, rate 0.5</option><option value="burst">burst, then calm</option><option value="decay">rate halving every 4</option></select></label>
@@ -763,13 +794,18 @@
           <label>Bidder sees<select id="d-obs"><option value="summary">a summary (φ)</option><option value="full">the full context</option></select></label>
           <label>Conversions<select id="d-conv"><option value="delayed">delayed</option><option value="immediate">immediate</option></select></label>
         </fieldset>
-        <fieldset>
-          <legend>Policy</legend>
+        <span class="darrow" aria-hidden="true"></span>
+        <fieldset class="dstep">
+          <legend><span class="dnum">2</span>Choose a policy</legend>
           <label>Policy<select id="d-policy"><option value="fipla">FiPla (bids V₀)</option><option value="shading">Shading (α × V₀)</option><option value="constant">Constant bid</option></select></label>
           <label id="d-alpha-row" hidden>α = <output id="d-alpha-out">0.6</output><input id="d-alpha" type="range" min="0.1" max="1" step="0.1" value="0.6"></label>
           <label id="d-const-row" hidden>bid = <output id="d-const-out">0.20</output><input id="d-const" type="range" min="0" max="1" step="0.01" value="0.2"></label>
+        </fieldset>
+        <span class="darrow" aria-hidden="true"></span>
+        <fieldset class="dstep drun">
+          <legend><span class="dnum">3</span>Run it</legend>
+          <button type="button" class="btn dstart" id="d-play">Start</button>
           <div class="demo-buttons">
-            <button type="button" class="btn" id="d-play">Start</button>
             <button type="button" class="btn ghost" id="d-reset">Reset</button>
             <button type="button" class="btn ghost" id="d-new">New campaign</button>
           </div>
@@ -778,8 +814,12 @@
           <p class="demo-seed" id="d-seed"></p>
         </fieldset>
       </div>
+      <div class="dflow" aria-hidden="true"><span class="darrow down"></span></div>
+      <div class="dstage-wrap">
+        <span class="dstage-tag"><span class="dnum">4</span>Watch the campaign unfold</span>
       <div class="demo-stage"><canvas width="960" height="400" role="img"
         aria-label="Animated campaign: auctions slide along a time line towards the bidder, who bids against a competitor; wins, payments and clicks are counted."></canvas></div>
+      </div>
       <p class="demo-note">A simplified re-implementation of the environment in your browser, for illustration: same formulas as the
         library (survival kernel, carry-over contexts, oracle value V₀, delayed conversions), short campaigns (mean length 10), at least 0.3 time units between two auctions so that they can be told
         apart, and a user drawn among those receptive to the ad. FiPla and Shading use the oracle value V₀, which RL agents do not see. The
@@ -852,19 +892,20 @@
   </section>
 
   <!-- =============================== CITATION =============================== -->
-  <!-- TODO: once the paper is on arXiv, add  eprint = {XXXX.XXXXX}, archivePrefix = {arXiv}  (and the venue if accepted) -->
   <section id="citation">
     <p class="label">Citation</p>
     <h2>Cite DynamAuction</h2>
-    <p class="prose">If you use DynamAuction or its benchmark in your work, please cite the paper:</p>
+    <p class="prose">If you use DynamAuction or its benchmark in your work, please cite the paper (<a href="https://arxiv.org/abs/2611.14000">arXiv:2611.14000</a>):</p>
     <div class="bib">
       <button class="bib-copy" type="button" aria-label="Copy the BibTeX entry">Copy</button>
-      <pre id="bibtex">@misc{patard2026dynamauction,
-  title  = {{DynamAuction}: A Reinforcement Learning Environment for
-            Repeated Auctions with Dynamic Value},
-  author = {Patard, Eugenie and Pla, Corentin and Heymann, Benjamin and Loiseau, Patrick},
-  year   = {2026},
-  url    = {https://github.com/eugeniepatard/dynamauction}
+      <pre id="bibtex">@misc{patard2026dynamauctionreinforcementlearningenvironment,
+      title={DynamAuction: A Reinforcement Learning Environment for Repeated Auctions with Dynamic Value},
+      author={Eugénie Patard and Corentin Pla and Benjamin Heymann and Patrick Loiseau},
+      year={2026},
+      eprint={2611.14000},
+      archivePrefix={arXiv},
+      primaryClass={stat.AP},
+      url={https://arxiv.org/abs/2611.14000},
 }</pre>
     </div>
   </section>

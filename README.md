@@ -2,10 +2,12 @@
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![arXiv](https://img.shields.io/badge/arXiv-2611.14000-b31b1b.svg)](https://arxiv.org/abs/2611.14000)
 
 **DynamAuction** is a [Gymnasium](https://gymnasium.farama.org/)-compatible reinforcement learning environment for repeated auctions with dynamic display value, the official implementation accompanying the paper:
 
-> *DynamAuction: a reinforcement learning environment for repeated auction with dynamic value*
+> *DynamAuction: A Reinforcement Learning Environment for Repeated Auctions with Dynamic Value*,
+> Eugenie Patard, Corentin Pla, Benjamin Heymann and Patrick Loiseau, 2026. [arXiv:2611.14000](https://arxiv.org/abs/2611.14000)
 
 It is built on a **kernel causal model** that captures realistic advertiser dynamics, frequency saturation, recency effects, delayed conversions, and competitor interference, making it suitable for studying sequential bidding policies in non-stationary settings. The library also ships a modular simulator for multi-policy comparison and a full suite of baseline policies, from simple heuristics to model-predictive control.
 
@@ -211,11 +213,14 @@ only raises a warning.
 If you use DynamAuction in your research, please cite:
 
 ```bibtex
-@inproceedings{heymann2026dynamauction,
-  title     = {{DynamAuction}: a reinforcement learning environment for repeated auction with dynamic value},
-  author    = {Heymann, Benjamin and Patard, Eugenie and Pla, Corentin and Loiseau, Patrick},
-  booktitle = {Advances in Neural Information Processing Systems},
-  year      = {2026}
+@misc{patard2026dynamauctionreinforcementlearningenvironment,
+      title={DynamAuction: A Reinforcement Learning Environment for Repeated Auctions with Dynamic Value},
+      author={Eugénie Patard and Corentin Pla and Benjamin Heymann and Patrick Loiseau},
+      year={2026},
+      eprint={2611.14000},
+      archivePrefix={arXiv},
+      primaryClass={stat.AP},
+      url={https://arxiv.org/abs/2611.14000},
 }
 ```
 
