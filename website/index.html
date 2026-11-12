@@ -154,6 +154,39 @@
   }
 
 
+
+  /* ---------- "Build your own scenario": a paper-style table ---------- */
+  .spec { margin-top: 48px; }
+  .spec > p:not(.label) { color: var(--ink-2); margin: 12px 0 0; text-align: justify; }
+  .spec-table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: .95rem;
+                border-top: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); }
+  .spec-table caption { caption-side: top; text-align: left; padding-bottom: 8px; color: var(--ink-2); font-size: .92rem; }
+  .spec-table caption span { font-weight: 600; color: var(--ink); }
+  .spec-table thead th { font-weight: 600; text-align: left; padding: 8px 12px 7px 0; border-bottom: 1px solid var(--ink); }
+  .spec-table tbody th { font-weight: 600; text-align: left; vertical-align: top; padding: 9px 12px 9px 0; white-space: nowrap; }
+  .spec-table td { vertical-align: top; padding: 9px 12px 9px 0; color: var(--ink-2); }
+  .spec-table td.opts { font: 400 .82rem/1.55 var(--mono); color: var(--ink); width: 34%; padding-right: 0; }
+  .spec-table tbody tr + tr > * { border-top: 1px solid var(--line); }
+  @media (max-width: 760px) {
+    .spec-table, .spec-table caption, .spec-table tbody, .spec-table tr, .spec-table th, .spec-table td,
+    .spec-table td.opts { display: block; width: auto; }
+    .spec-table { border-top: 0; }
+    .spec-table thead { display: none; }
+    .spec-table tbody { border-top: 1.5px solid var(--ink); }
+    .spec-table tbody tr + tr > * { border-top: 0; }
+    .spec-table tbody tr + tr { border-top: 1px solid var(--line); padding-top: 4px; }
+    .spec-table tbody th { padding-bottom: 2px; }
+    .spec-table td { padding: 2px 0; }
+    .spec-table td.opts { padding-bottom: 10px; }
+  }
+
+  .scen { margin-top: 30px; }
+  .scen-sum { margin-top: 22px; color: var(--ink-2); }
+  .scen-sum strong { color: var(--ink); }
+  .scen .eq { overflow-x: auto; margin: 6px 0; }
+  .scen .eq .katex-display { margin: .5em 0; }
+  .scen strong { color: var(--ink); }
+
   /* ---------- game teaser (problem section) ---------- */
   .game-teaser {
     margin-top: 26px; display: grid; grid-template-columns: 210px 1fr auto; align-items: center; gap: 28px;
@@ -495,6 +528,26 @@
   .rpanel .settings, .rpanel .chart-card { margin-top: 18px; }
   .rpanel .stats { margin-top: 16px; }
   @media (max-width: 760px) { .rpanel { padding: 16px; } }
+
+  /* ---------- citation ---------- */
+  .bib { position: relative; margin-top: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .bib pre { margin: 0; padding: 18px 20px; overflow-x: auto; font: 400 .85rem/1.6 var(--mono); color: var(--ink); }
+  .bib-copy { position: absolute; top: 10px; right: 10px; font: 500 .8rem/1 var(--mono); padding: 7px 11px; border-radius: 6px;
+              border: 1px solid var(--line-strong); background: var(--bg); color: var(--ink-2); cursor: pointer; }
+  .bib-copy:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- alignment: titles and text on the left, paragraphs justified (the hero stays centred) ---------- */
+  section > .label, .abstract .label { display: table; margin-inline: 0; text-align: left; }
+  section > h2, .sub-h, .demo-head, .pl-top h3, .chart-head, .chart-head p { text-align: left; }
+  section > h2::after { margin-left: 0; }
+  .prose, .lead { margin-inline: 0; }
+  .pl-top { justify-content: flex-start; }
+  .chart-legend { justify-content: flex-start; }
+  main p, section p, figcaption, .card p, .features li, .pl-detail-body, .demo-note, .lead,
+  .demo-head p, .catch, p.center, .example-note, .rpanel-head p, .set-d, .part p, .th p {
+    text-align: justify !important; hyphens: auto; -webkit-hyphens: auto;
+  }
+  .demo-head p, .catch { margin-left: 0; margin-right: 0; }
 </style>
 </head>
 <body>
@@ -507,6 +560,7 @@
   <a href="#pipeline" class="sub">One environment step</a>
   <a href="#demo" class="sub">Watch a campaign</a>
   <a href="#results">Results</a>
+  <a href="#citation">Citation</a>
 </nav>
 <div class="wrap">
 
@@ -522,7 +576,7 @@
 
     <ul class="authors">
       <!-- TODO: put each author's website in href (leave "#" while there is none) -->
-      <li><a href="#" data-todo="author-website">Eugénie Patard</a><sup>1</sup></li>
+      <li><a href="#" data-todo="author-website">Eugenie Patard</a><sup>1</sup></li>
       <li><a href="#" data-todo="author-website">Corentin Pla</a><sup>1,2,3</sup></li>
       <li><a href="https://benhey.github.io/" data-todo="author-website">Benjamin Heymann</a><sup>1,2</sup></li>
       <li><a href="https://patrickloiseau.github.io/index.html" data-todo="author-website">Patrick Loiseau</a><sup>1</sup></li>
@@ -554,19 +608,16 @@
   </header>
 
   <nav class="toc" aria-label="Sections">
-    <a href="#problem">The problem</a><a href="#abstract">Abstract</a><a href="#model">The model</a><a href="#simulator">The simulator</a><a href="#results">Results</a>
+    <a href="#problem">The problem</a><a href="#abstract">Abstract</a><a href="#model">The model</a><a href="#simulator">The simulator</a><a href="#results">Results</a><a href="#citation">Citation</a>
   </nav>
 
   <!-- =============================== PROBLEM + GAME =============================== -->
   <section id="problem">
     <p class="label">The problem</p>
     <h2>Every ad you win changes what the next one is worth</h2>
-    <p class="lead prose">An advertiser bids, auction after auction, to show ads to the same user. Showing an ad now can
-      make the user convert, but it also tires them: the more often they have just seen the brand, the less the next
-      display is worth. The best bid therefore depends on the past wins and on the auctions still to come, not only on
-      the value of the display at hand.</p>
-    <p class="catch">To win tomorrow's auctions, you have to bid with them in mind today:
-      this is <em>planning</em>, and it is where reinforcement learning has to prove itself.</p>
+    <p class="lead prose">An advertiser bids again and again to show ads to the same user. Each ad shown can make the
+      user convert, but it also tires them, so the next display is worth less.</p>
+    <p class="catch">Bidding well means <em>planning</em>: a test for reinforcement learning.</p>
 
     <!-- MAIN ANIMATION: drawn by assets/js/hero.js. The value of the next display over one campaign: each won auction
          multiplies it by a recovering fatigue factor (1 - c e^{-(t - t_i)/s}), lost auctions leave it unchanged.
@@ -734,44 +785,21 @@
         apart, and a user drawn among those receptive to the ad. FiPla and Shading use the oracle value V₀, which RL agents do not see. The
         benchmark itself runs the Python package.</p>
     </div>
-    <h3 class="sub-h">Build your own scenario</h3>
-    <div class="parts">
-      <article class="part">
-        <span class="part-icon tone-a"><svg viewBox="0 0 24 24"><path d="m14 4 6 6M11 7l6 6M12.5 5.5l5 5-4 4-5-5zM9.5 11.5 3 18M4 21h9"/></svg></span>
-        <h3>Auctions</h3>
-        <p>First- or second-price, against a competing bid drawn from a chosen distribution.</p>
-        <ul class="tags"><li>second-price</li><li>first-price</li><li>lognormal</li><li>uniform</li><li>exponential</li><li>constant</li></ul>
-      </article>
-      <article class="part">
-        <span class="part-icon tone-b"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg></span>
-        <h3>Arrivals and horizon</h3>
-        <p>Auctions arrive as a Poisson process, constant, piecewise-constant or decaying; the campaign length is fixed or random.</p>
-        <ul class="tags"><li>cstpoisson</li><li>pwpoisson</li><li>decaypoisson</li><li>exponential T</li><li>fixed T</li></ul>
-      </article>
-      <article class="part">
-        <span class="part-icon tone-c"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 4-7 5 6"/><path d="M3 21h18"/></svg></span>
-        <h3>Value dynamics</h3>
-        <p>How past wins change the value of the next displays: a reward kernel and a carry-over context.</p>
-        <ul class="tags"><li>survival</li><li>saturation</li><li>recency</li><li>effective-frequency</li><li>reminder</li><li>fatigue</li></ul>
-      </article>
-      <article class="part">
-        <span class="part-icon tone-b"><svg viewBox="0 0 24 24"><path d="M5 3l12 6-5 1.5L10 16z"/><path d="M14 14l5 5"/></svg></span>
-        <h3>Feedback</h3>
-        <p>Immediate or delayed conversions, single or multiple, credited only when they happen, before the end of the campaign.</p>
-        <ul class="tags"><li>immediate</li><li>delayed</li><li>bernoulli</li><li>poisson</li></ul>
-      </article>
-      <article class="part">
-        <span class="part-icon tone-a"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><path d="M16.5 13v7M13 16.5h7"/></svg></span>
-        <h3>Presets or your own</h3>
-        <p>Ready-made scenarios with one call, or a scenario assembled from primitives with the builder.</p>
-        <ul class="tags"><li>dac.make(…)</li><li>ScenarioBuilder</li><li>overrides</li></ul>
-      </article>
-      <article class="part">
-        <span class="part-icon tone-c"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
-        <h3>Baselines and benchmark</h3>
-        <p>Reference policies and the full benchmark pipeline: tuned on validation campaigns, tested on 1&thinsp;000 others.</p>
-        <ul class="tags"><li>FiPla</li><li>Shading</li><li>MPC</li><li>PPO</li><li>SAC</li><li>TD3</li></ul>
-      </article>
+    <div class="spec prose">
+      <p class="label">Build your own scenario</p>
+      <p>Combine the components of Table 1 freely, or start from a preset.</p>
+      <table class="spec-table">
+        <caption><span>Table 1.</span> Configurable components of a DynamAuction scenario.</caption>
+        <thead><tr><th scope="col">Component</th><th scope="col">Role</th><th scope="col">Options in the library</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Auction</th><td>First- or second-price, random competing bid.</td><td class="opts">second-price, first-price; lognormal, uniform, exponential, constant</td></tr>
+          <tr><th scope="row">Arrivals and horizon</th><td>Poisson arrivals; fixed or random length.</td><td class="opts">cstpoisson, pwpoisson, decaypoisson; exponential or fixed T</td></tr>
+          <tr><th scope="row">Value dynamics</th><td>How past wins change future value.</td><td class="opts">survival, saturation, recency, effective-frequency, reminder, fatigue</td></tr>
+          <tr><th scope="row">Feedback</th><td>Immediate or delayed conversions.</td><td class="opts">immediate, delayed; bernoulli, poisson</td></tr>
+          <tr><th scope="row">Scenario</th><td>A preset, or your own build.</td><td class="opts">dac.make(…), ScenarioBuilder, overrides</td></tr>
+          <tr><th scope="row">Baselines and benchmark</th><td>Reference policies and the evaluation pipeline.</td><td class="opts">FiPla, Shading, MPC, PPO, SAC, TD3</td></tr>
+        </tbody>
+      </table>
     </div>
 
   </section>
@@ -780,40 +808,13 @@
   <section id="results">
     <p class="label">Results</p>
     <h2>Planning pays: MPC beats tuned shading and deep RL</h2>
-    <p class="lead prose">Every policy plays the same 1&thinsp;000 test campaigns of the main scenario, whose settings are below.</p>
+    <p class="lead prose">Every policy plays the same 1&thinsp;000 test campaigns.</p>
+
+    <p class="prose scen-sum"><strong>The scenario.</strong> Each win tires the user for good, and more so when wins are
+      close together, while the campaign length is hidden: the bidder has to win the right auctions at the right time.</p>
 
     <div class="rpanel">
-      <div class="rpanel-head"><span class="rpanel-num">1</span><div><h3>The scenario</h3>
-        <p>The main scenario of the benchmark: how displays are valued, how fatigue builds up, and how campaigns are drawn and evaluated.</p></div></div>
-    <div class="settings" aria-label="Main scenario settings">
-      <div class="set set-wide">
-        <span class="set-k">Value of a display · survival kernel</span>
-        <span class="set-d">The general kernel \(\mathcal K = \kappa\,\delta_0 + \lambda(\tau)\,d\tau\) has no immediate part here: a won display
-          converts at most once, with probability \(p\), after an exponential delay of rate \(\delta\).</span>
-        <div class="set-eq">\[ \begin{gathered} \kappa = 0, \qquad \lambda(\tau) = p\, \delta\, e^{-\delta \tau}, \\ p = \operatorname{clip}\bigl(\phi \cdot (\mathbf 1^\top u)(\mathbf 1^\top x),\, 0,\, 1\bigr) \end{gathered} \]</div>
-        <span class="set-d">Only conversions before the end of the campaign count, so a display won at \(t\) is worth
-          \(V_0 = p\,\bigl(1 - e^{-\delta (T - t)}\bigr)\) in expectation. Here \(\delta = 1\).</span>
-      </div>
-      <div class="set set-wide">
-        <span class="set-k">Fatigue · multiplicative carry-over context</span>
-        <span class="set-d">The context is the list of past wins \(t_1 \lt \dots \lt t_N\). Each interval between two wins multiplies the
-          fatigue factor by a penalty, larger when the wins are close; the factor then recovers from the last win.</span>
-        <div class="set-eq">\[ \begin{aligned} \phi(S_u(t^-), t) &= \prod_{i=2}^{N} \bigl(1 - c\, e^{-\beta (t_i - t_{i-1})}\bigr) \\ &\quad \times \bigl(1 - c\, e^{-\beta (t - t_N)}\bigr) \end{aligned} \]</div>
-        <span class="set-d">\(c = 0.9\), \(\beta = 1\), and \(\phi = 1\) before the first win. The bidder sees only \(\phi\), not the
-          win times: its observation is partial.</span>
-      </div>
-      <div class="set"><span class="set-k">Users and displays</span><span class="set-v">\(u, x \sim \mathcal N(0, I_3)\)</span><span class="set-d">user drawn once per campaign</span></div>
-      <div class="set"><span class="set-k">Auction</span><span class="set-v">second price</span><span class="set-d">competing bid LogNormal(−1, 1)</span></div>
-      <div class="set"><span class="set-k">Arrivals</span><span class="set-v">Poisson, rate 1</span><span class="set-d">≈ 48 auctions per campaign</span></div>
-      <div class="set"><span class="set-k">Campaign length</span><span class="set-v">\(T \sim \mathrm{Exp}\), mean 50</span><span class="set-d">hidden from the bidder</span></div>
-      <div class="set"><span class="set-k">Conversions</span><span class="set-v">Bernoulli(\(p\)), value 1</span><span class="set-d">delay Exp(1), credited until the last auction</span></div>
-      <div class="set"><span class="set-k">Evaluation</span><span class="set-v">1&thinsp;000 test campaigns</span><span class="set-d">same campaigns for all, paired differences</span></div>
-    </div>
-
-    </div>
-
-    <div class="rpanel">
-      <div class="rpanel-head"><span class="rpanel-num">2</span><div><h3>The results</h3>
+      <div class="rpanel-head"><div><h3>The results</h3>
         <p>The reward of every policy on the 1&thinsp;000 test campaigns of this scenario, then what to take away from it.</p></div></div>
     <div class="chart-card">
       <div class="chart-head">
@@ -850,6 +851,24 @@
     </dialog>
   </section>
 
+  <!-- =============================== CITATION =============================== -->
+  <!-- TODO: once the paper is on arXiv, add  eprint = {XXXX.XXXXX}, archivePrefix = {arXiv}  (and the venue if accepted) -->
+  <section id="citation">
+    <p class="label">Citation</p>
+    <h2>Cite DynamAuction</h2>
+    <p class="prose">If you use DynamAuction or its benchmark in your work, please cite the paper:</p>
+    <div class="bib">
+      <button class="bib-copy" type="button" aria-label="Copy the BibTeX entry">Copy</button>
+      <pre id="bibtex">@misc{patard2026dynamauction,
+  title  = {{DynamAuction}: A Reinforcement Learning Environment for
+            Repeated Auctions with Dynamic Value},
+  author = {Patard, Eugenie and Pla, Corentin and Heymann, Benjamin and Loiseau, Patrick},
+  year   = {2026},
+  url    = {https://github.com/eugeniepatard/dynamauction}
+}</pre>
+    </div>
+  </section>
+
   <footer>
     DynamAuction · <a href="https://github.com/eugeniepatard/dynamauction">github.com/eugeniepatard/dynamauction</a>
   </footer>
@@ -864,5 +883,14 @@
 <script src="assets/js/hero.js" defer></script>
 <script src="assets/js/sim.js" defer></script>
 <script src="assets/js/results.js" defer></script>
+<script>
+  document.querySelectorAll(".bib-copy").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var txt = document.getElementById("bibtex").textContent;
+      var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1500); };
+      if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, function () {}); 
+    });
+  });
+</script>
 </body>
 </html>
