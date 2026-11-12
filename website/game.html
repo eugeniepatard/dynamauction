@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Knight's Merchant</title>
+<meta name="description" content="A small planning game from DynamAuction: buy the gear a knight ordered, one market stand at a time, and compare your profit with a myopic merchant and with the optimal planner.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* palette of the DynamAuction website */
+    --bg: #f5f7f7; --surface: #ffffff; --ink: #1e2a2e; --ink-2: #45545a; --muted: #6e7b7f; --line: #e1e6e6;
+    --accent: #22566b; --accent-ink: #ffffff; --accent-soft: #e2edf0;
+    --bid: #dc9a42; --bid-ink: #87531a; --bid-soft: #f8eedd;
+    --lime: #8fb26f; --lime-ink: #41622a; --lime-soft: #edf2e4;
+    --myopic: #a3a9a6; --line-strong: #cdd3d3;
+    --shadow: 0 1px 2px rgba(20, 40, 48, .06), 0 8px 24px rgba(20, 40, 48, .06);
+    --radius: 10px;
+    /* the game world (one look in both themes) */
+    --wood: #5a3d27; --wood-dark: #2f1f14; --wood-ink: #f7ead0;
+    --paper: #f4e4bc; --paper-edge: #b9925a; --paper-ink: #3b2a1a; --paper-muted: #7a6142;
+    --gold: #f2c14e; --gold-dark: #8a5a12;
+    --buy: #6f9a4f; --buy-dark: #3c5a2a;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --pixel: "Pixelify Sans", "IBM Plex Mono", ui-monospace, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161c1e; --surface: #1e2629; --ink: #ebede6; --ink-2: #bcc5c2; --muted: #8f9a98;
+      --line: #2f3a3d; --accent: #7fb3c4; --accent-ink: #10191c; --accent-soft: #213238;
+      --bid: #e0a85e; --bid-ink: #e7b878; --bid-soft: #352a1a; --lime: #a1c283; --lime-ink: #adcb92; --lime-soft: #243024;
+      --myopic: #7f8987; --line-strong: #47524f;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161c1e; --surface: #1e2629; --ink: #ebede6; --ink-2: #bcc5c2; --muted: #8f9a98;
+    --line: #2f3a3d; --accent: #7fb3c4; --accent-ink: #10191c; --accent-soft: #213238;
+    --bid: #e0a85e; --bid-ink: #e7b878; --bid-soft: #352a1a; --lime: #a1c283; --lime-ink: #adcb92; --lime-soft: #243024;
+    --myopic: #7f8987; --line-strong: #47524f;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.65 var(--sans); padding-inline: 16px; }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  .wrap { max-width: 1040px; margin-inline: auto; }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+
+  /* ---------- top bar ---------- */
+  .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-block: 18px; flex-wrap: wrap; }
+  .topbar a { text-decoration: none; font: 500 .95rem/1 var(--mono); }
+  .topbar nav { display: flex; gap: 18px; }
+
+  /* ---------- header ---------- */
+  header.head { padding-block: 34px 8px; text-align: center; }
+  .pill { display: inline-block; font: 500 .75rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase;
+          padding: 6px 10px; border-radius: 999px; background: var(--lime-soft); color: var(--lime-ink); }
+  header.head h1 { font: 700 clamp(2.1rem, 5vw, 3.2rem)/1.1 var(--pixel); margin-top: 16px; letter-spacing: .01em; }
+  header.head p { color: var(--ink-2); max-width: 720px; margin: 14px auto 0; font-size: 1.1rem; }
+
+  /* ---------- rules ---------- */
+  .rules { display: grid; grid-template-columns: 1fr 1.35fr 1fr; gap: 18px; margin-top: 34px; }
+  .rule-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); }
+  .rule-card h2 { font: 600 .8rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .rule-card p, .rule-card li { color: var(--ink-2); font-size: .98rem; }
+  .rule-card p { margin: 12px 0 0; }
+  .rule-card ol { margin: 12px 0 0; padding-left: 1.2rem; display: grid; gap: 8px; }
+  .rule-card strong { color: var(--ink); }
+  .formula { margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: var(--bid-soft); color: var(--bid-ink);
+             font: 500 .92rem/1.5 var(--mono); }
+  .catch { margin-top: 14px !important; padding-left: 12px; border-left: 3px solid var(--lime); }
+
+  /* ---------- the game window ---------- */
+  .game { margin-top: 30px; container-type: inline-size; }
+  .stage { position: relative; border-radius: 14px; overflow: hidden; border: 3px solid var(--wood-dark);
+           box-shadow: var(--shadow); background: #cfe2e0; }
+  canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+
+  .parch { position: absolute; left: 1.6%; top: 2.8%; width: 27%; color: var(--paper-ink);
+           background: var(--paper); border: 2px solid var(--paper-edge); border-radius: 4px;
+           padding: 1.1cqw 1.2cqw 1cqw; font-size: clamp(11px, 1.45cqw, 15px); line-height: 1.25;
+           box-shadow: 3px 4px 0 rgba(47, 31, 20, .35); }
+  .parch::before, .parch::after { content: ""; position: absolute; left: -6px; right: -6px; height: 9px;
+           background: #d9bd86; border: 2px solid var(--paper-edge); border-radius: 6px; }
+  .parch::before { top: -7px; }
+  .parch::after { bottom: -7px; }
+  .parch h3 { font: 700 1.15em/1.1 var(--pixel); text-align: center; letter-spacing: .02em; }
+  .parch .sub { text-align: center; color: var(--paper-muted); font-size: .85em; margin-top: 2px; }
+  .order { list-style: none; margin: .5em 0 0; padding: 0; display: grid; gap: .1em; }
+  .order li { display: grid; grid-template-columns: 2.3em 1fr auto; align-items: center; gap: .5em;
+              padding: .15em .35em; border-radius: 4px; border: 1px dashed transparent; }
+  .order img { width: 2.3em; height: 2.3em; object-fit: contain; }
+  .order .nm { font-weight: 600; }
+  .order .val { display: block; font-size: .85em; color: var(--paper-muted); font-weight: 400; }
+  .order .st { font: 600 .9em/1.2 var(--pixel); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .order li.offered { background: #fff4d4; border-color: var(--gold-dark); }
+  .order li.bought .nm { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--buy-dark); }
+  .order li.bought .st { color: var(--buy-dark); }
+  .order li.missing .st { color: #9b3b2a; }
+  .order li.missing img { filter: grayscale(1); opacity: .5; }
+
+  .hud { position: absolute; right: 1.6%; top: 2.8%; width: 24%; background: rgba(47, 31, 20, .82); color: var(--wood-ink);
+         border-radius: 6px; padding: .9cqw 1.1cqw; font-size: clamp(11px, 1.35cqw, 14px); }
+  .hud .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .hud b { font: 700 1.35em/1 var(--pixel); font-variant-numeric: tabular-nums; }
+  .hud .gold { color: var(--gold); }
+  .pips { display: grid; grid-template-columns: repeat(20, 1fr); gap: 2px; margin: .55em 0 .6em; }
+  .pips i { height: .55em; border-radius: 1px; background: rgba(247, 234, 208, .22); }
+  .pips i.past { background: rgba(247, 234, 208, .6); }
+  .pips i.buy { background: var(--gold); }
+  .pips i.now { background: #fff; outline: 1px solid var(--gold); }
+
+  .offer { position: absolute; right: 1.6%; top: 27%; width: 24%; background: var(--wood); color: var(--wood-ink);
+           border: 3px solid var(--wood-dark); border-radius: 6px; padding: 1.1cqw 1.2cqw 1.2cqw;
+           font-size: clamp(12px, 1.45cqw, 15px); box-shadow: 0 4px 0 var(--wood-dark); }
+  .offer-head { display: flex; align-items: center; gap: .6em; }
+  .offer-head img { width: 3em; height: 3em; object-fit: contain; background: rgba(247, 234, 208, .12); border-radius: 4px; padding: 2px; }
+  .o-name { font: 700 1.3em/1.1 var(--pixel); }
+  .o-sub { font-size: .85em; opacity: .8; }
+  .offer dl { margin: .8em 0 0; display: grid; gap: .25em; }
+  .offer dl div { display: flex; justify-content: space-between; align-items: baseline; }
+  .offer dt { opacity: .85; }
+  .offer dd { margin: 0; font: 700 1.25em/1.1 var(--pixel); font-variant-numeric: tabular-nums; }
+  .offer dd.price { color: var(--gold); font-size: 1.6em; }
+  .o-advice { margin-top: .7em; padding: .45em .6em; border-radius: 4px; background: rgba(247, 234, 208, .14); font-size: .9em; }
+  .o-btns { margin-top: .8em; display: grid; gap: .45em; }
+  .gbtn { font: 700 1.05em/1 var(--pixel); letter-spacing: .02em; padding: .62em .8em; border-radius: 4px; cursor: pointer;
+          border: 3px solid var(--wood-dark); box-shadow: 0 3px 0 var(--wood-dark); display: inline-flex; justify-content: center;
+          align-items: center; gap: .6em; transition: transform .08s ease, box-shadow .08s ease; color: var(--paper-ink); background: var(--paper); }
+  .gbtn:hover { transform: translateY(-1px); box-shadow: 0 4px 0 var(--wood-dark); }
+  .gbtn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--wood-dark); }
+  .gbtn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .gbtn.buy { background: var(--buy); color: #fff; }
+  .gbtn kbd { font: 500 .72em/1 var(--mono); padding: .25em .4em; border-radius: 3px; background: rgba(0,0,0,.18); }
+
+  .ovl { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(30, 22, 14, .42); padding: 3cqw; }
+  .ovl-card { background: var(--paper); color: var(--paper-ink); border: 3px solid var(--wood-dark); border-radius: 8px;
+              box-shadow: 0 5px 0 var(--wood-dark); padding: 2.4cqw 2.8cqw; width: min(100%, 520px); text-align: center;
+              font-size: clamp(13px, 1.6cqw, 16px); max-height: 100%; overflow: auto; }
+  .ovl-card.wide { width: min(100%, 640px); }
+  .kicker { font: 500 .8em/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--paper-muted); margin: 0; }
+  .ovl-card h3 { font: 700 1.8em/1.15 var(--pixel); margin-top: .35em; }
+  .ovl-card p { margin: .6em 0 0; }
+  .intro-items { display: flex; justify-content: center; gap: .8em; flex-wrap: wrap; margin-top: .9em; }
+  .intro-items div { display: grid; justify-items: center; gap: 2px; font-size: .85em; }
+  .intro-items img { width: 3em; height: 3em; object-fit: contain; }
+  .intro-items b { font-family: var(--pixel); }
+  .ovl-card .gbtn { margin-top: 1em; }
+  .ovl-card .gbtn.big { font-size: 1.25em; padding: .7em 1.2em; }
+  .seed { font: 400 .8em/1 var(--mono); color: var(--paper-muted); margin-top: .9em !important; }
+
+  .bars { display: grid; gap: .55em; margin-top: 1em; text-align: left; }
+  .bar { display: grid; grid-template-columns: 9.5em 1fr 3.2em; align-items: center; gap: .7em; }
+  .bar .who { font-weight: 600; line-height: 1.15; }
+  .bar .who small { display: block; font-weight: 400; font-size: .78em; color: var(--paper-muted); }
+  .bar .track { height: 1.1em; background: rgba(59, 42, 26, .1); border-radius: 3px; overflow: hidden; }
+  .bar .fill { height: 100%; border-radius: 3px; }
+  .bar .num { font: 700 1.2em/1 var(--pixel); text-align: right; font-variant-numeric: tabular-nums; }
+  .e-note { font-size: .92em; }
+  .e-btns { display: flex; justify-content: center; gap: .7em; flex-wrap: wrap; }
+  .e-btns a { align-self: center; margin-top: 1em; color: var(--paper-ink); font-size: .92em; }
+
+  .fly { position: absolute; width: 4%; z-index: 5; pointer-events: none;
+         transition: left .8s cubic-bezier(.5, 0, .3, 1), top .8s cubic-bezier(.5, -.4, .3, 1), width .8s ease; }
+
+  .below { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px;
+           color: var(--ink-2); font-size: .95rem; }
+  .below label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+  .below input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .keys { color: var(--muted); font-size: .88rem; }
+  .keys kbd { font: 500 .8rem/1 var(--mono); padding: 2px 6px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); }
+
+  /* narrow game window: the panels leave the scene and stack below it */
+  @container (max-width: 760px) {
+    .stage { display: flex; flex-direction: column; background: var(--paper); }
+    .parch, .hud, .offer, .ovl { position: static; width: auto; font-size: 14px; }
+    .parch { margin: 14px 12px 12px; padding: 12px 14px; order: 3; }
+    .hud { border-radius: 0; padding: 10px 14px; order: 1; }
+    .offer { border-radius: 0; border-width: 3px 0 0; box-shadow: none; padding: 12px 14px; order: 2; }
+    .offer .o-btns { grid-template-columns: 1fr 1fr; }
+    .ovl { background: transparent; padding: 12px; order: 2; }
+    .ovl-card { font-size: 14px; padding: 16px; }
+    canvas { order: 0; }
+    .bar { grid-template-columns: 7.5em 1fr 2.8em; }
+  }
+
+  /* ---------- after the game ---------- */
+  section { margin-top: 56px; }
+  section > h2 { font-size: clamp(1.5rem, 3vw, 1.9rem); font-weight: 650; }
+  section > p { color: var(--ink-2); max-width: 820px; }
+  .recap-wrap { overflow-x: auto; margin-top: 16px; background: var(--surface); border: 1px solid var(--line);
+                border-radius: var(--radius); box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; min-width: 620px; }
+  th, td { padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font: 500 .78rem/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  td.n { font-variant-numeric: tabular-nums; text-align: right; }
+  th.n { text-align: right; }
+  td img { width: 26px; height: 26px; object-fit: contain; vertical-align: middle; margin-right: 8px; }
+  .tag { display: inline-block; padding: 3px 8px; border-radius: 999px; font: 500 .8rem/1.2 var(--mono); }
+  .tag.b { background: var(--lime-soft); color: var(--lime-ink); }
+  .tag.p { background: var(--accent-soft); color: var(--accent); }
+  tr.diff td { background: var(--bid-soft); }
+  .legend { color: var(--muted); font-size: .9rem; margin-top: 10px; }
+
+  .why { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+  .why .rule-card p { margin-top: 10px; }
+
+  footer { margin-block: 64px 40px; color: var(--muted); font-size: .9rem; text-align: center; }
+
+  @media (max-width: 900px) { .rules, .why { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { .fly { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="index.html">← DynamAuction</a>
+    <nav><a href="DynamAuction_paper.pdf">Paper</a><a href="https://github.com/eugeniepatard/dynamauction">Code</a></nav>
+  </div>
+
+  <header class="head">
+    <span class="pill">A game about planning</span>
+    <h1>The Knight's Merchant</h1>
+    <p>Buy the gear a knight ordered, one market stand at a time. Each purchase changes what the next stands are
+      worth to you: the bargain you take now can be the better one you miss later.</p>
+  </header>
+
+  <div class="rules">
+    <div class="rule-card">
+      <h2>The story</h2>
+      <p>You are a travelling merchant. A knight has ordered <strong>five pieces of gear</strong> and written on your
+        parchment what he will pay for each one.</p>
+      <p>Today you walk through the market, stand after stand, to buy them as cheaply as you can before you reach his castle.</p>
+    </div>
+    <div class="rule-card">
+      <h2>The rules</h2>
+      <ol>
+        <li>The market has <strong>20 stands</strong>, visited in order. You cannot go back.</li>
+        <li>Each stand sells <strong>one piece of your order</strong> at a posted price: <strong>buy</strong> it, or <strong>walk on</strong>.</li>
+        <li>You need each piece once. When you own it, <strong>no later stand offers it</strong>: they sell only what is still missing.</li>
+        <li>A piece's price is anywhere between <strong>30% and 120%</strong> of what the knight pays, all prices equally likely.
+          You don't know what the next stand sells, nor at what price.</li>
+        <li>The day ends when your order is complete or after the 20th stand.</li>
+      </ol>
+    </div>
+    <div class="rule-card">
+      <h2>Your score</h2>
+      <p class="formula">profit = Σ over the pieces you bought (knight's price − price paid)</p>
+      <p>A missing piece earns nothing. Buy the sword (the knight pays 55) for 42: +13. Pass, and if no cheaper sword
+        comes before the castle, the sword earns 0.</p>
+      <p class="catch">A price below the knight's value is a sure profit now, but a cheaper one may come, and fewer stands remain to find the rest.</p>
+    </div>
+  </div>
+
+  <div class="game" id="game">
+    <div class="stage" id="stage">
+      <canvas id="scene" width="960" height="540" aria-label="The market street: the merchant walks from stand to stand."></canvas>
+
+      <div class="parch" aria-live="polite">
+        <h3>The knight's order</h3>
+        <div class="sub">he pays, for each piece</div>
+        <ul class="order" id="order"></ul>
+      </div>
+
+      <div class="hud">
+        <div class="row"><span>Stand</span><b id="h-stand">0 / 20</b></div>
+        <div class="pips" id="pips" aria-hidden="true"></div>
+        <div class="row"><span>Profit so far</span><b class="gold" id="h-profit">0</b></div>
+      </div>
+
+      <div class="offer" id="offer" hidden>
+        <div class="offer-head">
+          <img id="o-icon" alt="">
+          <div><div class="o-name" id="o-name"></div><div class="o-sub" id="o-sub"></div></div>
+        </div>
+        <dl>
+          <div><dt>Price</dt><dd class="price" id="o-price"></dd></div>
+          <div><dt>Knight pays</dt><dd id="o-value"></dd></div>
+          <div><dt>Profit if you buy</dt><dd id="o-margin"></dd></div>
+        </dl>
+        <div class="o-advice" id="o-advice" hidden></div>
+        <div class="o-btns">
+          <button class="gbtn buy" id="b-buy">Buy <kbd>B</kbd></button>
+          <button class="gbtn" id="b-pass">Walk on <kbd>→</kbd></button>
+        </div>
+      </div>
+
+      <div class="ovl" id="intro">
+        <div class="ovl-card">
+          <p class="kicker">Morning, at the market gate</p>
+          <h3>Five pieces to find</h3>
+          <div class="intro-items" id="intro-items"></div>
+          <p>20 stands stand between you and the castle. Buy each piece for less than the knight pays, and as cheaply as you can.</p>
+          <button class="gbtn buy big" id="b-start">Enter the market ▸</button>
+          <p class="seed">Market #<span id="seed"></span></p>
+        </div>
+      </div>
+
+      <div class="ovl" id="end" hidden>
+        <div class="ovl-card wide">
+          <p class="kicker" id="e-kicker">At the knight's castle</p>
+          <h3 id="e-title"></h3>
+          <div class="bars" id="e-bars"></div>
+          <p class="e-note" id="e-note"></p>
+          <div class="e-btns">
+            <button class="gbtn buy" id="b-again">New market</button>
+            <button class="gbtn" id="b-replay">Replay this market</button>
+            <a href="#recap">Your day, stand by stand ↓</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="below">
+      <label><input type="checkbox" id="hint"> Show what the planner would do</label>
+      <span class="keys"><kbd>B</kbd> buy · <kbd>→</kbd> or <kbd>Space</kbd> walk on</span>
+    </div>
+  </div>
+
+  <section id="recap" hidden>
+    <h2>Your day, stand by stand</h2>
+    <p>For each stand you met, what you did, and what the planner would have done in your place: with the pieces you
+      still needed and the stands you had left. Rows where you and the planner disagree are highlighted.</p>
+    <div class="recap-wrap">
+      <table>
+        <thead><tr><th>Stand</th><th>Piece</th><th class="n">Price</th><th class="n">Knight pays</th><th>You</th><th>Planner in your place</th></tr></thead>
+        <tbody id="recap-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="why">
+    <h2>What does this have to do with DynamAuction?</h2>
+    <p>The game is a small version of the problem DynamAuction is built for: a buyer meets a stream of opportunities,
+      and every purchase changes what the next ones are worth.</p>
+    <div class="why">
+      <div class="rule-card">
+        <h2>Dynamic value</h2>
+        <p>Once you own a sword, the next sword is worth nothing to you, and the missing pieces show up more often. In
+          DynamAuction the same thing happens to an advertiser: each ad a user sees changes the user's state (here, the
+          pieces you own; there, the user's fatigue), and so the value of the next displays.</p>
+        <p>A posted price is a second-price auction seen from the buyer's side: the price is the highest rival bid, and
+          buying means bidding above it.</p>
+      </div>
+      <div class="rule-card">
+        <h2>Myopic or planner?</h2>
+        <p>The <strong>myopic merchant</strong> buys whenever the price is below what the knight pays: a sure profit now,
+          blind to what the next stands may bring. The <strong>planner</strong> compares each price with what it can
+          still expect from the stands left (computed exactly, by dynamic programming): picky at first, less and less as
+          the castle gets closer.</p>
+        <p>In the paper, the same gap separates the myopic bidders from our MPC planner. <a href="index.html#results">See the results</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>DynamAuction · <a href="index.html">back to the project page</a></footer>
+</div>
+
+<script src="assets/js/game.js" defer></script>
+</body>
+</html>
