@@ -14,25 +14,27 @@
         onload="renderMathInElement(document.body, {delimiters: [{left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}]})"></script>
 <style>
   :root {
-    --bg: #f6f7fb;
+    /* natural palette: warm paper, petrol ink, ochre, moss */
+    --bg: #f5f7f7;
     --surface: #ffffff;
-    --ink: #161a2e;
-    --ink-2: #454b66;
-    --muted: #6b7190;
-    --line: #dfe2ee;
-    --accent: #7b2cbf;        /* purple: brand, links, the competitor */
+    --ink: #1e2a2e;
+    --ink-2: #45545a;
+    --muted: #6e7b7f;
+    --line: #e1e6e6;
+    --accent: #22566b;        /* petrol: brand, links, MPC, the competitor */
     --accent-ink: #ffffff;
-    --accent-soft: #f1e7fa;
-    --bid: #f0ad4e;           /* amber: auctions and bids (fill) */
-    --bid-ink: #8a5200;       /* amber, readable as text */
-    --lime: #94c973;          /* green: conversions and clicks (fill) */
-    --lime-ink: #3f6b17;      /* green, readable as text */
-    --lime-soft: #edf6e3;
-    --myopic: #8b93b8;
-    --line-strong: #c3c8db;
-    --bid-soft: #fdf0dc;
-    --rival: #7b2cbf;
-    --shadow: 0 1px 2px rgba(22, 26, 46, .06), 0 8px 24px rgba(22, 26, 46, .06);
+    --accent-soft: #e2edf0;
+    --bid: #dc9a42;           /* ochre: auctions and bids (fill) */
+    --bid-ink: #87531a;       /* ochre, readable as text */
+    --bid-soft: #f8eedd;
+    --lime: #8fb26f;          /* moss: conversions and clicks (fill) */
+    --lime-ink: #41622a;      /* moss, readable as text */
+    --lime-soft: #edf2e4;
+    --myopic: #a3a9a6;
+    --line-strong: #cdd3d3;
+    --rival: #22566b;
+    --bg-pattern: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22480%22%20height=%22320%22%20viewBox=%220%200%20480%20320%22%3E%20%3Cg%20fill=%22none%22%20stroke=%22%2322566b%22%20stroke-opacity=%220.09%22%20stroke-width=%221.4%22%20stroke-linecap=%22round%22%3E%20%3Cpath%20d=%22M150%2070%20C%20185%2070,%20200%2040,%20250%2034%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M150%2070%20C%20190%2070,%20205%2070,%20255%2070%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M150%2070%20C%20185%2070,%20200%20102,%20250%20108%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M370%20240%20C%20400%20240,%20412%20214,%20455%20208%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M370%20240%20C%20402%20240,%20415%20262,%20458%20270%22%20stroke-dasharray=%223%205%22/%3E%20%3Ccircle%20cx=%22250%22%20cy=%2234%22%20r=%222.5%22/%3E%3Ccircle%20cx=%22255%22%20cy=%2270%22%20r=%222.5%22/%3E%3Ccircle%20cx=%22250%22%20cy=%22108%22%20r=%222.5%22/%3E%20%3Ccircle%20cx=%22455%22%20cy=%22208%22%20r=%222.5%22/%3E%3Ccircle%20cx=%22458%22%20cy=%22270%22%20r=%222.5%22/%3E%20%3Ccircle%20cx=%2240%22%20cy=%2270%22%20r=%224%22/%3E%3Ccircle%20cx=%22330%22%20cy=%2270%22%20r=%224%22/%3E%3Ccircle%20cx=%22420%22%20cy=%2270%22%20r=%224%22/%3E%20%3Ccircle%20cx=%2270%22%20cy=%22240%22%20r=%224%22/%3E%3Ccircle%20cx=%22215%22%20cy=%22240%22%20r=%224%22/%3E%3Ccircle%20cx=%22300%22%20cy=%22240%22%20r=%224%22/%3E%20%3Cg%20transform=%22translate(82%20150)%20rotate(-35)%22%3E%3Crect%20x=%22-13%22%20y=%22-6%22%20width=%2226%22%20height=%2212%22%20rx=%222%22/%3E%3Cpath%20d=%22M0%206%20V30%22/%3E%3C/g%3E%20%3Ccircle%20cx=%22395%22%20cy=%22150%22%20r=%2210%22/%3E%3Cpath%20d=%22M395%20144%20V156%20M391%20147%20H397%20a2%202%200%200%201%200%204%20H393%20a2%202%200%200%200%200%204%20H399%22/%3E%20%3C/g%3E%20%3Cg%20fill=%22%23dc9a42%22%20fill-opacity=%220.15%22%3E%20%3Ccircle%20cx=%22150%22%20cy=%2270%22%20r=%224.5%22/%3E%3Ccircle%20cx=%22105%22%20cy=%22240%22%20r=%224.5%22/%3E%3Ccircle%20cx=%22370%22%20cy=%22240%22%20r=%224.5%22/%3E%20%3C/g%3E%20%3C/svg%3E");
+    --shadow: 0 1px 2px rgba(20, 40, 48, .06), 0 8px 24px rgba(20, 40, 48, .06);
     --radius: 10px;
     --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -40,17 +42,19 @@
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0f1220; --surface: #171b2e; --ink: #eceefa; --ink-2: #b9bdd6; --muted: #8d92b2;
-      --line: #2a2f48; --accent: #b07ce6; --accent-ink: #160a24; --accent-soft: #2c1d40;
-      --bid: #f0b562; --bid-ink: #f0b562; --bid-soft: #3a2b14; --lime: #a4d278; --lime-ink: #a4d278; --lime-soft: #22301a; --myopic: #7d86ad; --line-strong: #4a5070; --rival: #b07ce6;
+      --bg: #161c1e; --surface: #1e2629; --ink: #ebede6; --ink-2: #bcc5c2; --muted: #8f9a98;
+      --line: #2f3a3d; --accent: #7fb3c4; --accent-ink: #10191c; --accent-soft: #213238;
+      --bid: #e0a85e; --bid-ink: #e7b878; --bid-soft: #352a1a; --lime: #a1c283; --lime-ink: #adcb92; --lime-soft: #243024;
+      --myopic: #7f8987; --line-strong: #47524f; --rival: #7fb3c4; --bg-pattern: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22480%22%20height=%22320%22%20viewBox=%220%200%20480%20320%22%3E%20%3Cg%20fill=%22none%22%20stroke=%22%23cfe3ea%22%20stroke-opacity=%220.07%22%20stroke-width=%221.4%22%20stroke-linecap=%22round%22%3E%20%3Cpath%20d=%22M150%2070%20C%20185%2070,%20200%2040,%20250%2034%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M150%2070%20C%20190%2070,%20205%2070,%20255%2070%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M150%2070%20C%20185%2070,%20200%20102,%20250%20108%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M370%20240%20C%20400%20240,%20412%20214,%20455%20208%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M370%20240%20C%20402%20240,%20415%20262,%20458%20270%22%20stroke-dasharray=%223%205%22/%3E%20%3Ccircle%20cx=%22250%22%20cy=%2234%22%20r=%222.5%22/%3E%3Ccircle%20cx=%22255%22%20cy=%2270%22%20r=%222.5%22/%3E%3Ccircle%20cx=%22250%22%20cy=%22108%22%20r=%222.5%22/%3E%20%3Ccircle%20cx=%22455%22%20cy=%22208%22%20r=%222.5%22/%3E%3Ccircle%20cx=%22458%22%20cy=%22270%22%20r=%222.5%22/%3E%20%3Ccircle%20cx=%2240%22%20cy=%2270%22%20r=%224%22/%3E%3Ccircle%20cx=%22330%22%20cy=%2270%22%20r=%224%22/%3E%3Ccircle%20cx=%22420%22%20cy=%2270%22%20r=%224%22/%3E%20%3Ccircle%20cx=%2270%22%20cy=%22240%22%20r=%224%22/%3E%3Ccircle%20cx=%22215%22%20cy=%22240%22%20r=%224%22/%3E%3Ccircle%20cx=%22300%22%20cy=%22240%22%20r=%224%22/%3E%20%3Cg%20transform=%22translate(82%20150)%20rotate(-35)%22%3E%3Crect%20x=%22-13%22%20y=%22-6%22%20width=%2226%22%20height=%2212%22%20rx=%222%22/%3E%3Cpath%20d=%22M0%206%20V30%22/%3E%3C/g%3E%20%3Ccircle%20cx=%22395%22%20cy=%22150%22%20r=%2210%22/%3E%3Cpath%20d=%22M395%20144%20V156%20M391%20147%20H397%20a2%202%200%200%201%200%204%20H393%20a2%202%200%200%200%200%204%20H399%22/%3E%20%3C/g%3E%20%3Cg%20fill=%22%23e0a85e%22%20fill-opacity=%220.11%22%3E%20%3Ccircle%20cx=%22150%22%20cy=%2270%22%20r=%224.5%22/%3E%3Ccircle%20cx=%22105%22%20cy=%22240%22%20r=%224.5%22/%3E%3Ccircle%20cx=%22370%22%20cy=%22240%22%20r=%224.5%22/%3E%20%3C/g%3E%20%3C/svg%3E");
       --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0f1220; --surface: #171b2e; --ink: #eceefa; --ink-2: #b9bdd6; --muted: #8d92b2;
-    --line: #2a2f48; --accent: #b07ce6; --accent-ink: #160a24; --accent-soft: #2c1d40;
-    --bid: #f0b562; --bid-ink: #f0b562; --bid-soft: #3a2b14; --lime: #a4d278; --lime-ink: #a4d278; --lime-soft: #22301a; --myopic: #7d86ad; --line-strong: #4a5070; --rival: #b07ce6;
+    --bg: #161c1e; --surface: #1e2629; --ink: #ebede6; --ink-2: #bcc5c2; --muted: #8f9a98;
+    --line: #2f3a3d; --accent: #7fb3c4; --accent-ink: #10191c; --accent-soft: #213238;
+    --bid: #e0a85e; --bid-ink: #e7b878; --bid-soft: #352a1a; --lime: #a1c283; --lime-ink: #adcb92; --lime-soft: #243024;
+    --myopic: #7f8987; --line-strong: #47524f; --rival: #7fb3c4; --bg-pattern: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22480%22%20height=%22320%22%20viewBox=%220%200%20480%20320%22%3E%20%3Cg%20fill=%22none%22%20stroke=%22%23cfe3ea%22%20stroke-opacity=%220.07%22%20stroke-width=%221.4%22%20stroke-linecap=%22round%22%3E%20%3Cpath%20d=%22M150%2070%20C%20185%2070,%20200%2040,%20250%2034%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M150%2070%20C%20190%2070,%20205%2070,%20255%2070%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M150%2070%20C%20185%2070,%20200%20102,%20250%20108%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M370%20240%20C%20400%20240,%20412%20214,%20455%20208%22%20stroke-dasharray=%223%205%22/%3E%20%3Cpath%20d=%22M370%20240%20C%20402%20240,%20415%20262,%20458%20270%22%20stroke-dasharray=%223%205%22/%3E%20%3Ccircle%20cx=%22250%22%20cy=%2234%22%20r=%222.5%22/%3E%3Ccircle%20cx=%22255%22%20cy=%2270%22%20r=%222.5%22/%3E%3Ccircle%20cx=%22250%22%20cy=%22108%22%20r=%222.5%22/%3E%20%3Ccircle%20cx=%22455%22%20cy=%22208%22%20r=%222.5%22/%3E%3Ccircle%20cx=%22458%22%20cy=%22270%22%20r=%222.5%22/%3E%20%3Ccircle%20cx=%2240%22%20cy=%2270%22%20r=%224%22/%3E%3Ccircle%20cx=%22330%22%20cy=%2270%22%20r=%224%22/%3E%3Ccircle%20cx=%22420%22%20cy=%2270%22%20r=%224%22/%3E%20%3Ccircle%20cx=%2270%22%20cy=%22240%22%20r=%224%22/%3E%3Ccircle%20cx=%22215%22%20cy=%22240%22%20r=%224%22/%3E%3Ccircle%20cx=%22300%22%20cy=%22240%22%20r=%224%22/%3E%20%3Cg%20transform=%22translate(82%20150)%20rotate(-35)%22%3E%3Crect%20x=%22-13%22%20y=%22-6%22%20width=%2226%22%20height=%2212%22%20rx=%222%22/%3E%3Cpath%20d=%22M0%206%20V30%22/%3E%3C/g%3E%20%3Ccircle%20cx=%22395%22%20cy=%22150%22%20r=%2210%22/%3E%3Cpath%20d=%22M395%20144%20V156%20M391%20147%20H397%20a2%202%200%200%201%200%204%20H393%20a2%202%200%200%200%200%204%20H399%22/%3E%20%3C/g%3E%20%3Cg%20fill=%22%23e0a85e%22%20fill-opacity=%220.11%22%3E%20%3Ccircle%20cx=%22150%22%20cy=%2270%22%20r=%224.5%22/%3E%3Ccircle%20cx=%22105%22%20cy=%22240%22%20r=%224.5%22/%3E%3Ccircle%20cx=%22370%22%20cy=%22240%22%20r=%224.5%22/%3E%20%3C/g%3E%20%3C/svg%3E");
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
     color-scheme: dark;
   }
@@ -58,7 +62,11 @@
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body {
-    margin: 0; background: var(--bg); color: var(--ink);
+    margin: 0; color: var(--ink);
+    background-color: var(--bg);
+    background-image: var(--bg-pattern);
+    background-size: 480px 320px;
+    background-repeat: repeat;
     font: 400 17px/1.65 var(--sans);
     padding-inline: 16px;
   }
@@ -435,6 +443,31 @@
   .th-head { display: flex; align-items: center; gap: 10px; }
   .theory3 .th-head h3 { margin: 0; }
   p.center { text-align: center !important; }
+
+  /* ---------- the live demo stands out: its own colored block ---------- */
+  .demo { background: var(--accent); border: 0; padding: 30px 28px 24px; color: var(--accent-ink); box-shadow: 0 12px 36px rgba(20, 40, 48, .18); }
+  .demo-head { text-align: center; }
+  .demo-head h3 { margin-top: 12px; font-size: 1.6rem; font-weight: 700; color: var(--accent-ink); }
+  .demo-head p { margin: 8px auto 0; max-width: 46rem; text-align: center !important; color: color-mix(in srgb, var(--accent-ink) 82%, transparent); font-size: 1rem; }
+  .demo-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--lime); color: #1d3311;
+    font: 600 .75rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  .demo-badge i { width: 8px; height: 8px; border-radius: 50%; background: #1d3311; animation: demo-pulse 1.6s ease-in-out infinite; }
+  @keyframes demo-pulse { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .demo-badge i { animation: none; } }
+  .demo fieldset { background: var(--surface); border: 0; padding-top: 16px; }
+  .demo legend { background: var(--surface); border-radius: 6px; padding: 3px 8px; }
+  .demo-stage { border: 0; box-shadow: 0 2px 10px rgba(0, 0, 0, .12); }
+  .demo .demo-note { color: color-mix(in srgb, var(--accent-ink) 78%, transparent); }
+
+  /* ---------- results: two labeled panels ---------- */
+  .rpanel { margin-top: 26px; padding: 24px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 55%, transparent); border: 1px solid var(--line); }
+  .rpanel-head { display: flex; gap: 14px; align-items: flex-start; }
+  .rpanel-num { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font: 600 .95rem/1 var(--mono); }
+  .rpanel-head h3 { font-size: 1.3rem; font-weight: 700; }
+  .rpanel-head p { margin: 4px 0 0; color: var(--ink-2); font-size: .95rem; }
+  .rpanel .settings, .rpanel .chart-card { margin-top: 18px; }
+  .rpanel .stats { margin-top: 16px; }
+  @media (max-width: 760px) { .rpanel { padding: 16px; } }
 </style>
 </head>
 <body>
@@ -632,8 +665,10 @@
     <!-- ---------- a short campaign, animated ---------- -->
     <div class="demo" id="demo">
       <div class="demo-head">
-        <h3>Watch a campaign</h3>
-        <p>Pick the primitives and a policy, then start: the auctions slide towards the bidder along the time line.</p>
+        <span class="demo-badge"><i></i>Live demo</span>
+        <h3>Watch a campaign, live</h3>
+        <p>A demonstration of the DynamAuction simulator, running in your browser. Pick the primitives and a policy, press
+          Start, and follow the auctions as they slide towards the bidder.</p>
       </div>
       <div class="demo-controls">
         <fieldset>
@@ -716,6 +751,9 @@
     <h2>Planning pays: MPC beats tuned shading and deep RL</h2>
     <p class="lead prose">Every policy plays the same 1&thinsp;000 test campaigns of the main scenario, whose settings are below.</p>
 
+    <div class="rpanel">
+      <div class="rpanel-head"><span class="rpanel-num">1</span><div><h3>The scenario</h3>
+        <p>The main scenario of the benchmark: how displays are valued, how fatigue builds up, and how campaigns are drawn and evaluated.</p></div></div>
     <div class="settings" aria-label="Main scenario settings">
       <div class="set set-wide">
         <span class="set-k">Value of a display · survival kernel</span>
@@ -741,6 +779,11 @@
       <div class="set"><span class="set-k">Evaluation</span><span class="set-v">1&thinsp;000 test campaigns</span><span class="set-d">same campaigns for all, paired differences</span></div>
     </div>
 
+    </div>
+
+    <div class="rpanel">
+      <div class="rpanel-head"><span class="rpanel-num">2</span><div><h3>The results</h3>
+        <p>The reward of every policy on the 1&thinsp;000 test campaigns of this scenario, then what to take away from it.</p></div></div>
     <div class="chart-card">
       <div class="chart-head">
         <h3>Mean episode reward</h3>
@@ -759,6 +802,8 @@
         (+0.65 ± 0.13, paired over the same campaigns)</span></div>
       <div class="stat"><span class="big">+46%</span><span>over the best deep RL agent, PPO
         (4.33 against 2.97); SAC and TD3 do worse than the myopic bidder</span></div>
+    </div>
+
     </div>
 
     <dialog id="algo-dialog" class="dlg" aria-labelledby="dlg-title">
