@@ -139,7 +139,8 @@
     $("intro").hidden = false;
     $("end").hidden = true;
     $("offer").hidden = true;
-    renderOrder(); renderHud();
+    renderOrder(); renderHud(); renderHistory();
+    $("recap").hidden = true;
   }
 
   function later(t, fn) { g.timers.push({ t, fn }); }
@@ -175,6 +176,7 @@
     const o = g.offer, it = g.mk.items[o.i];
     const thr = plannerMax(g.mk, g.S, g.k, o.i);
     g.log.push({ k: g.k, i: o.i, price: o.price, bought: buy, thr, left: N - g.k - 1 });
+    renderHistory();
     $("offer").hidden = true;
     if (buy) {
       g.phase = "buy";
@@ -298,6 +300,21 @@
     else txt = `The planner pays up to ${thr} here: it would ${o.price <= thr ? "buy" : "walk on"}.`;
     box.textContent = txt;
     box.hidden = false;
+  }
+
+  // live strip under the game: every stand seen so far, newest on the right
+  function renderHistory() {
+    const list = $("hist");
+    if (!g.log.length) {
+      list.innerHTML = `<li class="hist-empty">none yet: your stands will appear here as you walk</li>`;
+      return;
+    }
+    list.innerHTML = g.log.map((l, j) => {
+      const it = g.mk.items[l.i];
+      const what = l.bought ? `✓ ${l.price}` : `${l.price} · passed`;
+      return `<li class="${l.bought ? "b" : ""}${j === g.log.length - 1 ? " new" : ""}" title="Stand ${l.k + 1}: ${it.name} at ${l.price}, ${l.bought ? "bought" : "walked on"}">` +
+        `<img src="${ASSET}icon-${it.key}.png" alt=""><span class="hn">#${l.k + 1} ${it.name}</span><span class="hp">${what}</span></li>`;
+    }).join("");
   }
 
   function renderRecap() {

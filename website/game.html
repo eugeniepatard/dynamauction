@@ -220,6 +220,24 @@
 
   @media (max-width: 900px) { .rules, .why { grid-template-columns: 1fr; } }
   @media (prefers-reduced-motion: reduce) { .fly { transition: none; } }
+
+  /* live history of the stands seen */
+  .hist { margin-top: 12px; display: flex; align-items: flex-start; gap: 12px; background: var(--surface); border: 1px solid var(--line);
+          border-radius: var(--radius); padding: 10px 12px; box-shadow: var(--shadow); }
+  .hist-title { flex: none; font: 600 .75rem/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); width: 5.5em; }
+  .hist-list { list-style: none; margin: 0; padding: 2px 0; display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+  .hist-list li { flex: none; display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; column-gap: 6px; align-items: center;
+                  padding: 3px 8px 3px 4px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); font-size: .82rem; }
+  .hist-list li img { grid-row: 1 / 3; width: 26px; height: 26px; object-fit: contain; }
+  .hist-list li .hn { font: 500 .7rem/1.2 var(--mono); color: var(--muted); }
+  .hist-list li .hp { font: 600 .85rem/1.2 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); white-space: nowrap; }
+  .hist-list li.b { border-color: var(--lime); background: var(--lime-soft); }
+  .hist-list li.b .hp { color: var(--lime-ink); }
+  .hist-list li.new { animation: hist-in .45s ease-out; }
+  .hist-list li.hist-empty { display: block; border: 0; background: none; color: var(--muted); font-size: .88rem; padding-left: 0; }
+  @keyframes hist-in { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .hist-list li.new { animation: none; } }
+  @media (max-width: 600px) { .hist { flex-direction: column; align-items: stretch; } .hist-title { width: auto; } }
 </style>
 </head>
 <body>
@@ -319,6 +337,11 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="hist" aria-live="polite">
+      <span class="hist-title">Stands seen</span>
+      <ol class="hist-list" id="hist"><li class="hist-empty">none yet: your stands will appear here as you walk</li></ol>
     </div>
 
     <div class="below">

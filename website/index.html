@@ -473,7 +473,7 @@
   .chart-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
   .chart-wrap { position: relative; margin-top: 10px; overflow-x: auto; }
   .chart svg { display: block; width: 100%; min-width: 560px; height: auto; }
-  .chart .grid { stroke: var(--line); stroke-width: 1; }
+  .chart .grid { stroke: var(--line-strong); stroke-width: 1; }
   .chart .tick { fill: var(--muted); font: 500 11px var(--mono); }
   .chart .lab { fill: var(--ink-2); font: 500 13px var(--sans); }
   .chart .val { fill: var(--ink); font: 600 12px var(--mono); }
@@ -583,6 +583,30 @@
                 font: 600 .8rem/1 var(--sans); }
   .dstage-wrap .demo-stage { background: var(--surface); padding-top: 18px; border: 0; }
   @media (max-width: 1000px) { .dflow { grid-template-columns: 1fr; } .dflow .darrow { grid-column: 1; justify-self: center; margin-left: 0; } }
+
+  /* ---------- results charts: grouped vertical bars, and MPC by horizon ---------- */
+  .chart svg { min-width: 620px; }
+  .chart .grp { fill: var(--bg); stroke: var(--line); }
+  .chart .grp-mpc { fill: var(--accent-soft); stroke: color-mix(in srgb, var(--accent) 35%, transparent); }
+  .chart .grp-name { font: 600 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; fill: var(--muted); }
+  .chart .grp-name-mpc { fill: var(--accent); }
+  .chart .grp-name-rl { fill: var(--lime-ink); }
+  .chart .lab { fill: var(--ink); font: 600 12px var(--sans); }
+  .chart .grp-sub { font: 500 11px var(--mono); fill: var(--accent); opacity: .8; }
+  .chart .lab2 { fill: var(--muted); font: 500 10.5px var(--mono); }
+  .chart .axis0 { stroke: var(--ink-2); stroke-width: 1.2; }
+  .chart .bar:hover .hit, .chart .bar:focus-visible .hit { fill: color-mix(in srgb, var(--lime) 18%, transparent); }
+  .chart-h svg { min-width: 380px; }
+  .chart .ref { stroke: var(--bid); stroke-width: 1.5; stroke-dasharray: 5 4; }
+  .chart .ref-lab { fill: var(--bid-ink); font: 500 11px var(--mono); }
+  .chart .h-arrow { stroke: var(--lime-ink); stroke-width: 3; fill: none; stroke-linecap: round; }
+  .chart .h-head { fill: var(--lime-ink); }
+  .chart .h-text { fill: var(--lime-ink); font: 600 12.5px var(--sans); }
+  .h-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+  .h-msg { border-left: 4px solid var(--lime); padding-left: 22px; }
+  .h-big { display: block; font-size: clamp(1.6rem, 3.2vw, 2.3rem); line-height: 1.15; font-weight: 700; color: var(--accent); letter-spacing: -.01em; }
+  .h-msg p { margin: 16px 0 0; color: var(--ink-2); font-size: .95rem; }
+  @media (max-width: 860px) { .h-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -853,20 +877,28 @@
     <p class="prose scen-sum"><strong>The scenario.</strong> Each win tires the user for good, and more so when wins are
       close together, while the campaign length is hidden: the bidder has to win the right auctions at the right time.</p>
 
-    <div class="rpanel">
-      <div class="rpanel-head"><div><h3>The results</h3>
-        <p>The reward of every policy on the 1&thinsp;000 test campaigns of this scenario, then what to take away from it.</p></div></div>
     <div class="chart-card">
       <div class="chart-head">
         <h3>Mean episode reward</h3>
         <p>95% confidence intervals · deep RL: mean of three trainings · <b>click a bar</b> to see how the policy works</p>
       </div>
-      <ul class="chart-legend">
-        <li><i style="background:var(--accent)"></i>MPC (ours)</li><li><i style="background:var(--bid)"></i>Tuned shading</li>
-        <li><i style="background:var(--lime)"></i>Deep RL</li><li><i style="background:var(--myopic)"></i>Myopic</li>
-        <li><i style="background:var(--line-strong)"></i>Constant</li>
-      </ul>
-      <div class="chart-wrap"><div id="chart" class="chart"></div><div id="chart-tip" class="chart-tip" hidden></div></div>
+      <div class="chart-wrap"><div id="chart" class="chart"></div><div class="chart-tip" hidden></div></div>
+    </div>
+
+    <div class="chart-card h-card">
+      <div class="h-grid">
+        <div>
+          <div class="chart-head">
+            <h3>Planning further ahead pays</h3>
+            <p>MPC with M = 60 rollouts and α_cont = 1, for three planning horizons H · dashed line: tuned Shading, which does not plan (3.68)</p>
+          </div>
+          <div class="chart-wrap"><div id="chart-h" class="chart chart-h"></div><div class="chart-tip" hidden></div></div>
+        </div>
+        <div class="h-msg">
+          <span class="h-big">A bigger H<br>means looking<br>further ahead</span>
+          <p>H is how far into the future MPC simulates before choosing its bid.</p>
+        </div>
+      </div>
     </div>
 
     <div class="stats">
@@ -876,7 +908,6 @@
         (4.33 against 2.97); SAC and TD3 do worse than the myopic bidder</span></div>
     </div>
 
-    </div>
 
     <dialog id="algo-dialog" class="dlg" aria-labelledby="dlg-title">
       <button type="button" class="dlg-close" aria-label="Close">×</button>
