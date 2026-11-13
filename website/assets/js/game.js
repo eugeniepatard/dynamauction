@@ -148,7 +148,7 @@
     const from = g.mx;
     g.walk = { from, to, t: 0, dur: Math.max(0.9, Math.abs(to - from) / 470), cb };
     g.phase = "walk";
-    g.bubble = null;
+    if (!g.early) g.bubble = null;
   }
 
   function goNext() {
@@ -202,6 +202,11 @@
 
   function goCastle() {
     g.offer = null;
+    if (g.S === 0 && g.k < N - 1) {
+      g.early = N - 1 - g.k;   // stands left unvisited: nothing to buy there any more
+      g.bubble = { text: "Order complete! Off to the castle.", follow: true };
+      renderHud();
+    }
     g.castleX = g.mx + 980;
     startWalk(g.castleX - 150, finish);
   }
@@ -215,8 +220,9 @@
     const full = (1 << mk.items.length) - 1;
     const planner = simulate(mk, "planner"), myopic = simulate(mk, "myopic");
     const nMissing = mk.items.filter((_, i) => g.status[i] === "missing").length;
-    $("e-title").textContent = nMissing === 0 ? `Order complete: ${fmtSigned(g.profit)} coins`
-      : `${nMissing} piece${nMissing > 1 ? "s" : ""} missing: ${fmtSigned(g.profit)} coins`;
+    $("e-kicker").textContent = g.early ? `Order complete at stand ${N - g.early} of ${N}` : "At the knight's castle";
+    $("e-title").textContent = nMissing === 0 ? "Order complete!"
+      : `${nMissing} piece${nMissing > 1 ? "s" : ""} missing`;
     const rows = [
       { who: "You", sub: "", v: g.profit, color: "var(--bid)" },
       { who: "Myopic merchant", sub: "buys whenever price < knight's price", v: myopic, color: "var(--myopic)" },
@@ -230,7 +236,8 @@
     const gap = planner - g.profit;
     const verdict = gap <= 0 ? "You matched the planner on this market. Well planned!"
       : `The planner made ${gap} more coin${gap > 1 ? "s" : ""} on this market.`;
-    $("e-note").textContent = `${verdict} Same market for all three (same draws). Averaged over all markets with this ` +
+    const earlyTxt = g.early ? `You had all five pieces, so you skipped the last ${g.early} stand${g.early > 1 ? "s" : ""}: nothing there was worth anything to you. ` : "";
+    $("e-note").textContent = `${earlyTxt}${verdict} Same market for all three (same draws). Averaged over all markets with this ` +
       `order, the planner makes ${mk.V[N][full].toFixed(0)} coins and the myopic merchant ${mk.M[N][full].toFixed(0)}.`;
     $("end").hidden = false;
     renderRecap();
@@ -260,7 +267,7 @@
     let pips = "";
     for (let k = 0; k < N; k++) {
       const l = g.log.find((x) => x.k === k);
-      const cls = l ? (l.bought ? "buy" : "past") : (k === g.k && g.phase === "offer" ? "now" : "");
+      const cls = l ? (l.bought ? "buy" : "past") : (k === g.k && g.phase === "offer" ? "now" : g.early ? "skip" : "");
       pips += `<i class="${cls}"></i>`;
     }
     $("pips").innerHTML = pips;
@@ -438,8 +445,8 @@
 
   function drawBubble(cam) {
     if (!g.bubble) return;
-    const x = g.bubble.x - cam + 30, y = 92;
-    ctx.font = "700 21px 'Pixelify Sans', monospace";
+    const x = g.bubble.follow ? g.mx - cam + 70 : g.bubble.x - cam + 30, y = g.bubble.follow ? 200 : 92;
+    ctx.font = "700 20px 'IBM Plex Sans', system-ui, sans-serif";
     const tw = ctx.measureText(g.bubble.text).width, bw = tw + 32, bh = 40;
     const bx = Math.max(8, Math.min(W - bw - 8, x - bw / 2));
     rect("#2f1f14", bx - 3, y - 3, bw + 6, bh + 6);
@@ -484,7 +491,7 @@
     drawBubble(cam);
     for (const t of g.texts) {
       ctx.globalAlpha = Math.max(0, 1 - t.t / 1.3);
-      ctx.font = "700 30px 'Pixelify Sans', monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "700 28px 'IBM Plex Mono', ui-monospace, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.lineWidth = 5; ctx.strokeStyle = "#fffaf0"; ctx.strokeText(t.text, t.x - cam, t.y - t.t * 40);
       ctx.fillStyle = t.color; ctx.fillText(t.text, t.x - cam, t.y - t.t * 40);
       ctx.globalAlpha = 1;

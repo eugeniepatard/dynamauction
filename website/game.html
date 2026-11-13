@@ -26,6 +26,7 @@
     --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --pixel: "Pixelify Sans", "IBM Plex Mono", ui-monospace, monospace;
+    --num: 600 1em/1.1 "IBM Plex Mono", ui-monospace, monospace;   /* numbers: the pixel font's digits are ambiguous */
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
@@ -101,7 +102,7 @@
   .order img { width: 2.3em; height: 2.3em; object-fit: contain; }
   .order .nm { font-weight: 600; }
   .order .val { display: block; font-size: .85em; color: var(--paper-muted); font-weight: 400; }
-  .order .st { font: 600 .9em/1.2 var(--pixel); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .order .st { font: 600 .9em/1.2 "IBM Plex Mono", ui-monospace, monospace; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .order li.offered { background: #fff4d4; border-color: var(--gold-dark); }
   .order li.bought .nm { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--buy-dark); }
   .order li.bought .st { color: var(--buy-dark); }
@@ -111,13 +112,14 @@
   .hud { position: absolute; right: 1.6%; top: 2.8%; width: 24%; background: rgba(47, 31, 20, .82); color: var(--wood-ink);
          border-radius: 6px; padding: .9cqw 1.1cqw; font-size: clamp(11px, 1.35cqw, 14px); }
   .hud .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .hud b { font: 700 1.35em/1 var(--pixel); font-variant-numeric: tabular-nums; }
+  .hud b { font: 600 1.3em/1 "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
   .hud .gold { color: var(--gold); }
   .pips { display: grid; grid-template-columns: repeat(20, 1fr); gap: 2px; margin: .55em 0 .6em; }
   .pips i { height: .55em; border-radius: 1px; background: rgba(247, 234, 208, .22); }
   .pips i.past { background: rgba(247, 234, 208, .6); }
   .pips i.buy { background: var(--gold); }
   .pips i.now { background: #fff; outline: 1px solid var(--gold); }
+  .pips i.skip { background: transparent; outline: 1px dashed rgba(247, 234, 208, .35); outline-offset: -1px; }
 
   .offer { position: absolute; right: 1.6%; top: 27%; width: 24%; background: var(--wood); color: var(--wood-ink);
            border: 3px solid var(--wood-dark); border-radius: 6px; padding: 1.1cqw 1.2cqw 1.2cqw;
@@ -129,11 +131,11 @@
   .offer dl { margin: .8em 0 0; display: grid; gap: .25em; }
   .offer dl div { display: flex; justify-content: space-between; align-items: baseline; }
   .offer dt { opacity: .85; }
-  .offer dd { margin: 0; font: 700 1.25em/1.1 var(--pixel); font-variant-numeric: tabular-nums; }
+  .offer dd { margin: 0; font: 600 1.2em/1.1 "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
   .offer dd.price { color: var(--gold); font-size: 1.6em; }
   .o-advice { margin-top: .7em; padding: .45em .6em; border-radius: 4px; background: rgba(247, 234, 208, .14); font-size: .9em; }
   .o-btns { margin-top: .8em; display: grid; gap: .45em; }
-  .gbtn { font: 700 1.05em/1 var(--pixel); letter-spacing: .02em; padding: .62em .8em; border-radius: 4px; cursor: pointer;
+  .gbtn { font: 700 1.02em/1 var(--sans); letter-spacing: 0; padding: .62em .8em; border-radius: 4px; cursor: pointer;
           border: 3px solid var(--wood-dark); box-shadow: 0 3px 0 var(--wood-dark); display: inline-flex; justify-content: center;
           align-items: center; gap: .6em; transition: transform .08s ease, box-shadow .08s ease; color: var(--paper-ink); background: var(--paper); }
   .gbtn:hover { transform: translateY(-1px); box-shadow: 0 4px 0 var(--wood-dark); }
@@ -153,7 +155,7 @@
   .intro-items { display: flex; justify-content: center; gap: .8em; flex-wrap: wrap; margin-top: .9em; }
   .intro-items div { display: grid; justify-items: center; gap: 2px; font-size: .85em; }
   .intro-items img { width: 3em; height: 3em; object-fit: contain; }
-  .intro-items b { font-family: var(--pixel); }
+  .intro-items b { font-family: "IBM Plex Mono", ui-monospace, monospace; }
   .ovl-card .gbtn { margin-top: 1em; }
   .ovl-card .gbtn.big { font-size: 1.25em; padding: .7em 1.2em; }
   .seed { font: 400 .8em/1 var(--mono); color: var(--paper-muted); margin-top: .9em !important; }
@@ -164,7 +166,7 @@
   .bar .who small { display: block; font-weight: 400; font-size: .78em; color: var(--paper-muted); }
   .bar .track { height: 1.1em; background: rgba(59, 42, 26, .1); border-radius: 3px; overflow: hidden; }
   .bar .fill { height: 100%; border-radius: 3px; }
-  .bar .num { font: 700 1.2em/1 var(--pixel); text-align: right; font-variant-numeric: tabular-nums; }
+  .bar .num { font: 600 1.15em/1 "IBM Plex Mono", ui-monospace, monospace; text-align: right; font-variant-numeric: tabular-nums; }
   .e-note { font-size: .92em; }
   .e-btns { display: flex; justify-content: center; gap: .7em; flex-wrap: wrap; }
   .e-btns a { align-self: center; margin-top: 1em; color: var(--paper-ink); font-size: .92em; }
@@ -230,8 +232,7 @@
   <header class="head">
     <span class="pill">A game about planning</span>
     <h1>The Knight's Merchant</h1>
-    <p>Buy the gear a knight ordered, one market stand at a time. Each purchase changes what the next stands are
-      worth to you: the bargain you take now can be the better one you miss later.</p>
+    <p>A small game that illustrates DynamAuction: every purchase changes what the next offers are worth, so you have to plan.</p>
   </header>
 
   <div class="rules">
