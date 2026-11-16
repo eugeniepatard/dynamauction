@@ -1,12 +1,15 @@
 /* The Knight's Merchant: a small planning game for the DynamAuction website.
  *
  * Model. The knight orders K = 5 of the 8 pieces below and pays `value` for each. The market has N = 20 stands,
- * visited in order. Stand k sells one piece still missing, chosen uniformly, at an integer price uniform in
- * [round(0.3 v), round(1.2 v)]. Buying removes the piece from all later stands. Profit = sum over bought pieces of
+ * visited in order. Stand k sells one piece still missing, chosen uniformly, at an integer price uniform in the
+ * piece's range [lo, hi]. Buying removes the piece from all later stands. Profit = sum over bought pieces of
  * (value - price); a missing piece earns 0.
- * A market is a seed: the order and two uniforms per stand (which piece, which price quantile). The player, the
- * myopic merchant and the planner all play the same uniforms (common random numbers), so they meet the same market,
- * although not always the same pieces once their purchases differ.
+ * A market is a seed: the order and, for each ordered piece, its price range. Ranges differ from piece to piece and
+ * from market to market, so playing many markets does not teach one fixed distribution; they are written on the
+ * parchment, so the player knows what the planner knows. A day is a second seed: two uniforms per stand (which
+ * piece, which price quantile). "Replay" keeps the market and draws a new day. The player, the myopic merchant and
+ * the planner all play the same day (common random numbers), so they meet the same stands, although not always the
+ * same pieces once their purchases differ.
  * Planner: the exact optimal policy, by dynamic programming over (pieces still missing S, stands left n):
  *   V(S, n) = mean_{i in S} E_p[ max(v_i - p + V(S \ i, n - 1), V(S, n - 1)) ],
  * so at a stand it buys iff p <= v_i + V(S \ i, n - 1) - V(S, n - 1).
@@ -25,7 +28,10 @@
     { key: "boots",  name: "Boots",  value: 20 },
     { key: "ring",   name: "Ring",   value: 60 },
   ];
-  const N = 20, K = 5, LO = 0.3, HI = 1.2;
+  const N = 20, K = 5;
+  // price range of a piece, in fractions of its value: centre in [C0, C1], half-width in [H0, H1]
+  // (the former fixed range [0.3 v, 1.2 v] is centre 0.75, half-width 0.45)
+  const C0 = 0.45, C1 = 0.95, H0 = 0.15, H1 = 0.5;
 
   function mulberry32(a) {
     return function () {
@@ -36,15 +42,20 @@
     };
   }
 
-  function makeMarket(seed) {
+  // market `seed` fixes the order and the price ranges; `day` fixes the stands (defaults to the market seed)
+  function makeMarket(seed, day = seed) {
     const r = mulberry32(seed);
     const keys = ITEMS.map((x) => x.key);
     for (let i = keys.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [keys[i], keys[j]] = [keys[j], keys[i]]; }
     const chosen = new Set(keys.slice(0, K));
-    const items = ITEMS.filter((x) => chosen.has(x.key))
-      .map((x) => ({ ...x, lo: Math.round(LO * x.value), hi: Math.round(HI * x.value) }));
-    const U = Array.from({ length: N }, () => [r(), r()]);
-    return { seed, items, U, ...solve(items) };
+    const items = ITEMS.filter((x) => chosen.has(x.key)).map((x) => {
+      const c = C0 + (C1 - C0) * r(), h = H0 + (H1 - H0) * r();
+      const lo = Math.max(1, Math.round((c - h) * x.value));
+      return { ...x, lo, hi: Math.max(lo + 2, Math.round((c + h) * x.value)) };
+    }).sort((a, b) => b.value - a.value);         // most valuable first, as on the parchment
+    const d = mulberry32(day ^ 0x5bd1e995);
+    const U = Array.from({ length: N }, () => [d(), d()]);
+    return { seed, day, items, U, ...solve(items) };
   }
 
   // V[n][S]: optimal expected profit; M[n][S]: expected profit of the myopic merchant
@@ -125,17 +136,20 @@
   let g = null;
   let hint = false;
 
-  function newGame(seed) {
-    const mk = makeMarket(seed);
+  function newGame(seed, visit = 1) {
+    const mk = makeMarket(seed, visit === 1 ? seed : newSeed());
     g = {
+      visit,
       mk, S: (1 << mk.items.length) - 1, k: -1, profit: 0, log: [], phase: "intro",
       mx: START_X, step: 0, walk: null, offer: null, next: null, stands: [], castleX: null,
       coins: [], texts: [], timers: [], bubble: null, hop: -1, time: 0, status: {},
     };
     mk.items.forEach((it, i) => { g.status[i] = "needed"; });
-    $("seed").textContent = seed;
+    $("seed").textContent = visit === 1 ? `Market #${seed}`
+      : `Market #${seed}, day ${visit}: same order and price ranges, new stands`;
     $("intro-items").innerHTML = mk.items.map((it) =>
-      `<div><img src="${ASSET}icon-${it.key}.png" alt=""><span>${it.name}</span><b>${it.value}</b></div>`).join("");
+      `<div><img src="${ASSET}icon-${it.key}.png" alt=""><span>${it.name}</span><b>${it.value}</b>` +
+      `<small>sold ${it.lo}–${it.hi}</small></div>`).join("");
     $("intro").hidden = false;
     $("end").hidden = true;
     $("offer").hidden = true;
@@ -239,8 +253,9 @@
     const verdict = gap <= 0 ? "You matched the planner on this market. Well planned!"
       : `The planner made ${gap} more coin${gap > 1 ? "s" : ""} on this market.`;
     const earlyTxt = g.early ? `You had all five pieces, so you skipped the last ${g.early} stand${g.early > 1 ? "s" : ""}: nothing there was worth anything to you. ` : "";
-    $("e-note").textContent = `${earlyTxt}${verdict} Same market for all three (same draws). Averaged over all markets with this ` +
-      `order, the planner makes ${mk.V[N][full].toFixed(0)} coins and the myopic merchant ${mk.M[N][full].toFixed(0)}.`;
+    $("e-note").textContent = `${earlyTxt}${verdict} All three met the same stands. Averaged over many days at this market ` +
+      `(same order, same price ranges), the planner makes ${mk.V[N][full].toFixed(0)} coins and the myopic merchant ` +
+      `${mk.M[N][full].toFixed(0)}.`;
     $("end").hidden = false;
     renderRecap();
     setTimeout(() => $("b-again").focus({ preventScroll: true }), 50);
@@ -255,11 +270,19 @@
       let right = "";
       if (st === "bought" && rec) right = `✓ ${rec.price} · ${fmtSigned(it.value - rec.price)}`;
       else if (st === "missing") right = "✗ not found";
-      else if (i === cur) right = "on offer";
+      else right = rangeHtml(it, i === cur ? g.offer.price : null);
       const cls = [st, i === cur ? "offered" : ""].join(" ");
       return `<li class="${cls}" data-i="${i}"><img src="${ASSET}icon-${it.key}.png" alt="">` +
         `<span class="nm">${it.name}<span class="val">pays ${it.value}</span></span><span class="st">${right}</span></li>`;
     }).join("");
+  }
+
+  // price range of a piece: "lo–hi" over a bar, green where the price is below the knight's, with the offer marked
+  function rangeHtml(it, price) {
+    const pos = (x) => Math.min(100, Math.max(0, (x - it.lo) / (it.hi - it.lo) * 100)).toFixed(1) + "%";
+    const mark = price === null ? "" : `<i class="mk" style="left:${pos(price)}"></i>`;
+    return `<span class="rg">${it.lo}–${it.hi}</span>` +
+      `<span class="rb" style="--v:${pos(it.value)}"><i class="tk"></i>${mark}</span>`;
   }
 
   function renderHud() {
@@ -460,18 +483,30 @@
     }
   }
 
+  // parchment box in canvas units, or null when it does not lie over the canvas (narrow layout)
+  function parchBox() {
+    const el = document.querySelector(".parch"), c = canvas.getBoundingClientRect();
+    if (!el || !c.width) return null;
+    const r = el.getBoundingClientRect(), s = W / c.width;
+    if (r.top >= c.bottom || r.bottom <= c.top) return null;
+    return { right: (r.right - c.left) * s, bottom: (r.bottom - c.top) * s };
+  }
+
   function drawBubble(cam) {
     if (!g.bubble) return;
     const x = g.bubble.follow ? g.mx - cam + 70 : g.bubble.x - cam + 30, y = g.bubble.follow ? 200 : 92;
     ctx.font = "700 20px 'IBM Plex Sans', system-ui, sans-serif";
     const tw = ctx.measureText(g.bubble.text).width, bw = tw + 32, bh = 40;
-    const bx = Math.max(8, Math.min(W - bw - 8, x - bw / 2));
+    let bx = Math.max(8, Math.min(W - bw - 8, x - bw / 2));
+    const p = parchBox();                          // keep the bubble clear of the parchment (an HTML layer above the canvas)
+    if (p && bx < p.right + 14 && y < p.bottom) bx = Math.min(W - bw - 8, p.right + 14);
+    const tx = Math.max(bx + 34, Math.min(bx + bw - 14, x - 20));   // tail: points down-left, kept under the bubble
     rect("#2f1f14", bx - 3, y - 3, bw + 6, bh + 6);
     rect("#fffaf0", bx, y, bw, bh);
     ctx.fillStyle = "#2f1f14";
-    ctx.beginPath(); ctx.moveTo(x - 40, y + bh); ctx.lineTo(x - 20, y + bh); ctx.lineTo(x - 50, y + bh + 22); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(tx - 20, y + bh); ctx.lineTo(tx, y + bh); ctx.lineTo(tx - 30, y + bh + 22); ctx.fill();
     ctx.fillStyle = "#fffaf0";
-    ctx.beginPath(); ctx.moveTo(x - 37, y + bh - 1); ctx.lineTo(x - 24, y + bh - 1); ctx.lineTo(x - 45, y + bh + 14); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(tx - 17, y + bh - 1); ctx.lineTo(tx - 4, y + bh - 1); ctx.lineTo(tx - 25, y + bh + 14); ctx.fill();
     ctx.fillStyle = "#3b2a1a"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(g.bubble.text, bx + bw / 2, y + bh / 2 + 1);
   }
@@ -568,7 +603,9 @@
     $("b-buy").addEventListener("click", () => decide(true));
     $("b-pass").addEventListener("click", () => decide(false));
     $("b-again").addEventListener("click", () => newGame(newSeed()));
-    $("b-replay").addEventListener("click", () => newGame(g.mk.seed));
+    $("b-replay").addEventListener("click", () => newGame(g.mk.seed, g.visit + 1));
+    $("c-restart").addEventListener("click", () => newGame(g.mk.seed, g.visit + 1));   // usable mid-game
+    $("c-new").addEventListener("click", () => newGame(newSeed()));
     document.addEventListener("keydown", (e) => {
       if (!g || e.target.closest("input, textarea, select")) return;
       if (g.phase === "intro" && e.key === "Enter" && !e.target.closest("button, a")) { e.preventDefault(); $("b-start").click(); }
