@@ -136,7 +136,15 @@
   let g = null;
   let hint = false;
 
+  // competition: a market code everyone plays on its first day (day seed = market seed), so the stands are the same
+  let comp = null;
+  const todayCode = () => {
+    const d = new Date(), k = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    return 1 + (Math.imul(k ^ 0x2c1b3c6d, 0x297a2d39) >>> 0) % 99999;
+  };
+
   function newGame(seed, visit = 1) {
+    if (comp) { seed = comp; visit = 1; }
     const mk = makeMarket(seed, visit === 1 ? seed : newSeed());
     g = {
       visit,
@@ -145,7 +153,8 @@
       coins: [], texts: [], timers: [], bubble: null, hop: -1, time: 0, status: {},
     };
     mk.items.forEach((it, i) => { g.status[i] = "needed"; });
-    $("seed").textContent = visit === 1 ? `Market #${seed}`
+    $("intro-warn").hidden = true;
+    $("seed").textContent = comp ? `Competition #${seed}: everyone meets these same stands` : visit === 1 ? `Market #${seed}`
       : `Market #${seed}, day ${visit}: same order and price ranges, new stands`;
     $("intro-items").innerHTML = mk.items.map((it) =>
       `<div><img src="${ASSET}icon-${it.key}.png" alt=""><span>${it.name}</span><b>${it.value}</b>` +
@@ -253,11 +262,18 @@
     const verdict = gap <= 0 ? "You matched the planner on this market. Well planned!"
       : `The planner made ${gap} more coin${gap > 1 ? "s" : ""} on this market.`;
     const earlyTxt = g.early ? `You had all five pieces, so you skipped the last ${g.early} stand${g.early > 1 ? "s" : ""}: nothing there was worth anything to you. ` : "";
-    $("e-note").textContent = `${earlyTxt}${verdict} All three met the same stands. Averaged over many days at this market ` +
+    const ps = Math.round(recordGame(g.profit, myopic, planner));
+    const psTxt = comp ? "" : `Planning score ${ps} (100 = the planner, 0 ≈ the myopic merchant), `;
+    $("e-note").textContent = `${psTxt}${comp ? "Saved" : "saved"} to the scoreboard as ${playerName()}. ${earlyTxt}${verdict} All three met the same stands. Averaged over many days at this market ` +
       `(same order, same price ranges), the planner makes ${mk.V[N][full].toFixed(0)} coins and the myopic merchant ` +
       `${mk.M[N][full].toFixed(0)}.`;
     $("end").hidden = false;
     renderRecap();
+    if (comp) {
+      const rows = loadScores().filter((r) => r.comp === comp).sort((a, b) => b.you - a.you);
+      const rank = rows.findIndex((r) => r.you === g.profit && r.name === playerName()) + 1;
+      $("e-kicker").textContent = `Competition #${comp} · rank ${rank} of ${rows.length}`;
+    }
     setTimeout(() => $("b-again").focus({ preventScroll: true }), 50);
   }
 
@@ -587,6 +603,128 @@
 
   function newSeed() { return 1 + Math.floor(Math.random() * 99999); }
 
+  // ------------------------------------------------------------------ scoreboard (localStorage, this browser only)
+  const SB_KEY = "km-scores", SB_TOP = 15;
+  function loadScores() {
+    try { const a = JSON.parse(localStorage.getItem(SB_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  }
+  function saveScores(a) { try { localStorage.setItem(SB_KEY, JSON.stringify(a)); } catch (e) { /* storage unavailable */ } }
+  function playerName() { return ($("player").value || "").trim().slice(0, 24) || "Anonymous"; }
+  const pct = (a, b) => (b > 0 ? a / b * 100 : null);         // your total as a % of theirs: 100% = as good
+
+  function recordGame(you, myopic, planner) {
+    const a = loadScores();
+    const full = (1 << g.mk.items.length) - 1, edge = g.mk.V[N][full] - g.mk.M[N][full];
+    a.push({ name: playerName(), seed: g.mk.seed, day: g.visit, you, myopic, planner, edge, t: Date.now(), ...(comp ? { comp } : {}) });
+    saveScores(a);
+    renderScoreboard();
+    return planScore(a[a.length - 1]);
+  }
+
+  // planning score of one game (normal games only; a competition ranks by profit): 100 = the planner's profit on
+  // the same stands; each point below is 1% of what planning is worth on this market (the planner's expected edge
+  // over the myopic merchant, from the DP), so the myopic merchant scores 0 on average.
+  function planScore(r) {
+    const e = r.edge > 0 ? r.edge : Math.max(1, r.planner - r.myopic);
+    return 100 * (1 - (r.planner - r.you) / e);
+  }
+
+  let sbView = "games", psOpen = false;
+
+  function renderScoreboard() {
+    const all = loadScores().map((r) => ({ ...r, ps: planScore(r) }));
+    $("ps-box").hidden = !psOpen || (sbView === "comp" && !!comp);   // explanation opens from the column header
+    const psHead = (t) => `<th class="n"><button class="th-info" data-ps aria-expanded="${psOpen}" aria-controls="ps-box">${t} <span aria-hidden="true">ⓘ</span></button></th>`;
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    // against a reference (myopic merchant or planner): a bar diverging from its score (centre line), right/green
+    // when you made more, left/red when you made less; full half-width at ±50%. Matching the planner earns a gold star.
+    const vs = (you, ref, star) => {
+      const x = pct(you, ref);
+      if (x === null) return `<td class="n">—</td>`;
+      const d = x - 100, tie = Math.abs(d) < 0.5, w = Math.min(50, Math.abs(d)) / 50 * 50;
+      const bar = tie ? "" : `<i class="${d > 0 ? "up" : "down"}" style="width:${w.toFixed(1)}%;${d > 0 ? "left" : "right"}:50%"></i>`;
+      const txt = tie ? (star ? "★ tie" : "tie") : `${d > 0 ? "▲ +" : "▼ −"}${Math.abs(d).toFixed(0)}%`;
+      const cls = tie ? (star ? "top" : "even") : d > 0 ? "up" : "down";
+      return `<td class="n my ${cls}"><span class="mbar">${bar}</span><span class="mt">${txt}</span></td>`;
+    };
+    const psCell = (x) => {
+      const r = Math.round(x), top = r >= 100;
+      return `<td class="n ps${top ? " top" : r < 0 ? " down" : ""}"><span class="psbar"><i style="width:${Math.max(0, Math.min(100, x)).toFixed(1)}%"></i></span>` +
+        `<b>${top ? "★ " : ""}${r < 0 ? "−" + Math.abs(r) : r}</b></td>`;
+    };
+    const empty = (n) => `<tr><td class="empty" colspan="${n}">No market finished yet: play one and your score appears here.</td></tr>`;
+    let head, body;
+    if (sbView === "comp" && comp) {
+      // same market and stands for all: rank by profit directly
+      const rows = all.filter((r) => r.comp === comp).sort((a, b) => b.you - a.you || (a.t || 0) - (b.t || 0));
+      const last = rows.reduce((m, r) => Math.max(m, r.t || 0), 0);
+      head = `<tr><th>#</th><th>Player</th><th class="n">Profit</th><th class="n">vs myopic</th><th class="n">vs planner</th></tr>`;
+      body = rows.length ? rows.map((p, i) =>
+        `<tr class="${p.t === last ? "me" : ""}"><td class="rk">${i === 0 ? "🏆" : i + 1}</td><td>${esc(p.name)}</td>` +
+        `<td class="n"><b>${fmtSigned(p.you) || "0"}</b></td>${vs(p.you, p.myopic, false)}${vs(p.you, p.planner, true)}</tr>`).join("")
+        : `<tr><td class="empty" colspan="5">Nobody has finished competition #${comp} on this device yet.</td></tr>`;
+    } else if (sbView === "players") {
+      const by = new Map();
+      all.forEach((r) => {
+        const key = String(r.name).trim().toLowerCase();
+        const p = by.get(key) || { name: r.name, n: 0, sum: 0, best: -1e9, you: 0, myopic: 0, planner: 0 };
+        p.n++; p.sum += r.ps; p.best = Math.max(p.best, r.ps); p.you += r.you; p.myopic += r.myopic; p.planner += r.planner;
+        by.set(key, p);
+      });
+      const rows = [...by.values()].map((p) => ({ ...p, avg: p.sum / p.n }))
+        .sort((a, b) => b.avg - a.avg || b.n - a.n).slice(0, SB_TOP);
+      const me = playerName().toLowerCase();
+      head = `<tr><th>#</th><th>Player</th>${psHead("Planning score (average)")}<th class="n">Games</th>` +
+        `<th class="n">Best game</th><th class="n">vs myopic</th><th class="n">vs planner</th></tr>`;
+      body = rows.length ? rows.map((p, i) =>
+        `<tr class="${p.name.trim().toLowerCase() === me ? "me" : ""}"><td class="rk">${i + 1}</td><td>${esc(p.name)}</td>` +
+        `${psCell(p.avg)}<td class="n">${p.n}</td><td class="n">${Math.round(p.best)}</td>` +
+        `${vs(p.you, p.myopic, false)}${vs(p.you, p.planner, true)}</tr>`).join("") : empty(7);
+    } else {
+      // one entry per market played (the same player on another market, or another day, is a new row)
+      const last = all.reduce((m, r) => Math.max(m, r.t || 0), 0);
+      const rows = all.slice().sort((a, b) => b.ps - a.ps || b.you - a.you || (a.t || 0) - (b.t || 0)).slice(0, SB_TOP);
+      head = `<tr><th>#</th><th>Player</th>${psHead("Planning score")}<th>Market</th><th class="n">Profit</th>` +
+        `<th class="n">vs myopic</th><th class="n">vs planner</th></tr>`;
+      body = rows.length ? rows.map((p, i) =>
+        `<tr class="${p.t && p.t === last ? "me" : ""}"><td class="rk">${i + 1}</td><td>${esc(p.name)}</td>` +
+        `${psCell(p.ps)}<td class="mk">${p.seed ? `#${p.seed}${p.day > 1 ? ` · day ${p.day}` : ""}` : "—"}</td>` +
+        `<td class="n">${fmtSigned(p.you) || "0"}</td>${vs(p.you, p.myopic, false)}${vs(p.you, p.planner, true)}</tr>`).join("") : empty(7);
+    }
+    $("sb-head").innerHTML = head;
+    $("sb-body").innerHTML = body;
+  }
+
+  let setViewRef = null;
+  function showWarn(t) { const w = $("intro-warn"); w.textContent = t; w.hidden = false; }
+
+  // enter or leave a competition: UI state, URL hash (#c12345, shareable), scoreboard tab, new game
+  function setComp(c) {
+    comp = c;
+    $("comp").classList.toggle("on", !!c);
+    $("comp-off").hidden = !!c; $("comp-on").hidden = !c;
+    $("sb-v-comp").hidden = !c;
+    $("c-restart").disabled = !!c;
+    $("b-replay").hidden = !!c;
+    $("b-again").textContent = c ? "Next player" : "New market";
+    $("c-new").textContent = c ? "Leave and play a new market" : "New market";
+    if (c) { $("comp-name").textContent = c; $("comp-share").textContent = c; }
+    try { history.replaceState(null, "", c ? "#c" + c : location.pathname + location.search); } catch (e) { /* ignore */ }
+    if (setViewRef) setViewRef(c ? "comp" : (sbView === "comp" ? "games" : sbView));
+    if (c) newGame(c);
+  }
+
+  function armReset() {
+    const b = $("sb-reset");
+    if (b.classList.contains("armed")) {
+      saveScores([]); renderScoreboard();
+      b.classList.remove("armed"); b.textContent = "Reset the scoreboard"; clearTimeout(b._t);
+      return;
+    }
+    b.classList.add("armed"); b.textContent = "Click again to erase all scores";
+    b._t = setTimeout(() => { b.classList.remove("armed"); b.textContent = "Reset the scoreboard"; }, 3500);
+  }
+
   function init() {
     canvas = $("scene");
     ctx = canvas.getContext("2d");
@@ -599,13 +737,61 @@
       try { localStorage.setItem("km-hint", hint ? "1" : "0"); } catch (err) { /* storage unavailable */ }
       renderAdvice();
     });
-    $("b-start").addEventListener("click", () => { if (g.phase !== "intro") return; $("intro").hidden = true; goNext(); });
+    $("b-start").addEventListener("click", () => {
+      if (g.phase !== "intro") return;
+      if (comp) {   // one try per player and competition (on this device)
+        const name = playerName(), key = name.toLowerCase();
+        if (name === "Anonymous") { showWarn("Enter your name to take part in the competition."); $("player").focus(); return; }
+        if (loadScores().some((r) => r.comp === comp && String(r.name).trim().toLowerCase() === key)) {
+          showWarn(`${name} already played competition #${comp}: one try per player.`); $("player").focus(); return;
+        }
+      }
+      $("intro").hidden = true; goNext();
+    });
     $("b-buy").addEventListener("click", () => decide(true));
     $("b-pass").addEventListener("click", () => decide(false));
-    $("b-again").addEventListener("click", () => newGame(newSeed()));
+    $("b-again").addEventListener("click", () => newGame(newSeed()));   // in a competition: next player, same market
     $("b-replay").addEventListener("click", () => newGame(g.mk.seed, g.visit + 1));
     $("c-restart").addEventListener("click", () => newGame(g.mk.seed, g.visit + 1));   // usable mid-game
-    $("c-new").addEventListener("click", () => newGame(newSeed()));
+    $("c-new").addEventListener("click", () => { if (comp) setComp(null); newGame(newSeed()); });
+    $("comp-today").addEventListener("click", () => setComp(todayCode()));
+    $("comp-join").addEventListener("click", () => {
+      const c = parseInt($("comp-code").value, 10);
+      if (c >= 1 && c <= 99999) setComp(c); else $("comp-code").focus();
+    });
+    $("comp-code").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("comp-join").click(); } });
+    $("comp-leave").addEventListener("click", () => { setComp(null); newGame(newSeed()); });
+    $("comp-board").addEventListener("click", () => $("scoreboard").scrollIntoView({ behavior: "smooth" }));
+    $("comp-copy").addEventListener("click", () => {
+      const url = location.href.split("#")[0] + "#c" + comp, b = $("comp-copy");
+      const done = () => { b.textContent = "Copied ✓"; setTimeout(() => { b.textContent = "Copy link"; }, 1600); };
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, () => { b.textContent = url; });
+      else b.textContent = url;
+    });
+    try { $("player").value = localStorage.getItem("km-player") || ""; } catch (e) { /* storage unavailable */ }
+    $("player").addEventListener("input", () => {
+      try { localStorage.setItem("km-player", $("player").value.trim()); } catch (e) { /* storage unavailable */ }
+      renderScoreboard();
+    });
+    $("player").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("b-start").click(); } });
+    $("sb-reset").addEventListener("click", armReset);
+    $("sb-head").addEventListener("click", (e) => { if (e.target.closest("[data-ps]")) { psOpen = !psOpen; renderScoreboard(); } });
+    $("ps-close").addEventListener("click", () => { psOpen = false; renderScoreboard(); });
+    try { if (localStorage.getItem("km-sb-view") === "players") sbView = "players"; } catch (e) { /* storage unavailable */ }
+    const setView = (v) => {
+      sbView = v;
+      $("sb-v-games").setAttribute("aria-pressed", v === "games"); $("sb-v-players").setAttribute("aria-pressed", v === "players");
+      $("sb-v-comp").setAttribute("aria-pressed", v === "comp");
+      try { localStorage.setItem("km-sb-view", v); } catch (e) { /* storage unavailable */ }
+      renderScoreboard();
+    };
+    $("sb-v-games").addEventListener("click", () => setView("games"));
+    $("sb-v-players").addEventListener("click", () => setView("players"));
+    $("sb-v-comp").addEventListener("click", () => setView("comp"));
+    setViewRef = setView;
+    if (sbView === "comp") sbView = "games";
+    setView(sbView);
+    renderScoreboard();
     document.addEventListener("keydown", (e) => {
       if (!g || e.target.closest("input, textarea, select")) return;
       if (g.phase === "intro" && e.key === "Enter" && !e.target.closest("button, a")) { e.preventDefault(); $("b-start").click(); }
@@ -615,7 +801,8 @@
       }
     });
     const names = ["merchant", ...ITEMS.map((x) => "stand-" + x.key)];
-    newGame(newSeed());
+    const hc = /^#c(\d{1,5})$/.exec(location.hash);
+    if (hc && +hc[1] >= 1) setComp(+hc[1]); else newGame(newSeed());
     Promise.all(names.map(load)).then(() => document.fonts && document.fonts.load("700 20px 'Pixelify Sans'"));
     requestAnimationFrame(frame);
   }

@@ -112,10 +112,14 @@
     });
   }
 
+  // y-axis title, rotated, left of the tick labels
+  const yTitle = (top, base) =>
+    `<text class="ytitle" transform="translate(18 ${(top + base) / 2}) rotate(-90)" text-anchor="middle">mean episode reward ↑</text>`;
+
   function render() {
     const host = document.getElementById("chart");
     if (!host) return;
-    const W = 860, H = 386, left = 40, right = 8, top = 70, base = 318, gap = 22, pad = 16, bw = 52, inner = 20;
+    const W = 880, H = 386, left = 64, right = 8, top = 70, base = 318, gap = 22, pad = 16, bw = 52, inner = 20;
     const max = 4.75, y = (v) => base - (v / max) * (base - top);
     const flat = [];
     let svg = `<svg viewBox="0 0 ${W} ${H}" role="group" aria-label="Mean episode reward per policy, grouped by family">`;
@@ -139,6 +143,7 @@
       x += gw + gap;
     });
     svg += blocks + grid + bars;   // grid lines drawn over the blocks, under the bars
+    svg += yTitle(top, base);
     svg += `<line class="axis0" x1="${left}" x2="${W - right}" y1="${base}" y2="${base}"/>`;
     svg += `</svg>`;
     host.innerHTML = svg;
@@ -148,7 +153,7 @@
   function renderHorizon() {
     const host = document.getElementById("chart-h");
     if (!host) return;
-    const W = 460, H = 340, left = 40, top = 70, base = 290, bw = 76, step = 120, x0 = 78;
+    const W = 484, H = 340, left = 64, top = 70, base = 290, bw = 76, step = 120, x0 = 102;
     const max = 4.75, y = (v) => base - (v / max) * (base - top);
     let svg = `<svg viewBox="0 0 ${W} ${H}" role="group" aria-label="Mean episode reward of MPC for planning horizons H = 10, 25 and 35">`;
     for (let v = 0; v <= 4; v++) {
@@ -167,7 +172,7 @@
            `<path d="M0 0 L10 5 L0 10 z" class="h-head"/></marker></defs>` +
            `<path class="h-arrow" d="M${a[0]} ${a[1]} L${b[0]} ${b[1]}" marker-end="url(#h-arrow)"/>` +
            `<text class="h-text" transform="translate(${(a[0] + b[0]) / 2} ${(a[1] + b[1]) / 2 - 10}) rotate(${ang.toFixed(1)})" text-anchor="middle">performance increases with planning</text>`;
-    svg += `<line class="axis0" x1="${left}" x2="${W - 10}" y1="${base}" y2="${base}"/>`;
+    svg += `<line class="axis0" x1="${left}" x2="${W - 10}" y1="${base}" y2="${base}"/>` + yTitle(top, base);
     svg += `<text class="tick" x="${x0 + step + bw / 2}" y="${H - 6}" text-anchor="middle">planning horizon H (time units)</text>`;
     svg += `</svg>`;
     host.innerHTML = svg;

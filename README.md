@@ -3,11 +3,14 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![arXiv](https://img.shields.io/badge/arXiv-2611.14000-b31b1b.svg)](https://arxiv.org/abs/2611.14000)
+[![Website](https://img.shields.io/badge/Website-DynamAuction-22566b.svg)](https://eugeniepatard.github.io/dynamauction/)
 
 **DynamAuction** is a [Gymnasium](https://gymnasium.farama.org/)-compatible reinforcement learning environment for repeated auctions with dynamic display value, the official implementation accompanying the paper:
 
 > *DynamAuction: A Reinforcement Learning Environment for Repeated Auctions with Dynamic Value*,
 > Eugenie Patard, Corentin Pla, Benjamin Heymann and Patrick Loiseau, 2026. [arXiv:2611.14000](https://arxiv.org/abs/2611.14000)
+
+**Project website:** [eugeniepatard.github.io/dynamauction](https://eugeniepatard.github.io/dynamauction/): an overview of the paper, a live simulator in the browser, the results, and [*The Knight's Merchant*](https://eugeniepatard.github.io/dynamauction/game.html), a small game about planning.
 
 It is built on a **kernel causal model** that captures realistic advertiser dynamics, frequency saturation, recency effects, delayed conversions, and competitor interference, making it suitable for studying sequential bidding policies in non-stationary settings. The library also ships a modular simulator for multi-policy comparison and a full suite of baseline policies, from simple heuristics to model-predictive control.
 
