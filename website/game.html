@@ -103,7 +103,14 @@
   .order .nm { font-weight: 600; }
   .order .val { display: block; font-size: .85em; color: var(--paper-muted); font-weight: 400; }
   .order .st { font: 600 .9em/1.2 "IBM Plex Mono", ui-monospace, monospace; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .order .st .rg { display: block; color: var(--paper-muted); font-weight: 500; }
+  .order .rb { position: relative; display: block; min-width: 6em; height: .42em; margin: .25em 0 .1em; border-radius: 2px;
+               background: linear-gradient(90deg, var(--buy) 0 var(--v), #c98a78 var(--v) 100%); }
+  .order .rb .tk { position: absolute; left: var(--v); top: -.18em; bottom: -.18em; width: 2px; margin-left: -1px; background: var(--paper-ink); }
+  .order .rb .mk { position: absolute; top: 50%; width: .75em; height: .75em; margin: -.375em 0 0 -.375em; border-radius: 50%;
+                   background: var(--gold); border: 2px solid var(--paper-ink); box-sizing: border-box; }
   .order li.offered { background: #fff4d4; border-color: var(--gold-dark); }
+  .order li.offered .rg { color: var(--paper-ink); }
   .order li.bought .nm { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--buy-dark); }
   .order li.bought .st { color: var(--buy-dark); }
   .order li.missing .st { color: #9b3b2a; }
@@ -156,9 +163,10 @@
   .intro-items div { display: grid; justify-items: center; gap: 2px; font-size: .85em; }
   .intro-items img { width: 3em; height: 3em; object-fit: contain; }
   .intro-items b { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  .intro-items small { font: 400 .85em/1.2 "IBM Plex Mono", ui-monospace, monospace; color: var(--paper-muted); }
   .ovl-card .gbtn { margin-top: 1em; }
   .ovl-card .gbtn.big { font-size: 1.25em; padding: .7em 1.2em; }
-  .seed { font: 400 .8em/1 var(--mono); color: var(--paper-muted); margin-top: .9em !important; }
+  .seed { font: 400 .8em/1.35 var(--mono); color: var(--paper-muted); margin-top: .9em !important; }
 
   .bars { display: grid; gap: .55em; margin-top: 1em; text-align: left; }
   .bar { display: grid; grid-template-columns: 9.5em 1fr 3.2em; align-items: center; gap: .7em; }
@@ -179,6 +187,11 @@
   .below label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
   .below input { width: 18px; height: 18px; accent-color: var(--accent); }
   .keys { color: var(--muted); font-size: .88rem; }
+  .ctl { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ctl button { font: 600 .9rem/1 var(--sans); padding: .55em .85em; border-radius: 6px; cursor: pointer;
+                border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); }
+  .ctl button:hover { border-color: var(--accent); color: var(--accent); }
+  .ctl button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .keys kbd { font: 500 .8rem/1 var(--mono); padding: 2px 6px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface); }
 
   /* narrow game window: the panels leave the scene and stack below it */
@@ -220,6 +233,24 @@
 
   @media (max-width: 900px) { .rules, .why { grid-template-columns: 1fr; } }
   @media (prefers-reduced-motion: reduce) { .fly { transition: none; } }
+
+  /* live history of the stands seen */
+  .hist { margin-top: 12px; display: flex; align-items: flex-start; gap: 12px; background: var(--surface); border: 1px solid var(--line);
+          border-radius: var(--radius); padding: 10px 12px; box-shadow: var(--shadow); }
+  .hist-title { flex: none; font: 600 .75rem/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); width: 5.5em; }
+  .hist-list { list-style: none; margin: 0; padding: 2px 0; display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+  .hist-list li { flex: none; display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; column-gap: 6px; align-items: center;
+                  padding: 3px 8px 3px 4px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); font-size: .82rem; }
+  .hist-list li img { grid-row: 1 / 3; width: 26px; height: 26px; object-fit: contain; }
+  .hist-list li .hn { font: 500 .7rem/1.2 var(--mono); color: var(--muted); }
+  .hist-list li .hp { font: 600 .85rem/1.2 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); white-space: nowrap; }
+  .hist-list li.b { border-color: var(--lime); background: var(--lime-soft); }
+  .hist-list li.b .hp { color: var(--lime-ink); }
+  .hist-list li.new { animation: hist-in .45s ease-out; }
+  .hist-list li.hist-empty { display: block; border: 0; background: none; color: var(--muted); font-size: .88rem; padding-left: 0; }
+  @keyframes hist-in { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .hist-list li.new { animation: none; } }
+  @media (max-width: 600px) { .hist { flex-direction: column; align-items: stretch; } .hist-title { width: auto; } }
 </style>
 </head>
 <body>
@@ -248,9 +279,10 @@
         <li>The market has <strong>20 stands</strong>, visited in order. You cannot go back.</li>
         <li>Each stand sells <strong>one piece of your order</strong> at a posted price: <strong>buy</strong> it, or <strong>walk on</strong>.</li>
         <li>You need each piece once. When you own it, <strong>no later stand offers it</strong>: they sell only what is still missing.</li>
-        <li>A piece's price is anywhere between <strong>30% and 120%</strong> of what the knight pays, all prices equally likely.
-          You don't know what the next stand sells, nor at what price.</li>
-        <li>The day ends when your order is complete or after the 20th stand.</li>
+        <li>Each market has its <strong>own price range for each piece</strong>, written on your parchment: any price in
+          the range is equally likely. You don't know what the next stand sells, nor at what price.</li>
+        <li>The day ends when your order is complete or after the 20th stand. Replay a market and you keep its order
+          and price ranges, but meet new stands.</li>
       </ol>
     </div>
     <div class="rule-card">
@@ -268,7 +300,7 @@
 
       <div class="parch" aria-live="polite">
         <h3>The knight's order</h3>
-        <div class="sub">he pays, for each piece</div>
+        <div class="sub">he pays · prices at this market</div>
         <ul class="order" id="order"></ul>
       </div>
 
@@ -300,9 +332,10 @@
           <p class="kicker">Morning, at the market gate</p>
           <h3>Five pieces to find</h3>
           <div class="intro-items" id="intro-items"></div>
-          <p>20 stands stand between you and the castle. Buy each piece for less than the knight pays, and as cheaply as you can.</p>
+          <p>20 stands stand between you and the castle. Under each piece: what the knight pays, and the prices sold at
+            this market. Buy each piece for less than the knight pays, and as cheaply as you can.</p>
           <button class="gbtn buy big" id="b-start">Enter the market ▸</button>
-          <p class="seed">Market #<span id="seed"></span></p>
+          <p class="seed" id="seed"></p>
         </div>
       </div>
 
@@ -314,15 +347,24 @@
           <p class="e-note" id="e-note"></p>
           <div class="e-btns">
             <button class="gbtn buy" id="b-again">New market</button>
-            <button class="gbtn" id="b-replay">Replay this market</button>
+            <button class="gbtn" id="b-replay" title="Same order and price ranges, new stands">Replay this market</button>
             <a href="#recap">Your day, stand by stand ↓</a>
           </div>
         </div>
       </div>
     </div>
 
+    <div class="hist" aria-live="polite">
+      <span class="hist-title">Stands seen</span>
+      <ol class="hist-list" id="hist"><li class="hist-empty">none yet: your stands will appear here as you walk</li></ol>
+    </div>
+
     <div class="below">
       <label><input type="checkbox" id="hint"> Show what the planner would do</label>
+      <div class="ctl">
+        <button id="c-restart" title="Same order and price ranges, new stands">↺ Restart this market</button>
+        <button id="c-new">New market</button>
+      </div>
       <span class="keys"><kbd>B</kbd> buy · <kbd>→</kbd> or <kbd>Space</kbd> walk on</span>
     </div>
   </div>
@@ -357,7 +399,7 @@
         <p>The <strong>myopic merchant</strong> buys whenever the price is below what the knight pays: a sure profit now,
           blind to what the next stands may bring. The <strong>planner</strong> compares each price with what it can
           still expect from the stands left (computed exactly, by dynamic programming): picky at first, less and less as
-          the castle gets closer.</p>
+          the castle gets closer. It knows what you know, the price ranges, and not what the next stands will offer.</p>
         <p>In the paper, the same gap separates the myopic bidders from our MPC planner. <a href="index.html#results">See the results</a>.</p>
       </div>
     </div>
