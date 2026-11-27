@@ -128,20 +128,24 @@
   .pips i.now { background: #fff; outline: 1px solid var(--gold); }
   .pips i.skip { background: transparent; outline: 1px dashed rgba(247, 234, 208, .35); outline-offset: -1px; }
 
-  .offer { position: absolute; right: 1.6%; top: 27%; width: 24%; background: var(--wood); color: var(--wood-ink);
+  .offer { position: absolute; right: 1.6%; top: 24%; width: 28%; max-height: 73%; overflow-y: auto; background: var(--wood); color: var(--wood-ink);
            border: 3px solid var(--wood-dark); border-radius: 6px; padding: 1.1cqw 1.2cqw 1.2cqw;
            font-size: clamp(12px, 1.45cqw, 15px); box-shadow: 0 4px 0 var(--wood-dark); }
   .offer-head { display: flex; align-items: center; gap: .6em; }
   .offer-head img { width: 3em; height: 3em; object-fit: contain; background: rgba(247, 234, 208, .12); border-radius: 4px; padding: 2px; }
   .o-name { font: 700 1.3em/1.1 var(--pixel); }
   .o-sub { font-size: .85em; opacity: .8; }
-  .offer dl { margin: .8em 0 0; display: grid; gap: .25em; }
+  .offer dl { margin: .6em 0 0; display: grid; gap: .2em; }
   .offer dl div { display: flex; justify-content: space-between; align-items: baseline; }
   .offer dt { opacity: .85; }
   .offer dd { margin: 0; font: 600 1.2em/1.1 "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
   .offer dd.price { color: var(--gold); font-size: 1.6em; }
-  .o-advice { margin-top: .7em; padding: .45em .6em; border-radius: 4px; background: rgba(247, 234, 208, .14); font-size: .9em; }
-  .o-btns { margin-top: .8em; display: grid; gap: .45em; }
+  .o-advice { margin-top: .6em; padding: .4em .55em; border-radius: 4px; background: rgba(247, 234, 208, .14); font-size: .85em; }
+  .o-btns { margin-top: .7em; display: grid; grid-template-columns: 1fr 1fr; gap: .45em; }
+  .o-regret { margin-top: .6em; padding: .4em .55em; border-radius: 4px; background: rgba(247, 234, 208, .14); font-size: .82em; line-height: 1.3; }
+  .o-regret.sting { background: rgba(201, 112, 95, .35); }
+  .gbtn.castle { grid-column: 1 / -1; font-size: .9em; }
+  .order .st .ex { display: block; font-size: .82em; color: #9b3b2a; }
   .gbtn { font: 700 1.02em/1 var(--sans); letter-spacing: 0; padding: .62em .8em; border-radius: 4px; cursor: pointer;
           border: 3px solid var(--wood-dark); box-shadow: 0 3px 0 var(--wood-dark); display: inline-flex; justify-content: center;
           align-items: center; gap: .6em; transition: transform .08s ease, box-shadow .08s ease; color: var(--paper-ink); background: var(--paper); }
@@ -222,6 +226,8 @@
   td img { width: 26px; height: 26px; object-fit: contain; vertical-align: middle; margin-right: 8px; }
   .tag { display: inline-block; padding: 3px 8px; border-radius: 999px; font: 500 .8rem/1.2 var(--mono); }
   .tag.b { background: var(--lime-soft); color: var(--lime-ink); }
+  .tag.x { background: #f6dcd6; color: #9b3b2a; }
+  .rg-note { color: #9b3b2a; font-size: .85rem; }
   .tag.p { background: var(--accent-soft); color: var(--accent); }
   tr.diff td { background: var(--bid-soft); }
   .legend { color: var(--muted); font-size: .9rem; margin-top: 10px; }
@@ -320,6 +326,9 @@
   .hist-list li .hp { font: 600 .85rem/1.2 "IBM Plex Mono", ui-monospace, monospace; color: var(--ink); white-space: nowrap; }
   .hist-list li.b { border-color: var(--lime); background: var(--lime-soft); }
   .hist-list li.b .hp { color: var(--lime-ink); }
+  .hist-list li.x { border-color: #c9705f; background: #f6dcd6; }
+  .hist-list li.x .hp { color: #9b3b2a; }
+  .hist-list li.r { border-style: dashed; border-color: #c9705f; }
   .hist-list li.new { animation: hist-in .45s ease-out; }
   .hist-list li.hist-empty { display: block; border: 0; background: none; color: var(--muted); font-size: .88rem; padding-left: 0; }
   @keyframes hist-in { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -352,18 +361,21 @@
       <ol>
         <li>The market has <strong>20 stands</strong>, visited in order. You cannot go back.</li>
         <li>Each stand sells <strong>one piece of your order</strong> at a posted price: <strong>buy</strong> it, or <strong>walk on</strong>.</li>
-        <li>You need each piece once. When you own it, <strong>no later stand offers it</strong>: they sell only what is still missing.</li>
+        <li>Stands keep selling <strong>every piece of the order</strong>, even those you already own. You may buy a piece
+          again (say, cheaper than yours), but every copy is paid and <strong>the knight takes only one of each piece</strong>,
+          the one that leaves you the most profit: the other copies are lost money.</li>
         <li>Each market has its <strong>own price range for each piece</strong>, written on your parchment: any price in
           the range is equally likely. You don't know what the next stand sells, nor at what price.</li>
-        <li>The day ends when your order is complete or after the 20th stand. Replay a market and you keep its order
-          and price ranges, but meet new stands.</li>
+        <li>The day ends after the 20th stand (once your order is complete you may go to the castle earlier). Replay a
+          market and you keep its order and price ranges, but meet new stands.</li>
       </ol>
     </div>
     <div class="rule-card">
       <h2>Your score</h2>
-      <p class="formula">profit = Σ over the pieces you bought (knight's price − price paid)</p>
-      <p>A missing piece earns nothing. Buy the sword (the knight pays 55) for 42: +13. Pass, and if no cheaper sword
-        comes before the castle, the sword earns 0.</p>
+      <p class="formula">profit = Σ knight's price of the pieces you own − Σ every price you paid</p>
+      <p>A missing piece earns nothing. Buy the sword (the knight pays 55) for 42: +13. See a sword at 30 later and buy it
+        too: the knight still takes one sword, so you are at +13 − 30 = −17. Pass on it, and you only learn what you could
+        have paid.</p>
       <p class="catch">A price below the knight's value is a sure profit now, but a cheaper one may come, and fewer stands remain to find the rest.</p>
     </div>
   </div>
@@ -415,10 +427,12 @@
           <div><dt>Knight pays</dt><dd id="o-value"></dd></div>
           <div><dt>Profit if you buy</dt><dd id="o-margin"></dd></div>
         </dl>
+        <div class="o-regret" id="o-regret" hidden></div>
         <div class="o-advice" id="o-advice" hidden></div>
         <div class="o-btns">
           <button class="gbtn buy" id="b-buy">Buy <kbd>B</kbd></button>
           <button class="gbtn" id="b-pass">Walk on <kbd>→</kbd></button>
+          <button class="gbtn castle" id="b-castle" hidden>Go to the castle ▸</button>
         </div>
       </div>
 
@@ -524,7 +538,7 @@
     <div class="why">
       <div class="rule-card">
         <h2>Dynamic value</h2>
-        <p>Once you own a sword, the next sword is worth nothing to you, and the missing pieces show up more often. In
+        <p>Once you own a sword, the next sword is worth nothing to you, however cheap it is. In
           DynamAuction the same thing happens to an advertiser: each ad a user sees changes the user's state (here, the
           pieces you own; there, the user's fatigue), and so the value of the next displays.</p>
         <p>A posted price is a second-price auction seen from the buyer's side: the price is the highest rival bid, and
@@ -535,7 +549,8 @@
         <p>The <strong>myopic merchant</strong> buys whenever the price is below what the knight pays: a sure profit now,
           blind to what the next stands may bring. The <strong>planner</strong> compares each price with what it can
           still expect from the stands left (computed exactly, by dynamic programming): picky at first, less and less as
-          the castle gets closer. It knows what you know, the price ranges, and not what the next stands will offer.</p>
+          the castle gets closer. It knows what you know, the price ranges, and not what the next stands will offer; it never
+          buys a second copy.</p>
         <p>In the paper, the same gap separates the myopic bidders from our MPC planner. <a href="index.html#results">See the results</a>.</p>
       </div>
     </div>

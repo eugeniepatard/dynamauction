@@ -1,9 +1,11 @@
 /* The Knight's Merchant: a small planning game for the DynamAuction website.
  *
  * Model. The knight orders K = 5 of the 8 pieces below and pays `value` for each. The market has N = 20 stands,
- * visited in order. Stand k sells one piece still missing, chosen uniformly, at an integer price uniform in the
- * piece's range [lo, hi]. Buying removes the piece from all later stands. Profit = sum over bought pieces of
- * (value - price); a missing piece earns 0.
+ * visited in order. Stand k sells one of the K pieces, chosen uniformly (owned or not), at an integer price uniform in
+ * the piece's range [lo, hi]. The merchant may buy any number of copies; every copy is paid, and the knight takes one
+ * copy of each piece (the cheapest one: it leaves the most profit). Profit = sum over the pieces owned of value - sum of
+ * all the prices paid; a missing piece earns 0, an extra copy loses its price. Extra copies are there to show the
+ * regret of an early purchase: a later stand may sell the same piece cheaper.
  * A market is a seed: the order and, for each ordered piece, its price range. Ranges differ from piece to piece and
  * from market to market, so playing many markets does not teach one fixed distribution; they are written on the
  * parchment, so the player knows what the planner knows. A day is a second seed: two uniforms per stand (which
@@ -11,9 +13,10 @@
  * the planner all play the same day (common random numbers), so they meet the same stands, although not always the
  * same pieces once their purchases differ.
  * Planner: the exact optimal policy, by dynamic programming over (pieces still missing S, stands left n):
- *   V(S, n) = mean_{i in S} E_p[ max(v_i - p + V(S \ i, n - 1), V(S, n - 1)) ],
- * so at a stand it buys iff p <= v_i + V(S \ i, n - 1) - V(S, n - 1).
- * Myopic merchant: buys iff p <= v_i. */
+ *   V(S, n) = (1/K) [ sum_{i in S} E_p[ max(v_i - p + V(S \ i, n - 1), V(S, n - 1)) ] + (K - |S|) V(S, n - 1) ],
+ * so at a stand it buys a missing piece iff p <= v_i + V(S \ i, n - 1) - V(S, n - 1), and never a second copy (it
+ * earns nothing and costs its price).
+ * Myopic merchant: buys a missing piece iff p <= v_i, never a second copy. */
 (function () {
   "use strict";
 
@@ -65,10 +68,9 @@
     for (let n = 1; n <= N; n++) {
       const v = new Float64Array(F), m = new Float64Array(F);
       for (let S = 1; S < F; S++) {
-        let ev = 0, em = 0, c = 0;
+        let ev = 0, em = 0;
         for (let i = 0; i < items.length; i++) {
-          if (!((S >> i) & 1)) continue;
-          c++;
+          if (!((S >> i) & 1)) { ev += V[n - 1][S]; em += M[n - 1][S]; continue; }   // owned piece: walk on
           const it = items[i], S2 = S & ~(1 << i), np = it.hi - it.lo + 1;
           const stay = V[n - 1][S], go = V[n - 1][S2], mstay = M[n - 1][S], mgo = M[n - 1][S2];
           let a = 0, b = 0;
@@ -78,24 +80,23 @@
           }
           ev += a / np; em += b / np;
         }
-        v[S] = ev / c; m[S] = em / c;
+        v[S] = ev / items.length; m[S] = em / items.length;
       }
       V.push(v); M.push(m);
     }
     return { V, M };
   }
 
-  const missing = (S, K_) => { const r = []; for (let i = 0; i < K_; i++) if ((S >> i) & 1) r.push(i); return r; };
-
-  function offerAt(mk, k, S) {
-    const idx = missing(S, mk.items.length);
-    const i = idx[Math.floor(mk.U[k][0] * idx.length)];
+  // stand k sells piece i (any of the K, owned or not) at a price of its range: fixed by the day's uniforms
+  function offerAt(mk, k) {
+    const i = Math.floor(mk.U[k][0] * mk.items.length);
     const it = mk.items[i];
     return { i, price: it.lo + Math.floor(mk.U[k][1] * (it.hi - it.lo + 1)) };
   }
 
-  // highest price at which the planner buys piece i at stand k (0-based) with missing set S
+  // highest price at which the planner buys piece i at stand k (0-based) with missing set S; -1: never (owned)
   function plannerMax(mk, S, k, i) {
+    if (!((S >> i) & 1)) return -1;
     const n = N - k;
     return Math.floor(mk.items[i].value + mk.V[n - 1][S & ~(1 << i)] - mk.V[n - 1][S] + 1e-9);
   }
@@ -103,7 +104,8 @@
   function simulate(mk, who) {
     let S = (1 << mk.items.length) - 1, profit = 0;
     for (let k = 0; k < N && S; k++) {
-      const o = offerAt(mk, k, S), it = mk.items[o.i];
+      const o = offerAt(mk, k), it = mk.items[o.i];
+      if (!((S >> o.i) & 1)) continue;   // owned: neither buys a second copy
       const buy = who === "planner" ? o.price <= plannerMax(mk, S, k, o.i) : o.price <= it.value;
       if (buy) { profit += it.value - o.price; S &= ~(1 << o.i); }
     }
@@ -150,9 +152,9 @@
       visit,
       mk, S: (1 << mk.items.length) - 1, k: -1, profit: 0, log: [], phase: "intro",
       mx: START_X, step: 0, walk: null, offer: null, next: null, stands: [], castleX: null,
-      coins: [], texts: [], timers: [], bubble: null, hop: -1, time: 0, status: {},
+      coins: [], texts: [], timers: [], bubble: null, hop: -1, time: 0, status: {}, paid: {},
     };
-    mk.items.forEach((it, i) => { g.status[i] = "needed"; });
+    mk.items.forEach((it, i) => { g.status[i] = "needed"; g.paid[i] = []; });
     $("intro-warn").hidden = true;
     $("seed").textContent = comp ? `Competition #${seed}: everyone meets these same stands` : visit === 1 ? `Market #${seed}`
       : `Market #${seed}, day ${visit}: same order and price ranges, new stands`;
@@ -175,10 +177,13 @@
     if (!g.early) g.bubble = null;
   }
 
+  const owned = (i) => !((g.S >> i) & 1);
+  const kept = (i) => Math.min(...g.paid[i]);      // the copy the knight takes: the cheapest
+
   function goNext() {
     const k = g.k + 1;
-    if (g.S === 0 || k >= N) { goCastle(); return; }
-    const o = offerAt(g.mk, k, g.S);
+    if (k >= N) { goCastle(); return; }
+    const o = offerAt(g.mk, k);
     g.next = { k, ...o };
     g.stands.push({ k, key: g.mk.items[o.i].key, x: standX(k) });
     startWalk(standX(k) - STAND_OFF, arrive);
@@ -189,7 +194,9 @@
     g.offer = g.next;
     g.phase = "offer";
     const it = g.mk.items[g.offer.i];
-    g.bubble = { text: `${it.name}: ${g.offer.price} coins!`, x: standX(g.k) };
+    const regret = owned(g.offer.i) && g.offer.price < kept(g.offer.i);
+    g.bubble = { text: regret ? `${it.name}: ${g.offer.price}… I paid ${kept(g.offer.i)}!` : `${it.name}: ${g.offer.price} coins!`,
+                 x: standX(g.k) };
     showOffer();
     renderOrder(); renderHud();
   }
@@ -197,22 +204,24 @@
   function decide(buy) {
     if (!g || g.phase !== "offer") return;
     const o = g.offer, it = g.mk.items[o.i];
-    const thr = plannerMax(g.mk, g.S, g.k, o.i);
-    g.log.push({ k: g.k, i: o.i, price: o.price, bought: buy, thr, left: N - g.k - 1 });
+    const thr = plannerMax(g.mk, g.S, g.k, o.i), dup = owned(o.i);
+    g.log.push({ k: g.k, i: o.i, price: o.price, bought: buy, thr, left: N - g.k - 1, dup,
+                 prev: dup ? kept(o.i) : null });
     renderHistory();
     $("offer").hidden = true;
     if (buy) {
       g.phase = "buy";
-      g.bubble = { text: "A fine choice!", x: standX(g.k) };
+      g.bubble = { text: dup ? "One more, just in case…" : "A fine choice!", x: standX(g.k) };
       const hand = handWorld();
       for (let c = 0; c < 5; c++) g.coins.push({ t: -c * 0.08, from: hand, to: { x: standX(g.k) - 40, y: 372 } });
       later(0.55, () => {
         g.hop = 0;
-        g.profit += it.value - o.price;
+        const gain = dup ? -o.price : it.value - o.price;   // a second copy earns nothing: only its price counts
+        g.profit += gain;
+        g.paid[o.i].push(o.price);
         g.S &= ~(1 << o.i);
         g.status[o.i] = "bought";
-        g.texts.push({ x: g.mx, y: MERCH_BOTTOM - 240, text: fmtSigned(it.value - o.price), t: 0,
-                       color: it.value - o.price >= 0 ? "#3c5a2a" : "#9b3b2a" });
+        g.texts.push({ x: g.mx, y: MERCH_BOTTOM - 240, text: fmtSigned(gain), t: 0, color: gain >= 0 ? "#3c5a2a" : "#9b3b2a" });
         flyIcon(o.i, () => { renderOrder(); });
         renderHud();
       });
@@ -227,8 +236,9 @@
 
   function goCastle() {
     g.offer = null;
-    if (g.S === 0 && g.k < N - 1) {
-      g.early = N - 1 - g.k;   // stands left unvisited: nothing to buy there any more
+    $("offer").hidden = true;
+    if (g.k < N - 1) {
+      g.early = N - 1 - g.k;   // the player chose to skip the last stands (order complete)
       g.bubble = { text: "Order complete! Off to the castle.", follow: true };
       renderHud();
     }
@@ -261,10 +271,13 @@
     const gap = planner - g.profit;
     const verdict = gap <= 0 ? "You matched the planner on this market. Well planned!"
       : `The planner made ${gap} more coin${gap > 1 ? "s" : ""} on this market.`;
-    const earlyTxt = g.early ? `You had all five pieces, so you skipped the last ${g.early} stand${g.early > 1 ? "s" : ""}: nothing there was worth anything to you. ` : "";
+    const earlyTxt = g.early ? `You had all five pieces and skipped the last ${g.early} stand${g.early > 1 ? "s" : ""}. ` : "";
+    const extras = g.log.filter((l) => l.bought && l.dup), exCost = extras.reduce((a, l) => a + l.price, 0);
+    const extraTxt = extras.length ? `You bought ${extras.length} extra cop${extras.length > 1 ? "ies" : "y"} for ${exCost} coins: ` +
+      `the knight takes only one of each piece, the cheapest. ` : "";
     const ps = Math.round(recordGame(g.profit, myopic, planner));
     const psTxt = comp ? "" : `Planning score ${ps} (100 = the planner, 0 ≈ the myopic merchant), `;
-    $("e-note").textContent = `${psTxt}${comp ? "Saved" : "saved"} to the scoreboard as ${playerName()}. ${earlyTxt}${verdict} All three met the same stands. Averaged over many days at this market ` +
+    $("e-note").textContent = `${psTxt}${comp ? "Saved" : "saved"} to the scoreboard as ${playerName()}. ${earlyTxt}${extraTxt}${verdict} All three met the same stands. Averaged over many days at this market ` +
       `(same order, same price ranges), the planner makes ${mk.V[N][full].toFixed(0)} coins and the myopic merchant ` +
       `${mk.M[N][full].toFixed(0)}.`;
     $("end").hidden = false;
@@ -282,9 +295,11 @@
     const cur = g.phase === "offer" && g.offer ? g.offer.i : -1;
     $("order").innerHTML = g.mk.items.map((it, i) => {
       const st = g.status[i];
-      const rec = g.log.find((l) => l.i === i && l.bought);
       let right = "";
-      if (st === "bought" && rec) right = `✓ ${rec.price} · ${fmtSigned(it.value - rec.price)}`;
+      if (st === "bought" && g.paid[i].length) {
+        const k = kept(i), ex = g.paid[i].length - 1, exCost = g.paid[i].reduce((a, p) => a + p, 0) - k;
+        right = `✓ ${k} · ${fmtSigned(it.value - k)}` + (ex ? `<span class="ex">+${ex} extra · −${exCost}</span>` : "");
+      }
       else if (st === "missing") right = "✗ not found";
       else right = rangeHtml(it, i === cur ? g.offer.price : null);
       const cls = [st, i === cur ? "offered" : ""].join(" ");
@@ -319,22 +334,33 @@
     const left = N - g.k - 1;
     $("o-icon").src = `${ASSET}icon-${it.key}.png`;
     $("o-name").textContent = it.name;
-    $("o-sub").textContent = `Stand ${g.k + 1} of ${N} · ${left} more after this one`;
+    $("o-sub").textContent = `Stand ${g.k + 1} of ${N} · ${left} left after`;
+    const dup = owned(o.i);
     $("o-price").textContent = o.price;
-    $("o-value").textContent = it.value;
-    $("o-margin").textContent = fmtSigned(it.value - o.price) || "0";
-    $("b-buy").innerHTML = `Buy for ${o.price} <kbd>B</kbd>`;
+    $("o-value").textContent = it.value;   // he pays it once: for one copy only
+    $("o-margin").textContent = dup ? fmtSigned(-o.price) : fmtSigned(it.value - o.price) || "0";
+    $("b-buy").innerHTML = `Buy ${o.price} <kbd>B</kbd>`;
+    const rg = $("o-regret");
+    if (dup) {
+      const k = kept(o.i), d = k - o.price;
+      rg.innerHTML = d > 0 ? `Yours cost <b>${k}</b>, this one <b>${d} less</b>. The knight would take it, but your ${k} are lost: <b>${fmtSigned(-o.price)}</b>.`
+        : `You have one (paid <b>${k}</b>); the knight pays for one only.`;
+      rg.className = "o-regret" + (d > 0 ? " sting" : "");
+      rg.hidden = false;
+    } else rg.hidden = true;
+    $("b-castle").hidden = g.S !== 0;
     renderAdvice();
     $("offer").hidden = false;
   }
 
   function renderAdvice() {
     const box = $("o-advice");
-    if (!hint || !g || g.phase !== "offer") { box.hidden = true; return; }
+    if (!hint || !g || g.phase !== "offer" || owned(g.offer.i)) { box.hidden = true; return; }   // owned: the regret line says it
     const o = g.offer, it = g.mk.items[o.i];
     const thr = plannerMax(g.mk, g.S, g.k, o.i);
     let txt;
-    if (thr >= it.hi) txt = "The planner would buy at any price here.";
+    if (owned(o.i)) txt = `The planner would walk on: a second ${it.name.toLowerCase()} earns nothing.`;
+    else if (thr >= it.hi) txt = "The planner would buy at any price here.";
     else if (thr < it.lo) txt = "The planner would walk on, whatever the price.";
     else txt = `The planner pays up to ${thr} here: it would ${o.price <= thr ? "buy" : "walk on"}.`;
     box.textContent = txt;
@@ -350,8 +376,11 @@
     }
     list.innerHTML = g.log.map((l, j) => {
       const it = g.mk.items[l.i];
-      const what = l.bought ? `✓ ${l.price}` : `${l.price} · passed`;
-      return `<li class="${l.bought ? "b" : ""}${j === g.log.length - 1 ? " new" : ""}" title="Stand ${l.k + 1}: ${it.name} at ${l.price}, ${l.bought ? "bought" : "walked on"}">` +
+      const what = l.bought ? (l.dup ? `✓ ${l.price} · extra` : `✓ ${l.price}`) : `${l.price} · passed`;
+      const cls = l.bought ? (l.dup ? "x" : "b") : l.dup && l.price < l.prev ? "r" : "";
+      const tip = `Stand ${l.k + 1}: ${it.name} at ${l.price}, ${l.bought ? (l.dup ? "bought an extra copy" : "bought") : "walked on"}` +
+        (l.dup ? ` (you had one at ${l.prev})` : "");
+      return `<li class="${cls}${j === g.log.length - 1 ? " new" : ""}" title="${tip}">` +
         `<img src="${ASSET}icon-${it.key}.png" alt=""><span class="hn">#${l.k + 1} ${it.name}</span><span class="hp">${what}</span></li>`;
     }).join("");
   }
@@ -360,10 +389,13 @@
     $("recap-body").innerHTML = g.log.map((l) => {
       const it = g.mk.items[l.i];
       const pBuy = l.price <= l.thr;
-      const thrTxt = l.thr >= it.hi ? "any price" : l.thr < it.lo ? "never" : `up to ${l.thr}`;
+      const thrTxt = l.dup ? "nothing: already has one" : l.thr >= it.hi ? "any price" : l.thr < it.lo ? "never" : `up to ${l.thr}`;
+      const you = l.bought ? (l.dup ? `<span class="tag x">extra copy · ${fmtSigned(-l.price)}</span>`
+        : `<span class="tag b">bought · ${fmtSigned(it.value - l.price)}</span>`)
+        : `<span class="tag p">walked on</span>${l.dup && l.price < l.prev ? ` <span class="rg-note">yours cost ${l.prev}</span>` : ""}`;
       return `<tr class="${pBuy !== l.bought ? "diff" : ""}"><td>${l.k + 1}</td>` +
         `<td><img src="${ASSET}icon-${it.key}.png" alt="">${it.name}</td><td class="n">${l.price}</td><td class="n">${it.value}</td>` +
-        `<td>${l.bought ? `<span class="tag b">bought · ${fmtSigned(it.value - l.price)}</span>` : `<span class="tag p">walked on</span>`}</td>` +
+        `<td>${you}</td>` +
         `<td>${pBuy ? "buy" : "walk on"} <span style="color:var(--muted)">(pays ${thrTxt})</span></td></tr>`;
     }).join("");
     $("recap").hidden = false;
@@ -750,6 +782,7 @@
     });
     $("b-buy").addEventListener("click", () => decide(true));
     $("b-pass").addEventListener("click", () => decide(false));
+    $("b-castle").addEventListener("click", () => { if (g && g.phase === "offer" && g.S === 0) goCastle(); });
     $("b-again").addEventListener("click", () => newGame(newSeed()));   // in a competition: next player, same market
     $("b-replay").addEventListener("click", () => newGame(g.mk.seed, g.visit + 1));
     $("c-restart").addEventListener("click", () => newGame(g.mk.seed, g.visit + 1));   // usable mid-game
